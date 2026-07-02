@@ -44,7 +44,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
-import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
+import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type TileTone } from "@/components/weather/TileTone";
 import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
@@ -376,6 +376,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const homeyOk = data?.ok === true;
   const { opacity } = useTileOpacity();
   const { color: tileColor } = useTileColor();
+  const { tone } = useTileTone();
+
 
   // Scroll-drevet "shrink" på hero-header (sticky under toppmenyen)
   const [heroT, setHeroT] = useState(0); // 0 = full, 1 = kollapset
@@ -495,7 +497,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           {/* Søke-knapp → åpner favoritt-siden med animert vær pr sted */}
           <Link
             to="/varfavoritter"
-            className={`${toneCardCn()} relative z-40 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors`}
+            className={`${toneCardCn(tone)} relative z-40 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors`}
           >
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <div className="relative z-10 flex items-center gap-3 w-full">
@@ -592,6 +594,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           </p>
         </div>
         <LocationDots userLoc={userLoc} />
+        <WeatherMenuButton soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} />
+
       </div>
     </PageShell>
   );
@@ -778,10 +782,101 @@ function LocationDots({
   );
 }
 
-function toneCardCn(extra = ""): string {
-  const { tone } = useTileTone();
+function WeatherMenuButton({
+  soundEnabled,
+  setSoundEnabled,
+}: {
+  soundEnabled: boolean;
+  setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("mousedown", onClick);
+    return () => window.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="fixed bottom-6 right-6 z-50">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Værmeny"
+        aria-expanded={open}
+        title="Værmeny"
+        className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-black/55 active:scale-95 transition-all"
+      >
+        <span className="flex flex-col gap-[5px]" aria-hidden="true">
+          <span className="flex items-center gap-[5px]">
+            <span className="w-1 h-1 rounded-full bg-current" />
+            <span className="w-[18px] h-[2px] rounded-full bg-current" />
+          </span>
+          <span className="flex items-center gap-[5px]">
+            <span className="w-1 h-1 rounded-full bg-current" />
+            <span className="w-[18px] h-[2px] rounded-full bg-current" />
+          </span>
+          <span className="flex items-center gap-[5px]">
+            <span className="w-1 h-1 rounded-full bg-current" />
+            <span className="w-[18px] h-[2px] rounded-full bg-current" />
+          </span>
+        </span>
+      </button>
+
+      {open && (
+        <div className="absolute bottom-14 right-0 p-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2 min-w-[168px]">
+          <div className="flex items-center justify-between px-2 py-1.5">
+            <span className="text-xs text-white/70">Værlyd</span>
+            <button
+              type="button"
+              onClick={() => setSoundEnabled((v) => !v)}
+              aria-pressed={soundEnabled}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
+                soundEnabled
+                  ? "bg-white text-slate-900"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              {soundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
+              <span>{soundEnabled ? "På" : "Av"}</span>
+            </button>
+          </div>
+
+          <div className="h-px bg-white/10 mx-2" />
+
+          <div className="flex flex-col gap-1.5 px-2 py-1">
+            <span className="text-[10px] text-white/50 uppercase tracking-wider">Flis-stil</span>
+            <div className="flex items-center gap-2">
+              <TileColorToggle />
+              <TileGlassToggle />
+              <TileOpacityToggle />
+              <TileToneToggle />
+            </div>
+          </div>
+
+          <div className="h-px bg-white/10 mx-2" />
+
+          <Link
+            to="/varfavoritter"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <SearchIcon size={14} />
+            <span>Søk / favoritter</span>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function toneCardCn(tone: TileTone, extra = ""): string {
   return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
 }
+
 
 
 // ============================================================
@@ -801,8 +896,9 @@ function GlassCard({
   className?: string;
   fx?: React.ReactNode;
 }) {
+  const { tone } = useTileTone();
   return (
-    <article className={toneCardCn(className)}>
+    <article className={toneCardCn(tone, className)}>
       {fx}
       <div className="relative">
         {eyebrow && (
@@ -817,6 +913,7 @@ function GlassCard({
   );
 }
 
+
 // ============================================================
 // ROTERENDE 48-TIMERS PROGNOSE
 // Én flis som veksler mellom: Nedbør · Værforhold · Vind · Lyn
@@ -827,7 +924,9 @@ type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>("var:rotating:rangeHours", 48);
+  const { tone } = useTileTone();
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
+
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
     { key: "vaer", label: "Værforhold", icon: <Cloud size={14} /> },
     { key: "nedbor", label: "Nedbør", icon: <Droplets size={14} /> },
@@ -863,7 +962,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const active = panels.find((p) => p.key === panel)!;
 
   return (
-    <article className={toneCardCn()}>
+    <article className={toneCardCn(tone)}>
       {fx}
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
@@ -2958,6 +3057,7 @@ function alertFxFor(alert: MetAlert): React.ReactNode {
 
 function AlertCompactTile({ alert }: { alert: MetAlert }) {
   const color = alertColor(alert.awarenessColor);
+  const { tone } = useTileTone();
   const [open, setOpen] = usePerUserPersistedState<boolean>(
     `var:alert-open:${alert.id}`,
     false,
@@ -2965,9 +3065,10 @@ function AlertCompactTile({ alert }: { alert: MetAlert }) {
   const fx = open ? alertFxFor(alert) : null;
   return (
     <div
-      className={toneCardCn("border-l-[4px] relative overflow-hidden p-0")}
+      className={toneCardCn(tone, "border-l-[4px] relative overflow-hidden p-0")}
       style={{ borderLeftColor: color }}
     >
+
       {fx}
       <button
         type="button"
