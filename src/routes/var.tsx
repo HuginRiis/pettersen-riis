@@ -805,8 +805,8 @@ function WeatherMenuButton({
       </button>
 
       {open && (
-        <div className="absolute bottom-14 right-0 p-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2 min-w-[168px]">
-          <div className="flex items-center justify-between px-2 py-1.5">
+        <div className="absolute bottom-14 right-0 p-3 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2.5 w-[260px] max-h-[70vh] overflow-y-auto">
+          <div className="flex items-center justify-between px-1">
             <span className="text-xs text-white/70">Værlyd</span>
             <button
               type="button"
@@ -823,12 +823,13 @@ function WeatherMenuButton({
             </button>
           </div>
 
-          <div className="h-px bg-white/10 mx-2" />
+          <div className="h-px bg-white/10" />
 
-          <div className="flex flex-col gap-1.5 px-2 py-1">
+          <TileColorToggle />
+
+          <div className="flex flex-col gap-1.5">
             <span className="text-[10px] text-white/50 uppercase tracking-wider">Flis-stil</span>
-            <div className="flex items-center gap-2">
-              <TileColorToggle />
+            <div className="flex flex-wrap items-center gap-1.5">
               <TileGlassToggle />
               <TileOpacityToggle />
               <TileToneToggle />
