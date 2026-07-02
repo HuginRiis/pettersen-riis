@@ -1102,6 +1102,8 @@ export function TileSplashFX({
   kind: GlassKind;
   intensity?: number;
 }) {
+  const mounted = useClientOnly();
+  if (!mounted) return null;
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
   const isSnow = kind === "snow" || kind === "sleet";
   const isWindy = kind === "cloudy" || kind === "fog";
