@@ -896,8 +896,9 @@ function GlassCard({
   className?: string;
   fx?: React.ReactNode;
 }) {
+  const { tone } = useTileTone();
   return (
-    <article className={toneCardCn(className)}>
+    <article className={toneCardCn(tone, className)}>
       {fx}
       <div className="relative">
         {eyebrow && (
@@ -911,6 +912,7 @@ function GlassCard({
     </article>
   );
 }
+
 
 // ============================================================
 // ROTERENDE 48-TIMERS PROGNOSE
