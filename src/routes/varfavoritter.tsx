@@ -8,6 +8,7 @@ import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 import { UserLocationBar, useUserLocation } from "@/hooks/use-user-location";
 import type { ActiveLocation } from "@/components/LocationPicker";
 import { reverseGeocode } from "@/lib/user-locations.functions";
+import { TileToneProvider, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
 
 export const Route = createFileRoute("/varfavoritter")({
   head: () => ({
@@ -16,8 +17,16 @@ export const Route = createFileRoute("/varfavoritter")({
       { name: "description", content: "Alle dine lagrede værsteder på ett sted, med animert vær." },
     ],
   }),
-  component: FavoritesPage,
+  component: FavoritesPageWithTone,
 });
+
+function FavoritesPageWithTone() {
+  return (
+    <TileToneProvider>
+      <FavoritesPage />
+    </TileToneProvider>
+  );
+}
 
 const FAV_KEY = "loc:fav:var";
 const CHOSEN_KEY = "loc:chosen:var";
