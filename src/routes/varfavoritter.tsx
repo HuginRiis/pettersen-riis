@@ -170,7 +170,10 @@ function FavoritesPage() {
               {rows.map((f, i) => {
                 const isMyPosition = i === 0;
                 return (
-                  <div key={f.label} className="relative rounded-2xl overflow-hidden">
+                  <div
+                    key={f.label}
+                    className={`relative rounded-2xl overflow-hidden ${isMyPosition ? "tile-selected has-position-badge" : ""}`}
+                  >
                     {isMyPosition && (
                       <div className="absolute top-3 left-3 z-10 pointer-events-none text-[10px] tracking-[0.25em] uppercase text-white/80 bg-black/20 px-2 py-1 rounded-full">
                         Min posisjon
