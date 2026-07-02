@@ -192,6 +192,20 @@ function FavoritesPage() {
                         Min posisjon
                       </div>
                     )}
+                    {!isMyPosition && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFavorite(f);
+                        }}
+                        aria-label={`Fjern ${f.label} fra favoritter`}
+                        title="Fjern favoritt"
+                        className="absolute top-2 right-2 z-20 h-7 w-7 rounded-full bg-black/40 hover:bg-black/60 text-white/90 flex items-center justify-center backdrop-blur-sm border border-white/20 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                     <div
                       role="button"
                       tabIndex={0}
