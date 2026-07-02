@@ -118,6 +118,20 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
   }, [who, page, fetchDefault, authenticated, authLoading]);
 
 
+  const persistAndSetActive = (loc: ActiveLocation) => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          `loc:chosen:${page}`,
+          JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon }),
+        );
+      } catch {
+        // ignore
+      }
+    }
+    setActive(loc);
+  };
+
   return {
     who,
     active,
@@ -125,7 +139,7 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
     ready,
     authenticated: authenticated === true,
     setWho,
-    setActive,
+    setActive: persistAndSetActive,
     setDefaultLoc,
   };
 }
