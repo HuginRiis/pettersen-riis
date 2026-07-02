@@ -86,74 +86,91 @@ export function useTileColor() {
 export function TileColorToggle() {
   const { rawColor, setColor } = useTileColor();
   const color = rawColor;
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const customRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    window.addEventListener("mousedown", onClick);
-    return () => window.removeEventListener("mousedown", onClick);
-  }, [open]);
+  // Trekk ut hex-verdi fra tilpasset farge for input-elementet (fallback #3b82f6)
+  const isPresetColor = TILE_COLOR_PALETTE.some((p) => p.value === color);
+  const customHex = useMemo(() => {
+    if (!color || isPresetColor) return "#3b82f6";
+    const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (!m) return "#3b82f6";
+    const toHex = (n: string) => Number(n).toString(16).padStart(2, "0");
+    return `#${toHex(m[1])}${toHex(m[2])}${toHex(m[3])}`;
+  }, [color, isPresetColor]);
 
-  const active = TILE_COLOR_PALETTE.find((p) => p.value === color);
+  const hasCustom = color !== null && !isPresetColor;
 
   return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Velg flisfarge"
-        title="Velg flisfarge"
-        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium backdrop-blur-xl border transition-all bg-white/10 text-white/80 border-white/15 hover:bg-white/20"
-      >
-        <span
-          className="inline-block w-3 h-3 rounded-full border border-white/40"
-          style={{ background: color ?? "transparent" }}
-        />
-        <span>{active ? active.label : "Farge"}</span>
-      </button>
-      {open && (
-        <div className="absolute right-0 mt-2 z-50 p-2 rounded-xl bg-slate-900/95 border border-white/15 backdrop-blur-xl shadow-2xl w-[176px]">
-          <div className="grid grid-cols-4 gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                setColor(null);
-                setOpen(false);
-              }}
-              title="Ingen farge"
-              className={`w-9 h-9 rounded-md border flex items-center justify-center text-[10px] text-white/80 ${
-                color === null ? "border-white ring-2 ring-white/40" : "border-white/20"
-              }`}
-              style={{
-                background:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0 4px, rgba(255,255,255,0.02) 4px 8px)",
-              }}
-            >
-              Av
-            </button>
-            {TILE_COLOR_PALETTE.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => {
-                  setColor(p.value);
-                  setOpen(false);
-                }}
-                title={p.label}
-                aria-label={p.label}
-                className={`w-9 h-9 rounded-md border transition-all ${
-                  color === p.value ? "border-white ring-2 ring-white/50 scale-105" : "border-white/20 hover:border-white/50"
-                }`}
-                style={{ background: p.value }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="w-full space-y-1.5">
+      <div className="text-[10px] text-white/50 uppercase tracking-wider">Farge</div>
+      <div className="grid grid-cols-6 gap-1.5">
+        <button
+          type="button"
+          onClick={() => setColor(null)}
+          title="Ingen farge"
+          aria-label="Ingen farge"
+          className={`w-7 h-7 rounded-md border flex items-center justify-center text-[9px] text-white/80 ${
+            color === null ? "border-white ring-2 ring-white/40" : "border-white/20"
+          }`}
+          style={{
+            background:
+              "repeating-linear-gradient(45deg, rgba(255,255,255,0.08) 0 4px, rgba(255,255,255,0.02) 4px 8px)",
+          }}
+        >
+          Av
+        </button>
+        {TILE_COLOR_PALETTE.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setColor(p.value)}
+            title={p.label}
+            aria-label={p.label}
+            className={`w-7 h-7 rounded-md border transition-all ${
+              color === p.value
+                ? "border-white ring-2 ring-white/50 scale-105"
+                : "border-white/20 hover:border-white/50"
+            }`}
+            style={{ background: p.value }}
+          />
+        ))}
+        {/* Egendefinert farge */}
+        <button
+          type="button"
+          onClick={() => customRef.current?.click()}
+          title="Velg egen farge"
+          aria-label="Velg egen farge"
+          className={`relative w-7 h-7 rounded-md border overflow-hidden transition-all ${
+            hasCustom
+              ? "border-white ring-2 ring-white/50 scale-105"
+              : "border-white/20 hover:border-white/50"
+          }`}
+          style={{
+            background: hasCustom
+              ? color!
+              : "conic-gradient(from 0deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)",
+          }}
+        >
+          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow">
+            +
+          </span>
+          <input
+            ref={customRef}
+            type="color"
+            value={customHex}
+            onChange={(e) => {
+              const hex = e.target.value;
+              const r = parseInt(hex.slice(1, 3), 16);
+              const g = parseInt(hex.slice(3, 5), 16);
+              const b = parseInt(hex.slice(5, 7), 16);
+              setColor(`rgba(${r}, ${g}, ${b}, 0.6)`);
+            }}
+            className="absolute inset-0 opacity-0 pointer-events-none"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+        </button>
+      </div>
     </div>
   );
 }
