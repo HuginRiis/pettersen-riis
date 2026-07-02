@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
-import { Star } from "lucide-react";
+import { Star, X } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 import { UserLocationBar, useUserLocation } from "@/hooks/use-user-location";
