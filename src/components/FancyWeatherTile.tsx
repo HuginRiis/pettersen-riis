@@ -23,6 +23,7 @@ type Props = {
   label: string;
   lat: number;
   lon: number;
+  className?: string;
 };
 
 /**
@@ -30,7 +31,7 @@ type Props = {
  * været (sol, skyer, regn, snø, torden, natt) og faner for I dag / I morgen /
  * Kommende helg. Henter MET.no compact direkte (cachet av nettleseren).
  */
-export function FancyWeatherTile({ label, lat, lon }: Props) {
+export function FancyWeatherTile({ label, lat, lon, className }: Props) {
   const [days, setDays] = useState<Day[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("today");
@@ -64,7 +65,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
   const mood = symbolMood(symbol);
 
   return (
-    <div className={`fancy-wx fancy-wx--${mood} ${isNight ? "fancy-wx--night" : "fancy-wx--day"}`}>
+    <div className={`fancy-wx fancy-wx--${mood} ${isNight ? "fancy-wx--night" : "fancy-wx--day"} ${className ?? ""}`}>
       <div className="fancy-wx__bg">
         {/* lag — kjøres alltid, CSS skjuler etter mood */}
         <div className="fancy-wx__sky" />

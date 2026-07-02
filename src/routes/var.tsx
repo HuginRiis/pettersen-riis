@@ -135,7 +135,7 @@ function WeatherPage() {
   const fetchAlerts = useServerFn(getTollnesAlerts);
   const userLoc = useUserLocation("var");
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
-  const [now, setNow] = useState<Date>(() => new Date());
+  const [now, setNow] = useState<Date>(() => new Date("2000-01-01T12:00:00Z"));
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
   const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
 
@@ -154,6 +154,7 @@ function WeatherPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setNow(new Date());
     setState((s) => ({ ...s, skien: { ...s.skien, loading: true, error: null } }));
     LOCATIONS.forEach(async (loc) => {
       try {
