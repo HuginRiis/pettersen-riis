@@ -1269,20 +1269,20 @@ main .container {
 /* Innhold */
 .fancy-wx__content {
   position: relative; z-index: 1;
-  padding: 14px 16px 14px;
-  display: flex; flex-direction: column; gap: 10px;
-  min-height: 220px;
+  padding: 12px 14px 10px;
+  display: flex; flex-direction: column; gap: 6px;
+  min-height: 170px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.35);
 }
 .fancy-wx__top {
-  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
 }
 .fancy-wx__eyebrow {
   font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
   opacity: 0.78;
 }
-.fancy-wx__place { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; transition: padding-top 0.2s ease; }
-.has-position-badge .fancy-wx__place { padding-top: 24px; }
+.fancy-wx__place { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; transition: padding-top 0.2s ease; }
+.has-position-badge .fancy-wx__place { padding-top: 20px; }
 
 /* Pulsing glow on selected favorite tile */
 @keyframes tile-pulse {
