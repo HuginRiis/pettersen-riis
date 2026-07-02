@@ -1064,16 +1064,19 @@ export function GlassPaneFX({
         </>
       )}
 
-      {/* THUNDER: rare full-screen flash */}
+      {/* THUNDER: full-screen flash + faktiske lyn-slag */}
       {isThunder && (
-        <div
-          className="absolute inset-0 animate-wx-flash"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 30%, transparent 60%)",
-            animationDuration: "9s",
-          }}
-        />
+        <>
+          <div
+            className="absolute inset-0 animate-wx-flash"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.3) 30%, transparent 60%)",
+              animationDuration: "7s",
+            }}
+          />
+          <ThunderFX intensity={Math.max(0.7, intensity)} className="!fixed inset-0" />
+        </>
       )}
     </div>
   );
