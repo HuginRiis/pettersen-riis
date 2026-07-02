@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
-import { Star } from "lucide-react";
+import { Star, X } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 import { UserLocationBar, useUserLocation } from "@/hooks/use-user-location";
@@ -77,6 +77,19 @@ function FavoritesPage() {
       // ignore
     }
     navigate({ to: "/var" });
+  };
+
+  const removeFavorite = (loc: ActiveLocation) => {
+    const next = readFavs().filter(
+      (f) => f.label.trim().toLowerCase() !== loc.label.trim().toLowerCase(),
+    );
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("loc-favs-changed", { detail: { page: "var" } }));
+    } catch {
+      // ignore
+    }
+    setFavs(next);
   };
 
   useEffect(() => {
@@ -178,6 +191,20 @@ function FavoritesPage() {
                       <div className="absolute top-3 left-3 z-10 pointer-events-none text-[10px] tracking-[0.25em] uppercase text-white/80 bg-black/20 px-2 py-1 rounded-full">
                         Min posisjon
                       </div>
+                    )}
+                    {!isMyPosition && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFavorite(f);
+                        }}
+                        aria-label={`Fjern ${f.label} fra favoritter`}
+                        title="Fjern favoritt"
+                        className="absolute top-2 right-2 z-20 h-7 w-7 rounded-full bg-black/40 hover:bg-black/60 text-white/90 flex items-center justify-center backdrop-blur-sm border border-white/20 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
                     )}
                     <div
                       role="button"
