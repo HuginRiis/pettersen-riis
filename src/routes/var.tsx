@@ -407,7 +407,21 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-...
+
+  return (
+    <PageShell>
+      <div
+        className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative ${tileColor ? "has-tile-color" : ""}`}
+        style={{
+          ["--tile-opacity" as string]: opacity / 100,
+          ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
+        }}
+      >
+        <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
+        <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
+
+          {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
+
           {/* HERO — sticky under toppmenyen, krymper når man scroller */}
           <div
             className={`sticky top-[56px] z-30 -mx-4 px-4 transition-[background-color,box-shadow,border-color] duration-300 ease-out ${
