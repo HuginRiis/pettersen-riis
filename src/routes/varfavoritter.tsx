@@ -108,16 +108,16 @@ function FavoritesPage() {
         const lon = pos.coords.longitude;
         try {
           const r = await reverse({ data: { lat, lon } });
-          userLoc.setActive({ label: r.label, lat: r.lat, lon: r.lon });
+          userLoc.setActive({ label: r.label, lat: r.lat, lon: r.lon, source: "gps" });
         } catch {
           const list = readFavs();
           if (list.length) {
             const nearest = [...list].sort(
               (a, b) => distKm({ lat, lon }, a) - distKm({ lat, lon }, b),
             )[0];
-            userLoc.setActive(nearest);
+            userLoc.setActive({ ...nearest, source: "gps" });
           } else {
-            userLoc.setActive({ label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, lat, lon });
+            userLoc.setActive({ label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, lat, lon, source: "gps" });
           }
         } finally {
           setAutoLocated(true);
