@@ -126,7 +126,7 @@ function WeatherPage() {
 
   const LOCATIONS = useMemo(
     () => [
-      { key: "skien" as const, name: userLoc.active.label, subtitle: "Mitt sted · MET.no", lat: userLoc.active.lat, lon: userLoc.active.lon },
+      { key: "skien" as const, name: userLoc.active.label, subtitle: "Mitt sted", lat: userLoc.active.lat, lon: userLoc.active.lon },
       HYTTA_LOC,
     ],
     [userLoc.active.label, userLoc.active.lat, userLoc.active.lon],
@@ -641,7 +641,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
 
   if (!hours)
     return (
-      <GlassCard eyebrow="Værvarsel" icon={<TrendingUp size={14} />}>
+      <GlassCard icon={<TrendingUp size={14} />}>
         <Skeleton />
       </GlassCard>
     );
