@@ -442,23 +442,33 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                 {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
               </div>
               <div
-                className="font-medium transition-all duration-200"
+                className="font-medium transition-all duration-200 overflow-hidden"
                 style={{
                   fontSize: `${20 - heroT * 6}px`,
                   marginTop: `${8 - heroT * 6}px`,
                   display: collapsed ? "inline-block" : "block",
                   marginLeft: collapsed ? 8 : 0,
+                  opacity: `${Math.max(0, 1 - heroT * 5)}`,
+                  maxHeight: heroT > 0.22 ? 0 : `${24}px`,
                 }}
               >
-                {collapsed ? `| ${condition}` : condition}
+                {condition}
               </div>
-              {todayDay && !collapsed && (
-                <div className="text-base font-medium mt-1 tabular-nums">
+              {todayDay && (
+                <div
+                  className="text-base font-medium mt-1 tabular-nums transition-all duration-200 overflow-hidden"
+                  style={{ opacity: `${Math.max(0, 1 - heroT * 5)}`, maxHeight: heroT > 0.22 ? 0 : "24px" }}
+                >
                   H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
                 </div>
               )}
-              {headline && !collapsed && (
-                <div className="text-sm text-white/90 mt-3">{headline}</div>
+              {headline && (
+                <div
+                  className="text-sm text-white/90 mt-3 transition-all duration-200 overflow-hidden"
+                  style={{ opacity: `${Math.max(0, 1 - heroT * 5)}`, maxHeight: heroT > 0.22 ? 0 : "40px" }}
+                >
+                  {headline}
+                </div>
               )}
             </header>
           </div>
