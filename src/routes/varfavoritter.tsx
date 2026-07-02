@@ -116,9 +116,18 @@ function FavoritesPage() {
           ) : (
             <div className="space-y-3">
               {rows.map((f) => (
-                <FancyWeatherTile key={f.label} label={f.label} lat={f.lat} lon={f.lon} />
+                <button
+                  key={f.label}
+                  type="button"
+                  onClick={() => pickLocation(f)}
+                  className="block w-full text-left rounded-2xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/40 transition-transform active:scale-[0.99]"
+                  aria-label={`Åpne vær for ${f.label}`}
+                >
+                  <FancyWeatherTile label={f.label} lat={f.lat} lon={f.lon} />
+                </button>
               ))}
             </div>
+
           )}
         </div>
       </div>
