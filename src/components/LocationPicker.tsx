@@ -30,6 +30,8 @@ type Props = {
   readOnlyWho?: boolean;
   /** Når true: ingen egen bakgrunn/border (containeren utenfor styrer flis-stilen). */
   transparent?: boolean;
+  /** Når true: skjul 📍-knapp og "Sett som standard"-knapp. */
+  hideActions?: boolean;
 };
 
 const MAX_RECENT = 3;
