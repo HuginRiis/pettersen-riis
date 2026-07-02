@@ -1097,7 +1097,7 @@ main .container {
 .fancy-wx--day.fancy-wx--clear .fancy-wx__sky { background: linear-gradient(180deg, #1e7fff 0%, #5fb7ff 50%, #ffd49a 100%); }
 .fancy-wx--day.fancy-wx--fair  .fancy-wx__sky { background: linear-gradient(180deg, #3a8ef0 0%, #7ec2ff 60%, #d6ecff 100%); }
 .fancy-wx--day.fancy-wx--cloudy .fancy-wx__sky { background: linear-gradient(180deg, #4e6478 0%, #7a8c9e 60%, #aab9c7 100%); }
-.fancy-wx--rain .fancy-wx__sky    { background: linear-gradient(180deg, #1f2a36 0%, #3a4a5c 60%, #556775 100%); }
+.fancy-wx--rain .fancy-wx__sky    { background: linear-gradient(180deg, #2b3a4a 0%, #43586c 45%, #6b8296 100%); }
 .fancy-wx--sleet .fancy-wx__sky   { background: linear-gradient(180deg, #2a3a48 0%, #54697a 60%, #8198a8 100%); }
 .fancy-wx--snow .fancy-wx__sky    { background: linear-gradient(180deg, #4a5a6a 0%, #8095a8 60%, #d3dde6 100%); }
 .fancy-wx--thunder .fancy-wx__sky { background: linear-gradient(180deg, #0e131a 0%, #2a2f3a 60%, #46505c 100%); }
