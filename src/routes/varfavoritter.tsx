@@ -79,6 +79,19 @@ function FavoritesPage() {
     navigate({ to: "/var" });
   };
 
+  const removeFavorite = (loc: ActiveLocation) => {
+    const next = readFavs().filter(
+      (f) => f.label.trim().toLowerCase() !== loc.label.trim().toLowerCase(),
+    );
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(next));
+      window.dispatchEvent(new CustomEvent("loc-favs-changed", { detail: { page: "var" } }));
+    } catch {
+      // ignore
+    }
+    setFavs(next);
+  };
+
   useEffect(() => {
     setFavs(readFavs());
     const refresh = () => setFavs(readFavs());
