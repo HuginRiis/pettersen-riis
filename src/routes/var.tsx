@@ -81,6 +81,19 @@ export const Route = createFileRoute("/var")({
 
 const HYTTA_LOC = { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 } as const;
 
+const FAV_KEY = "loc:fav:var";
+
+function readFavs(): ActiveLocation[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const v = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((x) => x && typeof x.label === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+
 type ForecastDay = {
   date: string;
   symbol: string | null;
