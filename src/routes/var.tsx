@@ -12,23 +12,8 @@ import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 import { reverseGeocode } from "@/lib/user-locations.functions";
 import type { ActiveLocation } from "@/components/LocationPicker";
 import {
-  RainFX,
-  SnowFX,
-  CloudFX,
-  WindFX,
-  HeatwaveFX,
-  HumidityFX,
-  PressureFX,
-  GustFX,
-  SunFX,
-  StarFX,
-  MoonFX,
-  ThunderFX,
-  GlassPaneFX,
-  glassKindFromSymbol,
-  type GlassKind,
-  TileSplashFX,
-  CloudCoverFX,
+  RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
+  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
@@ -59,24 +44,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
-import {
-  TileToneProvider,
-  TileToneToggle,
-  useTileTone,
-  tileToneClasses,
-  type TileTone,
-} from "@/components/weather/TileTone";
-import {
-  TileOpacityProvider,
-  TileOpacityToggle,
-  useTileOpacity,
-} from "@/components/weather/TileOpacity";
-import {
-  TileColorProvider,
-  TileColorToggle,
-  TileGlassToggle,
-  useTileColor,
-} from "@/components/weather/TileColor";
+import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type TileTone } from "@/components/weather/TileTone";
+import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
+import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 
@@ -84,15 +54,9 @@ export const Route = createFileRoute("/var")({
   head: () => ({
     meta: [
       { title: "Vær — Skien & Numedal | House Pettersen Riis" },
-      {
-        name: "description",
-        content: "Værmelding, nedbør og vind for Skien og hytta, time for time fra MET.no.",
-      },
+      { name: "description", content: "Værmelding, nedbør og vind for Skien og hytta, time for time fra MET.no." },
       { property: "og:title", content: "Vær | House Pettersen Riis" },
-      {
-        property: "og:description",
-        content: "iOS-inspirert værvisning med MET.no, Netatmo og UV-indeks.",
-      },
+      { property: "og:description", content: "iOS-inspirert værvisning med MET.no, Netatmo og UV-indeks." },
     ],
   }),
   staleTime: 3 * 60_000,
@@ -100,7 +64,7 @@ export const Route = createFileRoute("/var")({
   loader: async () => {
     const homey = await getHomeySnapshot();
     const netatmo = await getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
-      (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" }),
+      (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" })
     );
     return { homey, netatmo };
   },
@@ -115,13 +79,7 @@ export const Route = createFileRoute("/var")({
   ),
 });
 
-const HYTTA_LOC = {
-  key: "hytta",
-  name: "Hytta · Numedal",
-  subtitle: "Lyngdal · Øvre Bjørkesethvegen",
-  lat: 59.92,
-  lon: 9.3,
-} as const;
+const HYTTA_LOC = { key: "hytta", name: "Hytta · Numedal", subtitle: "Lyngdal · Øvre Bjørkesethvegen", lat: 59.92, lon: 9.30 } as const;
 
 const FAV_KEY = "loc:fav:var";
 
@@ -134,6 +92,7 @@ function readFavs(): ActiveLocation[] {
     return [];
   }
 }
+
 
 type ForecastDay = {
   date: string;
@@ -170,10 +129,7 @@ type LocationState = {
 };
 
 function WeatherPage() {
-  const loaderData = Route.useLoaderData() as {
-    homey: Awaited<ReturnType<typeof getHomeySnapshot>>;
-    netatmo: Awaited<ReturnType<typeof getNetatmoWeatherStation>>;
-  };
+  const loaderData = Route.useLoaderData() as { homey: Awaited<ReturnType<typeof getHomeySnapshot>>; netatmo: Awaited<ReturnType<typeof getNetatmoWeatherStation>> };
   const data = loaderData.homey;
   const netatmoData = loaderData.netatmo;
   const fetchAlerts = useServerFn(getTollnesAlerts);
@@ -181,20 +137,11 @@ function WeatherPage() {
   const [alerts, setAlerts] = useState<AlertsResult | null>(null);
   const [now, setNow] = useState<Date>(() => new Date());
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
-  const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>(
-    "var.tile.sound.enabled",
-    false,
-  );
+  const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
 
   const LOCATIONS = useMemo(
     () => [
-      {
-        key: "skien" as const,
-        name: userLoc.active.label,
-        subtitle: "Mitt sted",
-        lat: userLoc.active.lat,
-        lon: userLoc.active.lon,
-      },
+      { key: "skien" as const, name: userLoc.active.label, subtitle: "Mitt sted", lat: userLoc.active.lat, lon: userLoc.active.lon },
       HYTTA_LOC,
     ],
     [userLoc.active.label, userLoc.active.lat, userLoc.active.lon],
@@ -223,12 +170,7 @@ function WeatherPage() {
         if (cancelled) return;
         setState((s) => ({
           ...s,
-          [loc.key]: {
-            days: null,
-            hours: null,
-            error: e instanceof Error ? e.message : "Ukjent feil",
-            loading: false,
-          },
+          [loc.key]: { days: null, hours: null, error: e instanceof Error ? e.message : "Ukjent feil", loading: false },
         }));
       }
     });
@@ -262,38 +204,14 @@ function WeatherPage() {
 
   const tollnesRainToday = readDailyRain(tollnesRainSensor);
   const hyttaRainToday = readDailyRain(hyttaRainSensor);
-  const tollnesWind = readCap(
-    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")),
-    "measure_wind_strength",
-  );
-  const hyttaWind = readCap(
-    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")),
-    "measure_wind_strength",
-  );
-  const tollnesPressure = readCap(
-    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_pressure")),
-    "measure_pressure",
-  );
-  const hyttaPressure = readCap(
-    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_pressure")),
-    "measure_pressure",
-  );
-  const tollnesHumidity = readCap(
-    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_humidity")),
-    "measure_humidity",
-  );
-  const hyttaHumidity = readCap(
-    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_humidity")),
-    "measure_humidity",
-  );
-  const tollnesTemp = readCap(
-    findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_temperature")),
-    "measure_temperature",
-  );
-  const hyttaTemp = readCap(
-    findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_temperature")),
-    "measure_temperature",
-  );
+  const tollnesWind = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_wind_strength")), "measure_wind_strength");
+  const hyttaWind = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_wind_strength")), "measure_wind_strength");
+  const tollnesPressure = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_pressure")), "measure_pressure");
+  const hyttaPressure = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_pressure")), "measure_pressure");
+  const tollnesHumidity = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_humidity")), "measure_humidity");
+  const hyttaHumidity = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_humidity")), "measure_humidity");
+  const tollnesTemp = readCap(findDeviceFuzzy(devices, zones, "tollnes", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
+  const hyttaTemp = readCap(findDeviceFuzzy(devices, zones, "hytta", (d) => hasCap(d, "measure_temperature")), "measure_temperature");
 
   // Netatmo ute-modul (Nordre Lensmannsveg / Tollnes) — prioriteres for temp/fukt
   const netatmoModules: WeatherModule[] = netatmoData?.ok === true ? netatmoData.modules : [];
@@ -310,10 +228,7 @@ function WeatherPage() {
   const hyttaDays = state.hytta?.days ?? null;
 
   const currentHour = skienHours?.[0] ?? null;
-  const sun = useMemo(
-    () => sunTimes(now, userLoc.active.lat, userLoc.active.lon),
-    [now, userLoc.active.lat, userLoc.active.lon],
-  );
+  const sun = useMemo(() => sunTimes(now, userLoc.active.lat, userLoc.active.lon), [now, userLoc.active.lat, userLoc.active.lon]);
   const moon = useMemo(() => moonPhase(now), [now]);
   const allAlerts = alerts?.ok === true ? alerts.alerts : [];
 
@@ -334,9 +249,7 @@ function WeatherPage() {
   const headline = useMemo(() => {
     if (!skienHours) return null;
     // Finn neste time med signifikant nedbør
-    const nextRain = skienHours
-      .slice(1, 24)
-      .find((h) => h.precip >= 0.2 || h.precipProbability >= 50);
+    const nextRain = skienHours.slice(1, 24).find((h) => h.precip >= 0.2 || h.precipProbability >= 50);
     if (nextRain) {
       const t = new Date(nextRain.time);
       const hh = t.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
@@ -455,40 +368,11 @@ type WeatherPageInnerProps = {
 
 function WeatherPageInner(props: WeatherPageInnerProps) {
   const {
-    data,
-    netatmoData,
-    userLoc,
-    alerts,
-    now,
-    bgGradient,
-    glassKind,
-    glassIntensity,
-    currentHour,
-    headline,
-    todayDay,
-    condition,
-    borgenTemp,
-    borgenHumidity,
-    tollnesRainToday,
-    hyttaRainToday,
-    tollnesWind,
-    hyttaWind,
-    tollnesPressure,
-    hyttaPressure,
-    tollnesTemp,
-    hyttaTemp,
-    hyttaHumidity,
-    skienHours,
-    skienDays,
-    hyttaHours,
-    hyttaDays,
-    moon,
-    sun,
-    rangeHours,
-    setRangeHours,
-    allAlerts,
-    soundEnabled,
-    setSoundEnabled,
+    data, netatmoData, userLoc, alerts, now, bgGradient, glassKind, glassIntensity,
+    currentHour, headline, todayDay, condition, borgenTemp, borgenHumidity,
+    tollnesRainToday, hyttaRainToday, tollnesWind, hyttaWind, tollnesPressure, hyttaPressure,
+    tollnesTemp, hyttaTemp, hyttaHumidity, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
+    rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
   } = props;
 
   const homeyOk = data?.ok === true;
@@ -496,7 +380,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { color: tileColor } = useTileColor();
   const { tone } = useTileTone();
 
-  // Scroll-drevet hero: full forsvinner opp, mini-header zoomer frem
+
+  // Scroll-drevet "shrink" på hero-header (sticky under toppmenyen)
   const [heroT, setHeroT] = useState(0); // 0 = full, 1 = kollapset
   useEffect(() => {
     const SHRINK_PX = 120;
@@ -508,6 +393,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  const collapsed = heroT > 0.5;
+
 
   return (
     <PageShell>
@@ -520,56 +407,62 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
       >
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
+
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
 
-          {/* HERO — sticky under toppmenyen. Full hero forsvinner opp, mini-header zoomer frem */}
+          {/* HERO — sticky under toppmenyen, krymper når man scroller */}
           <div
-            className={`sticky top-[56px] z-30 -mx-4 px-4 relative overflow-hidden transition-all duration-200 ease-out ${
-              heroT > 0 ? "backdrop-blur-xl bg-black/20 border-b border-white/10 shadow-lg" : ""
+            className={`sticky top-[56px] z-30 -mx-4 px-4 transition-all duration-200 ${
+              collapsed
+                ? "backdrop-blur-xl bg-black/20 border-b border-white/10 shadow-lg"
+                : ""
             }`}
-            style={{ height: `${240 - heroT * 192}px` }}
           >
-            {/* Full hero — forsvinner oppover */}
-            <div
-              className="absolute inset-x-0 top-0 pt-4 pb-2 text-center transition-transform duration-200 ease-out"
+            <header
+              className="text-center transition-all duration-200 ease-out"
               style={{
-                transform: `translateY(${-heroT * 80}px)`,
-                opacity: 1 - heroT,
+                paddingTop: `${16 - heroT * 12}px`,
+                paddingBottom: `${8 - heroT * 4}px`,
               }}
             >
-              <h1 className="font-medium tracking-wide text-white/90 drop-shadow-md text-lg">
+              <h1
+                className="font-medium tracking-wide text-white/90 drop-shadow-md transition-all duration-200"
+                style={{ fontSize: `${18 - heroT * 4}px`, marginTop: `${4 - heroT * 4}px` }}
+              >
                 {userLoc.active.label}
               </h1>
-              <div className="leading-none font-thin drop-shadow-lg tabular-nums text-[88px]">
+              <div
+                className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
+                style={{
+                  fontSize: `${88 - heroT * 60}px`,
+                  marginTop: `${8 - heroT * 6}px`,
+                  display: "inline-block",
+                }}
+              >
                 {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
               </div>
-              <div className="font-medium text-xl mt-2">{condition}</div>
-              {todayDay && (
+              <div
+                className="font-medium transition-all duration-200"
+                style={{
+                  fontSize: `${20 - heroT * 6}px`,
+                  marginTop: `${8 - heroT * 6}px`,
+                  display: collapsed ? "inline-block" : "block",
+                  marginLeft: collapsed ? 8 : 0,
+                }}
+              >
+                {collapsed ? `| ${condition}` : condition}
+              </div>
+              {todayDay && !collapsed && (
                 <div className="text-base font-medium mt-1 tabular-nums">
-                  H: {Math.round(todayDay.tempMax)}° L: {Math.round(todayDay.tempMin)}°
+                  H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
                 </div>
               )}
-              {headline && <div className="text-sm text-white/90 mt-3">{headline}</div>}
-            </div>
-
-            {/* Mini header — zoomer frem */}
-            <div
-              className="absolute inset-x-0 top-0 h-full flex items-center justify-center gap-2 transition-transform duration-200 ease-out"
-              style={{
-                transform: `scale(${0.85 + heroT * 0.15})`,
-                opacity: heroT,
-                pointerEvents: heroT > 0 ? "auto" : "none",
-              }}
-            >
-              <span className="font-medium tracking-wide text-white/90 drop-shadow-md text-sm">
-                {userLoc.active.label}
-              </span>
-              <span className="text-2xl font-thin tabular-nums drop-shadow-lg">
-                {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
-              </span>
-              <span className="font-medium text-white/90">| {condition}</span>
-            </div>
+              {headline && !collapsed && (
+                <div className="text-sm text-white/90 mt-3">{headline}</div>
+              )}
+            </header>
           </div>
+
 
           {/* Kompakte farevarsler — rett over søkeboksen */}
           {allAlerts.length > 0 && (
@@ -591,9 +484,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                 <SearchIcon size={18} className="text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[10px] tracking-[0.25em] uppercase text-white/60">
-                  Søk sted
-                </div>
+                <div className="text-[10px] tracking-[0.25em] uppercase text-white/60">Søk sted</div>
               </div>
               <ChevronRight size={18} className="text-white/60" />
             </div>
@@ -602,12 +493,9 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           {/* ROTERENDE 48-TIMERS PROGNOSE: nedbør · værforhold · vind · lyn */}
           <RotatingForecastCard hours={skienHours} soundEnabled={soundEnabled} />
 
+
           {/* 10-DAGERS PROGNOSE */}
-          <DailyListCard
-            days={skienDays}
-            hours={skienHours}
-            title={`${userLoc.active.label} · 10 dager`}
-          />
+          <DailyListCard days={skienDays} hours={skienHours} title={`${userLoc.active.label} · 10 dager`} />
 
           {/* VIND DETALJ */}
           <WindDetailCard hour={currentHour} />
@@ -638,24 +526,13 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* LIVE MÅLINGER — Netatmo */}
           {(homeyOk || netatmoData?.ok === true) && (
-            <GlassCard eyebrow="Live målinger · Netatmo" icon={<Thermometer size={14} />}>
+            <GlassCard
+              eyebrow="Live målinger · Netatmo"
+              icon={<Thermometer size={14} />}
+            >
               <div className="grid grid-cols-2 gap-3 -mx-1">
-                <NetatmoTile
-                  label="Ute · Borgen · Tollnes"
-                  temp={borgenTemp}
-                  wind={tollnesWind}
-                  rain={tollnesRainToday}
-                  humidity={borgenHumidity}
-                  pressure={tollnesPressure}
-                />
-                <NetatmoTile
-                  label="Hytta · Numedal"
-                  temp={hyttaTemp}
-                  wind={hyttaWind}
-                  rain={hyttaRainToday}
-                  humidity={hyttaHumidity}
-                  pressure={hyttaPressure}
-                />
+                <NetatmoTile label="Ute · Borgen · Tollnes" temp={borgenTemp} wind={tollnesWind} rain={tollnesRainToday} humidity={borgenHumidity} pressure={tollnesPressure} />
+                <NetatmoTile label="Hytta · Numedal" temp={hyttaTemp} wind={hyttaWind} rain={hyttaRainToday} humidity={hyttaHumidity} pressure={hyttaPressure} />
               </div>
             </GlassCard>
           )}
@@ -664,32 +541,21 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           <IosUvCard lat={userLoc.active.lat} lon={userLoc.active.lon} now={now} />
 
           {/* Romvær — solstormer, solvind, geomagnetiske stormer, nordlys, stråling */}
-          <SpaceWeatherCard
-            refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`}
-          />
+          <SpaceWeatherCard refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`} />
 
           {/* Radon — Airthings via Homey */}
-          <RadonCard
-            refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`}
-          />
+          <RadonCard refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`} />
 
           {/* VOC — Airthings via Homey (stua) */}
-          <VocCard
-            refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`}
-          />
+          <VocCard refreshKey={`${userLoc.active.lat.toFixed(3)},${userLoc.active.lon.toFixed(3)}`} />
+
 
           {/* Luftkvalitet — PM2.5, PM10, NO2, O3, SO2, CO */}
-          <AirPollutionCard
-            lat={userLoc.active.lat}
-            lon={userLoc.active.lon}
-            locationLabel={userLoc.active.label}
-          />
+          <AirPollutionCard lat={userLoc.active.lat} lon={userLoc.active.lon} locationLabel={userLoc.active.label} />
+
 
           {/* VINDROSE */}
-          <GlassCard
-            eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`}
-            icon={<Navigation size={14} />}
-          >
+          <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
             <div className="grid sm:grid-cols-2 gap-4">
               <WindRose name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
               <WindRose name="Hytta · Numedal" hours={hyttaHours} rangeHours={rangeHours} />
@@ -703,18 +569,22 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           <CollapsibleMap />
 
           <p className="text-[10px] text-white/50 text-center pt-4">
-            Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart
-            fra Windy.com.
+            Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart fra Windy.com.
           </p>
         </div>
         <LocationDots userLoc={userLoc} />
         <WeatherMenuButton soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} />
+
       </div>
     </PageShell>
   );
 }
 
-function LocationDots({ userLoc }: { userLoc: ReturnType<typeof useUserLocation> }) {
+function LocationDots({
+  userLoc,
+}: {
+  userLoc: ReturnType<typeof useUserLocation>;
+}) {
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
   const reverse = useServerFn(reverseGeocode);
   // -1 = GPS, 0..n-1 = favoritt-index. null = ingen forhåndsvisning.
@@ -753,12 +623,7 @@ function LocationDots({ userLoc }: { userLoc: ReturnType<typeof useUserLocation>
           const r = await reverse({ data: { lat, lon } });
           userLoc.setActive({ label: r.label, lat: r.lat, lon: r.lon, source: "gps" });
         } catch {
-          userLoc.setActive({
-            label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`,
-            lat,
-            lon,
-            source: "gps",
-          });
+          userLoc.setActive({ label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, lat, lon, source: "gps" });
         }
       },
       () => {
@@ -787,12 +652,7 @@ function LocationDots({ userLoc }: { userLoc: ReturnType<typeof useUserLocation>
       const el = itemsRef.current[i];
       if (!el) continue;
       const r = el.getBoundingClientRect();
-      if (
-        clientX >= r.left &&
-        clientX <= r.right &&
-        clientY >= r.top - 20 &&
-        clientY <= r.bottom + 20
-      ) {
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top - 20 && clientY <= r.bottom + 20) {
         return i === 0 ? -1 : i - 1;
       }
     }
@@ -861,9 +721,7 @@ function LocationDots({ userLoc }: { userLoc: ReturnType<typeof useUserLocation>
         </div>
       )}
       <button
-        ref={(el) => {
-          itemsRef.current[0] = el;
-        }}
+        ref={(el) => { itemsRef.current[0] = el; }}
         type="button"
         aria-label="Min posisjon"
         title="Min posisjon"
@@ -884,9 +742,7 @@ function LocationDots({ userLoc }: { userLoc: ReturnType<typeof useUserLocation>
           return (
             <button
               key={i}
-              ref={(el) => {
-                itemsRef.current[i + 1] = el;
-              }}
+              ref={(el) => { itemsRef.current[i + 1] = el; }}
               type="button"
               aria-label={fav.label}
               title={fav.label}
@@ -1001,6 +857,8 @@ function toneCardCn(tone: TileTone, extra = ""): string {
   return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
 }
 
+
+
 // ============================================================
 // Glass card primitive (iOS-style)
 // ============================================================
@@ -1035,6 +893,7 @@ function GlassCard({
   );
 }
 
+
 // ============================================================
 // ROTERENDE 48-TIMERS PROGNOSE
 // Én flis som veksler mellom: Nedbør · Værforhold · Vind · Lyn
@@ -1042,18 +901,9 @@ function GlassCard({
 
 type PanelKey = "nedbor" | "vaer" | "skydekke" | "vind" | "lyn";
 
-function RotatingForecastCard({
-  hours,
-  soundEnabled,
-}: {
-  hours: Hour[] | null;
-  soundEnabled: boolean;
-}) {
+function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; soundEnabled: boolean }) {
   const [panel, setPanel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
-  const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>(
-    "var:rotating:rangeHours",
-    48,
-  );
+  const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>("var:rotating:rangeHours", 48);
   const { tone } = useTileTone();
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
 
@@ -1080,21 +930,14 @@ function RotatingForecastCard({
   const rainIntensity = Math.min(1, Math.max(rawMaxRain / 6, totalRain / 20));
   const maxWind = Math.max(8, ...nextHours.map((h) => Math.max(h.wind, h.windGust)));
   const maxThunder = Math.max(0, ...nextHours.map((h) => h.thunder));
-  const avgCloud =
-    nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
+  const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
   const fx =
-    panel === "nedbor" ? (
-      <RainFX intensity={rainIntensity} />
-    ) : panel === "vaer" ? (
-      <CloudFX intensity={0.4} />
-    ) : panel === "skydekke" ? (
-      <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} />
-    ) : panel === "vind" ? (
-      <WindFX intensity={Math.min(1, maxWind / 14)} />
-    ) : (
-      <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />
-    );
+    panel === "nedbor" ? <RainFX intensity={rainIntensity} /> :
+    panel === "vaer" ? <CloudFX intensity={0.4} /> :
+    panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} /> :
+    panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
+    <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
 
   const active = panels.find((p) => p.key === panel)!;
 
@@ -1105,9 +948,7 @@ function RotatingForecastCard({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/80 uppercase">
             {active.icon}
-            <span>
-              {active.label} · neste {rangeHours} t
-            </span>
+            <span>{active.label} · neste {rangeHours} t</span>
           </div>
           <div className="flex items-center gap-1">
             {panels.map((p) => {
@@ -1165,15 +1006,11 @@ function RotatingForecastCard({
           key={panel}
           style={{
             animation:
-              panel === "nedbor"
-                ? "panelFlyRight 0.6s cubic-bezier(.2,.8,.2,1) both"
-                : panel === "vaer"
-                  ? "panelFlyLeft 0.6s cubic-bezier(.2,.8,.2,1) both"
-                  : panel === "skydekke"
-                    ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both"
-                    : panel === "vind"
-                      ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both"
-                      : "panelFlyZoom 0.6s cubic-bezier(.2,.8,.2,1) both",
+              panel === "nedbor"  ? "panelFlyRight 0.6s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "vaer"    ? "panelFlyLeft 0.6s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "skydekke"? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
+              panel === "vind"    ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
+                                    "panelFlyZoom 0.6s cubic-bezier(.2,.8,.2,1) both",
             willChange: "transform, opacity, filter",
           }}
         >
@@ -1198,21 +1035,13 @@ function HourLabel({ time, index }: { time: string; index: number }) {
   dayStart.setHours(0, 0, 0, 0);
   if (dayStart.getTime() !== today.getTime()) {
     const wd = d.toLocaleDateString("nb-NO", { weekday: "short" });
-    return (
-      <>
-        {wd.slice(0, 2)} {hh}
-      </>
-    );
+    return <>{wd.slice(0, 2)} {hh}</>;
   }
   return <>{hh}</>;
 }
 
 function fmtWhen(iso: string) {
-  return new Date(iso).toLocaleString("nb-NO", {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return new Date(iso).toLocaleString("nb-NO", { weekday: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 // Formater nedbør som Yr: "0,2" eller "0–0,2" (komma-desimal, bindestrek for range)
@@ -1246,9 +1075,7 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
               <div
                 key={h.time}
                 className="flex flex-col items-center w-10"
-                style={{
-                  animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
-                }}
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
               >
                 <div className="text-[10px] text-white/80 mb-1">
                   <HourLabel time={h.time} index={i} />
@@ -1292,9 +1119,7 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
             <div
               key={h.time}
               className="flex flex-col items-center w-10"
-              style={{
-                animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
-              }}
+              style={{ animation: `hourDrop 0.5s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
             >
               <div className="text-[10px] text-white/80 mb-1.5">
                 <HourLabel time={h.time} index={i} />
@@ -1322,14 +1147,7 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
   const clearIdx = clouds.reduce((b, v, i) => (v < clouds[b] ? i : b), 0);
   const peak = next[peakIdx];
   const clear = next[clearIdx];
-  const label =
-    avg < 25
-      ? "Stort sett klart"
-      : avg < 60
-        ? "Vekslende skydekke"
-        : avg < 85
-          ? "Mye skyet"
-          : "Tett overskyet";
+  const label = avg < 25 ? "Stort sett klart" : avg < 60 ? "Vekslende skydekke" : avg < 85 ? "Mye skyet" : "Tett overskyet";
   const summary = `${label} · snitt ${Math.round(avg)} % · tettest ${Math.round(clouds[peakIdx])} % ${fmtWhen(peak.time)} · klarest ${Math.round(clouds[clearIdx])} % ${fmtWhen(clear.time)}`;
 
   return (
@@ -1337,10 +1155,7 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
       <div className="text-[12px] text-white/90">{summary}</div>
 
       <div className="flex items-baseline gap-3 px-1">
-        <div className="text-3xl font-semibold tabular-nums text-white">
-          {Math.round(avg)}
-          <span className="text-base text-white/70">%</span>
-        </div>
+        <div className="text-3xl font-semibold tabular-nums text-white">{Math.round(avg)}<span className="text-base text-white/70">%</span></div>
         <div className="text-[11px] text-white/70">snitt skydekke neste {hours.length} t</div>
       </div>
 
@@ -1355,25 +1170,16 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
               <div
                 key={h.time}
                 className="flex flex-col items-center w-10"
-                style={{
-                  animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.4 + i * 0.04).toFixed(2)}s both`,
-                }}
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.4 + i * 0.04).toFixed(2)}s both` }}
               >
-                <div className="text-[10px] text-white/80 mb-1">
-                  <HourLabel time={h.time} index={i} />
-                </div>
+                <div className="text-[10px] text-white/80 mb-1"><HourLabel time={h.time} index={i} /></div>
                 <div className="relative w-6 h-16 rounded-md bg-white/10 overflow-hidden border-t border-dashed border-white/20">
                   <div
                     className="absolute bottom-0 left-0 right-0 rounded-md"
-                    style={{
-                      height: `${Math.max(4, v)}%`,
-                      background: `linear-gradient(to top, ${col}, rgba(255,255,255,0.15))`,
-                    }}
+                    style={{ height: `${Math.max(4, v)}%`, background: `linear-gradient(to top, ${col}, rgba(255,255,255,0.15))` }}
                   />
                 </div>
-                <div className="text-[10px] text-white/85 font-medium tabular-nums mt-1">
-                  {Math.round(v)}%
-                </div>
+                <div className="text-[10px] text-white/85 font-medium tabular-nums mt-1">{Math.round(v)}%</div>
               </div>
             );
           })}
@@ -1382,6 +1188,7 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
     </div>
   );
 }
+
 
 function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
@@ -1396,53 +1203,51 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
       <div className="text-[12px] text-white/90">{summary}</div>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-end gap-2 min-w-max pb-1">
-          {hours.map((h, i) => {
-            const heightPct = Math.max(4, (h.wind / maxG) * 70);
-            const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
-            const strong = h.wind >= 10;
-            return (
-              <div
-                key={h.time}
-                className="flex flex-col items-center w-10"
-                style={{
-                  animation: `hourSlide 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
-                }}
-              >
-                <div className="text-[10px] text-white/80 mb-1">
-                  <HourLabel time={h.time} index={i} />
-                </div>
-                <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
-                  <div
-                    className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md origin-bottom"
-                    style={{
-                      height: `${gustPct}%`,
-                      animation: `barGrow 0.4s cubic-bezier(.2,.8,.2,1) ${(0.53 + i * 0.05).toFixed(2)}s both`,
-                    }}
-                  />
-                  <div
-                    className={`absolute bottom-0 left-0 right-0 rounded-md origin-bottom ${
-                      strong
-                        ? "bg-gradient-to-t from-emerald-500 via-emerald-300 to-emerald-100"
-                        : "bg-gradient-to-t from-emerald-400 to-emerald-200"
-                    }`}
-                    style={{
-                      height: `${heightPct}%`,
-                      animation: `barGrow 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
-                    }}
-                  />
-                </div>
-                <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
-                  {Math.round(h.wind)}
-                </div>
-                <div
-                  className="text-[9px] text-white/60 leading-none"
-                  style={{ transform: `rotate(${h.windDir}deg)`, display: "inline-block" }}
-                >
-                  ↓
-                </div>
+        {hours.map((h, i) => {
+          const heightPct = Math.max(4, (h.wind / maxG) * 70);
+          const gustPct = Math.max(heightPct, (h.windGust / maxG) * 70);
+          const strong = h.wind >= 10;
+          return (
+            <div
+              key={h.time}
+              className="flex flex-col items-center w-10"
+              style={{ animation: `hourSlide 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
+            >
+              <div className="text-[10px] text-white/80 mb-1">
+                <HourLabel time={h.time} index={i} />
               </div>
-            );
-          })}
+              <div className="relative w-6 h-20 rounded-md bg-white/15 overflow-hidden border-t border-dashed border-white/20">
+                <div
+                  className="absolute bottom-0 left-0 right-0 bg-white/25 rounded-md origin-bottom"
+                  style={{
+                    height: `${gustPct}%`,
+                    animation: `barGrow 0.4s cubic-bezier(.2,.8,.2,1) ${(0.53 + i * 0.05).toFixed(2)}s both`,
+                  }}
+                />
+                <div
+                  className={`absolute bottom-0 left-0 right-0 rounded-md origin-bottom ${
+                    strong
+                      ? "bg-gradient-to-t from-emerald-500 via-emerald-300 to-emerald-100"
+                      : "bg-gradient-to-t from-emerald-400 to-emerald-200"
+                  }`}
+                  style={{
+                    height: `${heightPct}%`,
+                    animation: `barGrow 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
+                  }}
+                />
+              </div>
+              <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
+                {Math.round(h.wind)}
+              </div>
+              <div
+                className="text-[9px] text-white/60 leading-none"
+                style={{ transform: `rotate(${h.windDir}deg)`, display: "inline-block" }}
+              >
+                ↓
+              </div>
+            </div>
+          );
+        })}
         </div>
       </div>
       <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
@@ -1452,7 +1257,10 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
 
 function LynPanel({ hours }: { hours: Hour[] }) {
   const maxT = Math.max(5, ...hours.map((h) => h.thunder));
-  const peakIdx = hours.reduce((best, h, i, arr) => (h.thunder > arr[best].thunder ? i : best), 0);
+  const peakIdx = hours.reduce(
+    (best, h, i, arr) => (h.thunder > arr[best].thunder ? i : best),
+    0,
+  );
   const peak = hours[peakIdx];
   const peakTime = new Date(peak.time);
   const peakLabel =
@@ -1472,9 +1280,7 @@ function LynPanel({ hours }: { hours: Hour[] }) {
               <div
                 key={h.time}
                 className="flex flex-col items-center w-10"
-                style={{
-                  animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both`,
-                }}
+                style={{ animation: `hourPop 0.45s cubic-bezier(.2,.8,.2,1) ${(0.45 + i * 0.05).toFixed(2)}s both` }}
               >
                 <div className="text-[10px] text-white/80 mb-1">
                   <HourLabel time={h.time} index={i} />
@@ -1489,10 +1295,7 @@ function LynPanel({ hours }: { hours: Hour[] }) {
                     style={{ height: `${pct}%` }}
                   />
                   {hot && (
-                    <Zap
-                      size={10}
-                      className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200"
-                    />
+                    <Zap size={10} className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200" />
                   )}
                 </div>
                 <div className="text-[10px] text-yellow-100 font-medium tabular-nums mt-1">
@@ -1507,26 +1310,19 @@ function LynPanel({ hours }: { hours: Hour[] }) {
   );
 }
 
+
+
 // ============================================================
 // NEDBØR — hourly precip bars
 // ============================================================
 
 function NedborCard({ hours }: { hours: Hour[] | null }) {
-  if (!hours)
-    return (
-      <GlassCard eyebrow="Nedbør" icon={<Droplets size={14} />}>
-        <Skeleton />
-      </GlassCard>
-    );
+  if (!hours) return <GlassCard eyebrow="Nedbør" icon={<Droplets size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 12);
   const maxP = Math.max(1, ...next.map((h) => h.precip));
 
   return (
-    <GlassCard
-      eyebrow="Nedbør · sjanse for regn"
-      icon={<Droplets size={14} />}
-      fx={<RainFX intensity={Math.min(1, maxP / 4)} />}
-    >
+    <GlassCard eyebrow="Nedbør · sjanse for regn" icon={<Droplets size={14} />} fx={<RainFX intensity={Math.min(1, maxP / 4)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-end gap-3 min-w-max pb-1">
           {next.map((h, i) => {
@@ -1563,19 +1359,10 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
 // ============================================================
 
 function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
-  if (!hours)
-    return (
-      <GlassCard eyebrow="Værforhold" icon={<Cloud size={14} />}>
-        <Skeleton />
-      </GlassCard>
-    );
+  if (!hours) return <GlassCard eyebrow="Værforhold" icon={<Cloud size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 24);
   return (
-    <GlassCard
-      eyebrow="Værforhold · Temperatur"
-      icon={<Cloud size={14} />}
-      fx={<CloudFX intensity={0.4} />}
-    >
+    <GlassCard eyebrow="Værforhold · Temperatur" icon={<Cloud size={14} />} fx={<CloudFX intensity={0.4} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="flex items-center gap-4 min-w-max pb-1">
           {next.map((h, i) => (
@@ -1603,48 +1390,28 @@ function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
 // ============================================================
 
 function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
-  if (!hours)
-    return (
-      <GlassCard eyebrow="Vind" icon={<Wind size={14} />}>
-        <Skeleton />
-      </GlassCard>
-    );
+  if (!hours) return <GlassCard eyebrow="Vind" icon={<Wind size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 24);
-  const W = 600,
-    H = 80,
-    pad = 4;
+  const W = 600, H = 80, pad = 4;
   const winds = next.map((h) => h.wind);
   const maxW = Math.max(8, ...winds);
   const xFor = (i: number) => pad + (i / (next.length - 1)) * (W - pad * 2);
   const yFor = (v: number) => H - pad - (v / maxW) * (H - pad * 2);
-  const path = next
-    .map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(h.wind).toFixed(1)}`)
-    .join(" ");
+  const path = next.map((h, i) => `${i === 0 ? "M" : "L"} ${xFor(i).toFixed(1)} ${yFor(h.wind).toFixed(1)}`).join(" ");
   const fillPath = `${path} L ${xFor(next.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
 
   return (
-    <GlassCard
-      eyebrow="Vind · Hastighet (m/s)"
-      icon={<Wind size={14} />}
-      fx={<WindFX intensity={Math.min(1, maxW / 12)} />}
-    >
+    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, maxW / 12)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="min-w-max">
           <div className="flex items-end gap-4 mb-1">
-            {next
-              .filter((_, i) => i % 1 === 0)
-              .slice(0, 24)
-              .map((h, i) => (
-                <div key={h.time} className="w-12 text-center">
-                  <div className="text-[11px] text-white/80">
-                    {i === 0 ? "Nå" : h.time.slice(11, 16)}
-                  </div>
-                  <div className="text-base font-medium tabular-nums mt-1">
-                    {Math.round(h.wind)}
-                  </div>
-                  <div className="text-[10px] text-white/60">m/s</div>
-                </div>
-              ))}
+            {next.filter((_, i) => i % 1 === 0).slice(0, 24).map((h, i) => (
+              <div key={h.time} className="w-12 text-center">
+                <div className="text-[11px] text-white/80">{i === 0 ? "Nå" : h.time.slice(11, 16)}</div>
+                <div className="text-base font-medium tabular-nums mt-1">{Math.round(h.wind)}</div>
+                <div className="text-[10px] text-white/60">m/s</div>
+              </div>
+            ))}
           </div>
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-12" preserveAspectRatio="none">
             <defs>
@@ -1693,13 +1460,7 @@ function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; siz
   const hasSleet = s.includes("sleet");
   const hasRain = s.includes("rain") || s.includes("showers");
   const hasFog = s.includes("fog");
-  const cloudy =
-    s.includes("cloudy") ||
-    s.includes("partlycloudy") ||
-    hasRain ||
-    hasSnow ||
-    hasSleet ||
-    hasThunder;
+  const cloudy = s.includes("cloudy") || s.includes("partlycloudy") || hasRain || hasSnow || hasSleet || hasThunder;
   const fair = s.includes("fair") || s.includes("partlycloudy");
   const clear = s.includes("clearsky") || (!cloudy && !hasFog && s !== "");
 
@@ -1707,28 +1468,15 @@ function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; siz
     <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
       {/* Sun / Moon */}
       {(clear || fair) && !isNight && (
-        <g
-          style={{ transformOrigin: "22px 24px", animation: "wxSunPulse 3s ease-in-out infinite" }}
-        >
+        <g style={{ transformOrigin: "22px 24px", animation: "wxSunPulse 3s ease-in-out infinite" }}>
           <g style={{ transformOrigin: "22px 24px", animation: "wxSunRays 18s linear infinite" }}>
             {Array.from({ length: 8 }).map((_, i) => {
-              const a = (i * 45 * Math.PI) / 180;
+              const a = (i * 45) * Math.PI / 180;
               const x1 = 22 + Math.cos(a) * 14;
               const y1 = 24 + Math.sin(a) * 14;
               const x2 = 22 + Math.cos(a) * 19;
               const y2 = 24 + Math.sin(a) * 19;
-              return (
-                <line
-                  key={i}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke="#fde047"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              );
+              return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fde047" strokeWidth="2" strokeLinecap="round" />;
             })}
           </g>
           <circle cx="22" cy="24" r="9" fill="#fcd34d" stroke="#f59e0b" strokeWidth="1" />
@@ -1765,84 +1513,34 @@ function AnimatedWeatherIcon({ symbol, size = 36 }: { symbol: string | null; siz
       {hasRain && !hasSnow && (
         <g>
           {[18, 28, 38, 46].map((x, i) => (
-            <line
-              key={i}
-              x1={x}
-              y1={42}
-              x2={x - 2}
-              y2={50}
-              stroke="#38bdf8"
-              strokeWidth="2"
-              strokeLinecap="round"
-              style={{
-                transformOrigin: `${x}px 46px`,
-                animation: `wxRainFall 1.1s ${i * 0.15}s linear infinite`,
-              }}
-            />
+            <line key={i} x1={x} y1={42} x2={x - 2} y2={50} stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"
+              style={{ transformOrigin: `${x}px 46px`, animation: `wxRainFall 1.1s ${i * 0.15}s linear infinite` }} />
           ))}
         </g>
       )}
       {/* Sleet (rain + flake) */}
       {hasSleet && (
         <g>
-          <line
-            x1="20"
-            y1="42"
-            x2="18"
-            y2="50"
-            stroke="#38bdf8"
-            strokeWidth="2"
-            strokeLinecap="round"
-            style={{ animation: "wxRainFall 1.1s 0s linear infinite" }}
-          />
-          <line
-            x1="40"
-            y1="42"
-            x2="38"
-            y2="50"
-            stroke="#38bdf8"
-            strokeWidth="2"
-            strokeLinecap="round"
-            style={{ animation: "wxRainFall 1.1s 0.4s linear infinite" }}
-          />
-          <text
-            x="28"
-            y="52"
-            fontSize="9"
-            fill="#e0f2fe"
-            style={{ animation: "wxSnowFall 1.4s 0.2s linear infinite" }}
-          >
-            ❄
-          </text>
+          <line x1="20" y1="42" x2="18" y2="50" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"
+            style={{ animation: "wxRainFall 1.1s 0s linear infinite" }} />
+          <line x1="40" y1="42" x2="38" y2="50" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round"
+            style={{ animation: "wxRainFall 1.1s 0.4s linear infinite" }} />
+          <text x="28" y="52" fontSize="9" fill="#e0f2fe" style={{ animation: "wxSnowFall 1.4s 0.2s linear infinite" }}>❄</text>
         </g>
       )}
       {/* Snow */}
       {hasSnow && !hasSleet && (
         <g>
           {[20, 32, 44].map((x, i) => (
-            <text
-              key={i}
-              x={x}
-              y={52}
-              fontSize="10"
-              fill="#e0f2fe"
-              textAnchor="middle"
-              style={{ animation: `wxSnowFall 1.6s ${i * 0.25}s linear infinite` }}
-            >
-              ❄
-            </text>
+            <text key={i} x={x} y={52} fontSize="10" fill="#e0f2fe" textAnchor="middle"
+              style={{ animation: `wxSnowFall 1.6s ${i * 0.25}s linear infinite` }}>❄</text>
           ))}
         </g>
       )}
       {/* Thunder */}
       {hasThunder && (
-        <polygon
-          points="30,40 36,40 32,48 38,48 28,60 32,50 26,50"
-          fill="#fde047"
-          stroke="#f59e0b"
-          strokeWidth="0.6"
-          style={{ animation: "wxBoltFlash 1.8s ease-in-out infinite" }}
-        />
+        <polygon points="30,40 36,40 32,48 38,48 28,60 32,50 26,50" fill="#fde047" stroke="#f59e0b" strokeWidth="0.6"
+          style={{ animation: "wxBoltFlash 1.8s ease-in-out infinite" }} />
       )}
       {/* Wind hint when clear */}
       {clear && !cloudy && !hasRain && !hasSnow && !hasFog && false}
@@ -1863,23 +1561,11 @@ function DailyRollInStyles() {
   );
 }
 
-function DailyListCard({
-  days,
-  hours,
-  title,
-}: {
-  days: ForecastDay[] | null;
-  hours?: Hour[] | null;
-  title: string;
-}) {
+function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
-  if (!days)
-    return (
-      <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
-        <Skeleton />
-      </GlassCard>
-    );
+  if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
+
 
   // Nedbør-modus: bytt ut radene med 12 to-timers barer per dag
   if (panel === "nedbor" && hours && hours.length > 0) {
@@ -1952,6 +1638,12 @@ function DailyListCard({
     );
   }
 
+
+
+
+
+
+
   const allMins = list.map((d) => d.tempMin);
   const allMaxs = list.map((d) => d.tempMax);
   const globalMin = Math.min(...allMins);
@@ -1969,16 +1661,10 @@ function DailyListCard({
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
           const label = i === 0 ? "I dag" : weekdayShort(d.date);
           return (
-            <div
-              key={d.date}
-              className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5 wx-roll-in"
-              style={{ animationDelay: `${i * 70}ms` }}
-            >
+            <div key={d.date} className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5 wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
               <div className="text-[15px] capitalize">{label}</div>
               <DailyLeafFX wind={d.windMax} seed={i} />
-              <div className="flex items-center justify-center">
-                <AnimatedWeatherIcon symbol={d.symbol} size={34} />
-              </div>
+              <div className="flex items-center justify-center"><AnimatedWeatherIcon symbol={d.symbol} size={34} /></div>
               <div className="text-[11px] text-sky-200 tabular-nums text-right">
                 {d.precipProbability >= 20 ? `${Math.round(d.precipProbability)}%` : ""}
               </div>
@@ -1990,8 +1676,7 @@ function DailyListCard({
                 />
               </div>
               <div className="text-[13px] tabular-nums text-right text-white/90">
-                {Math.round(d.tempMin)}° <span className="text-white/60">·</span>{" "}
-                {Math.round(d.tempMax)}°
+                {Math.round(d.tempMin)}° <span className="text-white/60">·</span> {Math.round(d.tempMax)}°
               </div>
             </div>
           );
@@ -2020,30 +1705,19 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   const hasAnyHours = buckets.some((b) => b.precip > 0 || b.prob > 0);
   // Animasjon: kun på dager med regn, intensitet skalert mot total mm
   const dayPrecip = day.precip || 0;
-  const dropCount =
-    dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
+  const dropCount = dayPrecip <= 0 ? 0 : dayPrecip < 1 ? 4 : dayPrecip < 4 ? 8 : dayPrecip < 10 ? 14 : 20;
   const dropDur = dayPrecip < 1 ? 1.6 : dayPrecip < 4 ? 1.1 : dayPrecip < 10 ? 0.75 : 0.5;
   const rowRef = useRef<HTMLDivElement | null>(null);
   const [filled, setFilled] = useState(false);
   useEffect(() => {
     const el = rowRef.current;
     if (!el) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setFilled(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            setFilled(true);
-            io.disconnect();
-            break;
-          }
-        }
-      },
-      { threshold: 0.35 },
-    );
+    if (typeof IntersectionObserver === "undefined") { setFilled(true); return; }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) { setFilled(true); io.disconnect(); break; }
+      }
+    }, { threshold: 0.35 });
     io.observe(el);
     return () => io.disconnect();
   }, []);
@@ -2053,11 +1727,10 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
       <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: dropCount }, (_, i) => {
           // Seeded random fra dato + index for naturlig spredning uten hydration-mismatch
-          const seed =
-            (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + i * 2654435761) >>> 0;
-          const r1 = (seed % 1000) / 1000;
-          const r2 = ((seed >>> 7) % 1000) / 1000;
-          const r3 = ((seed >>> 13) % 1000) / 1000;
+          const seed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + i * 2654435761) >>> 0;
+          const r1 = ((seed % 1000) / 1000);
+          const r2 = (((seed >>> 7) % 1000) / 1000);
+          const r3 = (((seed >>> 13) % 1000) / 1000);
           const left = (r1 * 44).toFixed(2);
           const dur = (dropDur * (0.7 + r2 * 0.6)).toFixed(2);
           const delay = (r3 * dropDur * 1.5).toFixed(2);
@@ -2073,8 +1746,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
                 top: 0,
                 width: 1.5,
                 height: `${len}px`,
-                background:
-                  "linear-gradient(to bottom, rgba(186,230,253,0) 0%, rgba(125,211,252,0.95) 60%, rgba(56,189,248,1) 100%)",
+                background: "linear-gradient(to bottom, rgba(186,230,253,0) 0%, rgba(125,211,252,0.95) 60%, rgba(56,189,248,1) 100%)",
                 opacity: op.toFixed(2),
                 animation: `dailyRainDrop ${dur}s linear ${delay}s infinite`,
                 filter: "drop-shadow(0 0 2px rgba(56,189,248,0.6))",
@@ -2121,11 +1793,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
 
       <div className="text-right leading-tight">
         <div className="text-[13px] tabular-nums text-white/90">
-          {hasAnyHours ? (
-            `${day.precip.toFixed(day.precip >= 10 ? 0 : 1)} mm`
-          ) : (
-            <span className="text-white/40">0 mm</span>
-          )}
+          {hasAnyHours ? `${day.precip.toFixed(day.precip >= 10 ? 0 : 1)} mm` : <span className="text-white/40">0 mm</span>}
         </div>
         <div className="text-[11px] tabular-nums">
           {day.precipProbability >= 20 ? (
@@ -2139,17 +1807,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   );
 }
 
-function DriftingClouds({
-  intensity,
-  seed = 0,
-  className = "",
-  rainy = false,
-}: {
-  intensity: number;
-  seed?: number;
-  className?: string;
-  rainy?: boolean;
-}) {
+function DriftingClouds({ intensity, seed = 0, className = "", rainy = false }: { intensity: number; seed?: number; className?: string; rainy?: boolean }) {
   const i = Math.max(0, Math.min(1, intensity));
   const count = Math.round(2 + i * 6);
   const clouds = useMemo(() => {
@@ -2160,10 +1818,10 @@ function DriftingClouds({
       return s / 233280;
     };
     return Array.from({ length: count }, (_, k) => ({
-      top: rnd() * 78, // tilfeldig høyde i hele flisen
-      width: 32 + rnd() * 58, // px
-      dur: 14 + rnd() * 22, // s
-      delay: -rnd() * 40, // negativ → tilfeldig utgangspunkt
+      top: rnd() * 78,           // tilfeldig høyde i hele flisen
+      width: 32 + rnd() * 58,    // px
+      dur: 14 + rnd() * 22,      // s
+      delay: -rnd() * 40,        // negativ → tilfeldig utgangspunkt
       opacity: 0.35 + i * 0.45 + rnd() * 0.15,
       blur: rnd() * 1.2,
       key: k,
@@ -2171,10 +1829,7 @@ function DriftingClouds({
   }, [count, seed, i]);
   if (count === 0) return null;
   return (
-    <div
-      className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
-      aria-hidden
-    >
+    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`} aria-hidden>
       {clouds.map((c) => (
         <svg
           key={c.key}
@@ -2210,12 +1865,15 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
       return hh >= startHour && hh < startHour + 2;
     });
     const isNight = startHour < 6 || startHour >= 22;
-    const cloud = slot.length > 0 ? slot.reduce((s, h) => s + (h.cloud || 0), 0) / slot.length : 0;
+    const cloud = slot.length > 0
+      ? slot.reduce((s, h) => s + (h.cloud || 0), 0) / slot.length
+      : 0;
     return { startHour, isNight, cloud };
   });
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
-  const avgCloud =
-    dayHours.length > 0 ? dayHours.reduce((s, h) => s + (h.cloud || 0), 0) / dayHours.length : 0;
+  const avgCloud = dayHours.length > 0
+    ? dayHours.reduce((s, h) => s + (h.cloud || 0), 0) / dayHours.length
+    : 0;
 
   // Seed pr dag så clouds har unik random-fordeling pr rad
   const seed = index * 131 + Math.round(avgCloud);
@@ -2224,18 +1882,15 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   return (
     <div className="relative grid grid-cols-[56px_1fr_56px] items-center gap-3 py-2.5">
       {/* Skyer drifter over hele raden */}
-      <DriftingClouds
-        intensity={Math.min(1, avgCloud / 100)}
-        seed={seed}
-        className="rounded-md"
-        rainy={rainy}
-      />
+      <DriftingClouds intensity={Math.min(1, avgCloud / 100)} seed={seed} className="rounded-md" rainy={rainy} />
 
       <div className="relative z-10 text-[15px] capitalize">{label}</div>
       <div className="relative z-10 flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
           const fill = Math.max(4, Math.min(100, b.cloud));
-          const baseBg = b.isNight ? "rgba(30, 41, 59, 0.35)" : "rgba(148, 163, 184, 0.18)";
+          const baseBg = b.isNight
+            ? "rgba(30, 41, 59, 0.35)"
+            : "rgba(148, 163, 184, 0.18)";
           const grad = b.isNight
             ? "linear-gradient(to top, rgba(71,85,105,0.85) 0%, rgba(148,163,184,0.85) 100%)"
             : "linear-gradient(to top, rgba(148,163,184,0.85) 0%, rgba(226,232,240,0.95) 100%)";
@@ -2265,6 +1920,7 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
   );
 }
 
+
 function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const buckets = Array.from({ length: 12 }, (_, b) => {
@@ -2275,12 +1931,15 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
       return hh >= startHour && hh < startHour + 2;
     });
     const isNight = startHour < 6 || startHour >= 22;
-    const thunder = slot.length > 0 ? slot.reduce((m, h) => Math.max(m, h.thunder || 0), 0) : 0;
+    const thunder = slot.length > 0
+      ? slot.reduce((m, h) => Math.max(m, h.thunder || 0), 0)
+      : 0;
     return { startHour, isNight, thunder };
   });
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
-  const avgThunder =
-    dayHours.length > 0 ? dayHours.reduce((m, h) => Math.max(m, h.thunder || 0), 0) : 0;
+  const avgThunder = dayHours.length > 0
+    ? dayHours.reduce((m, h) => Math.max(m, h.thunder || 0), 0)
+    : 0;
   const boltCount = avgThunder < 5 ? 0 : avgThunder < 25 ? 1 : avgThunder < 55 ? 2 : 3;
 
   return (
@@ -2306,12 +1965,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
               }}
             >
               <svg width="12" height="20" viewBox="0 0 12 20">
-                <path
-                  d="M7 0 L0 12 L4 12 L2 20 L12 7 L7 7 L9 0 Z"
-                  fill="#fde047"
-                  stroke="#fbbf24"
-                  strokeWidth="0.5"
-                />
+                <path d="M7 0 L0 12 L4 12 L2 20 L12 7 L7 7 L9 0 Z" fill="#fde047" stroke="#fbbf24" strokeWidth="0.5" />
               </svg>
             </div>
           );
@@ -2321,7 +1975,9 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
       <div className="flex items-end gap-[3px] h-8">
         {buckets.map((b, i) => {
           const fill = b.thunder > 0 ? Math.max(6, Math.min(100, b.thunder)) : 0;
-          const baseBg = b.isNight ? "rgba(30, 27, 75, 0.45)" : "rgba(71, 85, 105, 0.22)";
+          const baseBg = b.isNight
+            ? "rgba(30, 27, 75, 0.45)"
+            : "rgba(71, 85, 105, 0.22)";
           const hot = b.thunder >= 40;
           const grad = hot
             ? "linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fde047 100%)"
@@ -2360,29 +2016,18 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
   );
 }
 
-function DailyWindRow({
-  day,
-  hours,
-  index,
-  globalMaxG,
-}: {
-  day: ForecastDay;
-  hours: Hour[];
-  index: number;
-  globalMaxG: number;
-}) {
+
+
+function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
 
   // Bygg 24 timesverdier (0..23). Fyll manglende timer med nærmeste verdi så grafen
   // strekker seg over hele døgnet (00–24), ikke bare der API-en har data.
-  const samples: ({ hh: number; wind: number; gust: number } | null)[] = Array.from(
-    { length: 24 },
-    (_, hh) => {
-      const h = dayHours.find((x) => parseInt(x.time.slice(11, 13)) === hh);
-      return h ? { hh, wind: h.wind || 0, gust: h.windGust || h.wind || 0 } : null;
-    },
-  );
+  const samples: ({ hh: number; wind: number; gust: number } | null)[] = Array.from({ length: 24 }, (_, hh) => {
+    const h = dayHours.find((x) => parseInt(x.time.slice(11, 13)) === hh);
+    return h ? { hh, wind: h.wind || 0, gust: h.windGust || h.wind || 0 } : null;
+  });
   // Fyll hull fra venstre med første gyldige verdi, fra høyre med siste gyldige verdi.
   let firstVal: { wind: number; gust: number } | null = null;
   for (let i = 0; i < 24; i++) {
@@ -2437,11 +2082,7 @@ function DailyWindRow({
       <div className="text-[15px] capitalize">{label}</div>
       <DailyLeafFX wind={maxWind} seed={index} />
       <div className="relative h-9">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          preserveAspectRatio="none"
-          className="w-full h-full overflow-visible"
-        >
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
           {/* Dag-bånd: 06–22 — lys grå */}
           <rect x={x(6)} y={0} width={x(22) - x(6)} height={H} fill="rgba(255,255,255,0.22)" />
           {/* Natt-bånd: 00–06 og 22–24 — mørkere grå */}
@@ -2457,12 +2098,12 @@ function DailyWindRow({
         </svg>
       </div>
       <div className="text-[13px] tabular-nums text-right text-white/90">
-        {Math.round(maxWind)} <span className="text-white/60">({Math.round(maxGust)})</span>{" "}
-        <span className="text-white/60 text-[11px]">m/s</span>
+        {Math.round(maxWind)} <span className="text-white/60">({Math.round(maxGust)})</span> <span className="text-white/60 text-[11px]">m/s</span>
       </div>
     </div>
   );
 }
+
 
 function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
   // Leaf count = floor(wind m/s). 0.9 → 0, 8.5 → 8 osv. Cap på 15.
@@ -2510,6 +2151,8 @@ function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
   );
 }
 
+
+
 // ============================================================
 // WIND DETAIL CARD with compass
 // ============================================================
@@ -2519,11 +2162,7 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
   const speed = hour?.wind ?? 0;
   const gust = hour?.windGust ?? speed;
   return (
-    <GlassCard
-      eyebrow="Vind"
-      icon={<Wind size={14} />}
-      fx={<WindFX intensity={Math.min(1, speed / 12)} />}
-    >
+    <GlassCard eyebrow="Vind" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, speed / 12)} />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
           <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
@@ -2532,41 +2171,20 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
         </div>
         <div className="relative w-28 h-28">
           <svg viewBox="0 0 100 100" className="w-full h-full">
-            <circle
-              cx="50"
-              cy="50"
-              r="44"
-              fill="none"
-              stroke="rgba(255,255,255,0.2)"
-              strokeWidth="1"
-            />
+            <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
             {Array.from({ length: 36 }).map((_, i) => {
               const a = (i * 10 - 90) * (Math.PI / 180);
               const x1 = (50 + 44 * Math.cos(a)).toFixed(1);
               const y1 = (50 + 44 * Math.sin(a)).toFixed(1);
               const x2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.cos(a)).toFixed(1);
               const y2 = (50 + (i % 9 === 0 ? 36 : 40) * Math.sin(a)).toFixed(1);
-              return (
-                <line
-                  key={i}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke="rgba(255,255,255,0.35)"
-                  strokeWidth="0.6"
-                />
-              );
+              return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.35)" strokeWidth="0.6" />;
             })}
             {["N", "Ø", "S", "V"].map((d, i) => {
               const a = (i * 90 - 90) * (Math.PI / 180);
               const x = 50 + 30 * Math.cos(a);
               const y = 50 + 30 * Math.sin(a) + 2.5;
-              return (
-                <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">
-                  {d}
-                </text>
-              );
+              return <text key={d} x={x} y={y} fontSize="7" fill="white" textAnchor="middle">{d}</text>;
             })}
             <g transform={`rotate(${dir} 50 50)`}>
               <polygon points="50,12 47,22 53,22" fill="white" />
@@ -2596,13 +2214,7 @@ function Row({ label, value }: { label: string; value: string }) {
 // MOON CARD
 // ============================================================
 
-function MoonCard({
-  moon,
-  now,
-}: {
-  moon: { name: string; icon: string; illumination: number; phaseFraction: number };
-  now: Date;
-}) {
+function MoonCard({ moon, now }: { moon: { name: string; icon: string; illumination: number; phaseFraction: number }; now: Date }) {
   const nextSet = useMemo(() => nextMoonset(now), [now]);
   const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
@@ -2620,16 +2232,9 @@ function MoonCard({
   );
 }
 
-function MoonVisual({
-  phaseFraction,
-  illumination,
-}: {
-  phaseFraction: number;
-  illumination: number;
-}) {
+function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; illumination: number }) {
   const r = 36;
-  const cx = 50,
-    cy = 50;
+  const cx = 50, cy = 50;
   const p = phaseFraction;
   const waxing = p < 0.5;
   const gibbous = p > 0.25 && p < 0.75;
@@ -2647,66 +2252,15 @@ function MoonVisual({
       <div
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${0.25 * glow}) 0%, rgba(255,247,220,${0.1 * glow}) 35%, transparent 70%)`,
+          background: `radial-gradient(circle at 50% 50%, rgba(255,247,220,${0.25 * glow}) 0%, rgba(255,247,220,${0.10 * glow}) 35%, transparent 70%)`,
           animation: "wxMoonHalo 4s ease-in-out infinite",
           filter: "blur(2px)",
         }}
       />
-      <span
-        className="absolute"
-        style={{
-          top: "10%",
-          left: "8%",
-          width: 2,
-          height: 2,
-          background: "#fff",
-          borderRadius: "50%",
-          animation: "wxMoonTwinkle 2.4s ease-in-out infinite",
-          opacity: 0.8,
-        }}
-      />
-      <span
-        className="absolute"
-        style={{
-          top: "78%",
-          left: "12%",
-          width: 1.5,
-          height: 1.5,
-          background: "#fff",
-          borderRadius: "50%",
-          animation: "wxMoonTwinkle 3.1s ease-in-out infinite",
-          animationDelay: "0.7s",
-          opacity: 0.7,
-        }}
-      />
-      <span
-        className="absolute"
-        style={{
-          top: "18%",
-          right: "6%",
-          width: 2,
-          height: 2,
-          background: "#fff",
-          borderRadius: "50%",
-          animation: "wxMoonTwinkle 2.8s ease-in-out infinite",
-          animationDelay: "1.2s",
-          opacity: 0.8,
-        }}
-      />
-      <span
-        className="absolute"
-        style={{
-          top: "82%",
-          right: "10%",
-          width: 1.5,
-          height: 1.5,
-          background: "#fff",
-          borderRadius: "50%",
-          animation: "wxMoonTwinkle 3.6s ease-in-out infinite",
-          animationDelay: "0.3s",
-          opacity: 0.6,
-        }}
-      />
+      <span className="absolute" style={{ top: "10%", left: "8%", width: 2, height: 2, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 2.4s ease-in-out infinite", opacity: 0.8 }} />
+      <span className="absolute" style={{ top: "78%", left: "12%", width: 1.5, height: 1.5, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 3.1s ease-in-out infinite", animationDelay: "0.7s", opacity: 0.7 }} />
+      <span className="absolute" style={{ top: "18%", right: "6%", width: 2, height: 2, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 2.8s ease-in-out infinite", animationDelay: "1.2s", opacity: 0.8 }} />
+      <span className="absolute" style={{ top: "82%", right: "10%", width: 1.5, height: 1.5, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 3.6s ease-in-out infinite", animationDelay: "0.3s", opacity: 0.6 }} />
 
       <svg viewBox="0 0 100 100" className="w-full h-full relative">
         <defs>
@@ -2714,31 +2268,15 @@ function MoonVisual({
             <stop offset="0%" stopColor="#0c0c14" stopOpacity="0.92" />
             <stop offset="100%" stopColor="#020204" stopOpacity="0.95" />
           </radialGradient>
-          <clipPath id="moonClip">
-            <circle cx={cx} cy={cy} r={r} />
-          </clipPath>
+          <clipPath id="moonClip"><circle cx={cx} cy={cy} r={r} /></clipPath>
         </defs>
         {/* Blå måne-bilde som base */}
         <g clipPath="url(#moonClip)" style={{ animation: "wxMoonGlow 4s ease-in-out infinite" }}>
-          <image
-            href={moonRealAsset.url}
-            x={cx - r}
-            y={cy - r}
-            width={r * 2}
-            height={r * 2}
-            preserveAspectRatio="xMidYMid slice"
-          />
+          <image href={moonRealAsset.url} x={cx - r} y={cy - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
           {/* Mørk skygge for fase */}
           <path d={litPath} fill="url(#moonG)" />
         </g>
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill="none"
-          stroke="rgba(170,210,255,0.35)"
-          strokeWidth="0.5"
-        />
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(170,210,255,0.35)" strokeWidth="0.5" />
       </svg>
     </div>
   );
@@ -2748,27 +2286,17 @@ function MoonVisual({
 // SUNSET CARD with arc
 // ============================================================
 
-function SunsetCard({
-  sun,
-  now,
-  moon,
-}: {
-  sun: ReturnType<typeof sunTimes>;
-  now: Date;
-  moon: { name: string; icon: string; illumination: number; phaseFraction: number };
-}) {
+function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now: Date; moon: { name: string; icon: string; illumination: number; phaseFraction: number } }) {
   const sunrise = sun.sunrise;
   const sunset = sun.sunset;
   // Full døgn-progress 0..1 (sol under horisont = utenfor [riseP..setP])
-  const dayStart = new Date(now);
-  dayStart.setHours(0, 0, 0, 0);
+  const dayStart = new Date(now); dayStart.setHours(0, 0, 0, 0);
   const dayMs = 24 * 3600 * 1000;
   const nowP = (now.getTime() - dayStart.getTime()) / dayMs;
   const riseP = sunrise ? (sunrise.getTime() - dayStart.getTime()) / dayMs : 0.25;
   const setP = sunset ? (sunset.getTime() - dayStart.getTime()) / dayMs : 0.75;
 
-  const W = 200,
-    H = 92;
+  const W = 200, H = 92;
   const horizonY = 62;
   const peakY = 14;
   const dipY = 84;
@@ -2795,9 +2323,7 @@ function SunsetCard({
     return "M " + pts.join(" L ");
   })();
   // Sol-posisjon
-  let sx = 0,
-    sy = horizonY,
-    above = false;
+  let sx = 0, sy = horizonY, above = false;
   {
     const p = nowP;
     sx = p * W;
@@ -2831,7 +2357,9 @@ function SunsetCard({
   // Solens høyeste punkt = midt mellom oppgang og nedgang
   const peakP = (riseP + setP) / 2;
   const peakX = peakP * W;
-  const peakTime = sunrise && sunset ? new Date((sunrise.getTime() + sunset.getTime()) / 2) : null;
+  const peakTime = sunrise && sunset
+    ? new Date((sunrise.getTime() + sunset.getTime()) / 2)
+    : null;
   const riseX = riseP * W;
   const setX = setP * W;
 
@@ -2842,9 +2370,7 @@ function SunsetCard({
     ? sunrise && now.getTime() < sunrise.getTime()
       ? `Sol opp ${formatTime(sunrise)}`
       : `Sol ned ${sunset ? formatTime(sunset) : "—"}`
-    : sunset
-      ? formatTime(sunset)
-      : "—";
+    : sunset ? formatTime(sunset) : "—";
 
   return (
     <GlassCard
@@ -2904,50 +2430,26 @@ function SunsetCard({
         {/* Sky-fyll over horisont */}
         <rect x="0" y="0" width={W} height={horizonY} fill={`url(#${gid}-sky)`} rx="6" />
         {/* Stjerner i natt-modus */}
-        {night &&
-          [
-            { x: 18, y: 12, r: 0.7, d: 0 },
-            { x: 42, y: 22, r: 0.5, d: 0.6 },
-            { x: 78, y: 8, r: 0.9, d: 1.1 },
-            { x: 118, y: 18, r: 0.6, d: 0.3 },
-            { x: 152, y: 28, r: 0.5, d: 1.4 },
-            { x: 180, y: 14, r: 0.8, d: 0.9 },
-            { x: 96, y: 36, r: 0.55, d: 1.7 },
-          ].map((s, i) => (
-            <circle
-              key={i}
-              cx={s.x}
-              cy={s.y}
-              r={s.r}
-              fill="rgba(255,255,255,0.85)"
-              style={{
-                animation: `wx-sun-pulse 3.4s ease-in-out ${s.d}s infinite`,
-                transformOrigin: `${s.x}px ${s.y}px`,
-              }}
-            />
-          ))}
-        {/* Grid */}
-        {[0.25, 0.5, 0.75].map((p) => (
-          <line
-            key={p}
-            x1={p * W}
-            x2={p * W}
-            y1="0"
-            y2={H}
-            stroke="rgba(255,255,255,0.12)"
-            strokeWidth="0.5"
-            strokeDasharray="1 2"
+        {night && [
+          { x: 18, y: 12, r: 0.7, d: 0 },
+          { x: 42, y: 22, r: 0.5, d: 0.6 },
+          { x: 78, y: 8, r: 0.9, d: 1.1 },
+          { x: 118, y: 18, r: 0.6, d: 0.3 },
+          { x: 152, y: 28, r: 0.5, d: 1.4 },
+          { x: 180, y: 14, r: 0.8, d: 0.9 },
+          { x: 96, y: 36, r: 0.55, d: 1.7 },
+        ].map((s, i) => (
+          <circle
+            key={i} cx={s.x} cy={s.y} r={s.r} fill="rgba(255,255,255,0.85)"
+            style={{ animation: `wx-sun-pulse 3.4s ease-in-out ${s.d}s infinite`, transformOrigin: `${s.x}px ${s.y}px` }}
           />
         ))}
+        {/* Grid */}
+        {[0.25, 0.5, 0.75].map((p) => (
+          <line key={p} x1={p * W} x2={p * W} y1="0" y2={H} stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" strokeDasharray="1 2" />
+        ))}
         {/* Horisont */}
-        <line
-          x1="0"
-          x2={W}
-          y1={horizonY}
-          y2={horizonY}
-          stroke="rgba(255,255,255,0.4)"
-          strokeWidth="0.8"
-        />
+        <line x1="0" x2={W} y1={horizonY} y2={horizonY} stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
         {/* Bue */}
         <path
           d={sunPath}
@@ -2964,23 +2466,9 @@ function SunsetCard({
         {/* Peak-markør (solens høyeste punkt) */}
         {peakTime && (
           <g style={{ opacity: 0, animation: "wx-sun-in 0.8s ease-out 1.5s forwards" }}>
-            <line
-              x1={peakX}
-              x2={peakX}
-              y1={peakY - 2}
-              y2={peakY + 6}
-              stroke="rgba(255,255,255,0.6)"
-              strokeWidth="0.6"
-            />
+            <line x1={peakX} x2={peakX} y1={peakY - 2} y2={peakY + 6} stroke="rgba(255,255,255,0.6)" strokeWidth="0.6" />
             <circle cx={peakX} cy={peakY} r="1.6" fill="rgba(255,255,255,0.9)" />
-            <text
-              x={peakX}
-              y={peakY - 4}
-              textAnchor="middle"
-              fontSize="7"
-              fill="rgba(255,255,255,0.9)"
-              style={{ fontVariantNumeric: "tabular-nums" }}
-            >
+            <text x={peakX} y={peakY - 4} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.9)" style={{ fontVariantNumeric: "tabular-nums" }}>
               {formatTime(peakTime)}
             </text>
           </g>
@@ -2989,14 +2477,7 @@ function SunsetCard({
         {sunrise && (
           <g style={{ opacity: 0, animation: "wx-sun-in 0.8s ease-out 1.7s forwards" }}>
             <circle cx={riseX} cy={horizonY} r="1.4" fill="rgba(255,255,255,0.85)" />
-            <text
-              x={riseX}
-              y={horizonY + 9}
-              textAnchor="middle"
-              fontSize="6.5"
-              fill="rgba(255,255,255,0.75)"
-              style={{ fontVariantNumeric: "tabular-nums" }}
-            >
+            <text x={riseX} y={horizonY + 9} textAnchor="middle" fontSize="6.5" fill="rgba(255,255,255,0.75)" style={{ fontVariantNumeric: "tabular-nums" }}>
               ↑ {formatTime(sunrise)}
             </text>
           </g>
@@ -3004,79 +2485,52 @@ function SunsetCard({
         {sunset && (
           <g style={{ opacity: 0, animation: "wx-sun-in 0.8s ease-out 1.9s forwards" }}>
             <circle cx={setX} cy={horizonY} r="1.4" fill="rgba(255,200,140,0.9)" />
-            <text
-              x={setX}
-              y={horizonY + 9}
-              textAnchor="middle"
-              fontSize="6.5"
-              fill="rgba(255,220,180,0.85)"
-              style={{ fontVariantNumeric: "tabular-nums" }}
-            >
+            <text x={setX} y={horizonY + 9} textAnchor="middle" fontSize="6.5" fill="rgba(255,220,180,0.85)" style={{ fontVariantNumeric: "tabular-nums" }}>
               ↓ {formatTime(sunset)}
             </text>
           </g>
         )}
         {/* Glød rundt sol/måne */}
         <circle
-          cx={sx}
-          cy={sy}
-          r={night ? 11 : 14}
-          fill={`url(#${gid}-glow)`}
-          style={{
-            animation: "wx-sun-pulse 2.6s ease-in-out infinite",
-            transformOrigin: `${sx}px ${sy}px`,
-          }}
+          cx={sx} cy={sy} r={night ? 11 : 14} fill={`url(#${gid}-glow)`}
+          style={{ animation: "wx-sun-pulse 2.6s ease-in-out infinite", transformOrigin: `${sx}px ${sy}px` }}
         />
         {/* Sol eller måne */}
-        {night ? (
-          (() => {
-            const mr = 6.5;
-            const p = moon.phaseFraction;
-            const waxing = p < 0.5;
-            const gibbous = p > 0.25 && p < 0.75;
-            const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * mr);
-            const outerSweep = waxing ? 1 : 0;
-            const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
-            const litPath = `M ${sx},${sy - mr} A ${mr},${mr} 0 0,${outerSweep} ${sx},${sy + mr} A ${rx},${mr} 0 0,${innerSweep} ${sx},${sy - mr} Z`;
-            const clipId = `${gid}-moonclip`;
-            const shadeId = `${gid}-moonshade`;
-            return (
-              <g
-                style={{
-                  opacity: 0,
-                  animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
-                  filter: "drop-shadow(0 0 5px rgba(220,230,255,0.7))",
-                }}
-              >
-                <defs>
-                  <clipPath id={clipId}>
-                    <circle cx={sx} cy={sy} r={mr} />
-                  </clipPath>
-                  <radialGradient id={shadeId} cx="50%" cy="50%">
-                    <stop offset="0%" stopColor="#05060a" stopOpacity="0.95" />
-                    <stop offset="100%" stopColor="#01010a" stopOpacity="0.98" />
-                  </radialGradient>
-                </defs>
-                <g clipPath={`url(#${clipId})`}>
-                  <image
-                    href={moonRealAsset.url}
-                    x={sx - mr}
-                    y={sy - mr}
-                    width={mr * 2}
-                    height={mr * 2}
-                    preserveAspectRatio="xMidYMid slice"
-                  />
-                  <path d={litPath} fill={`url(#${shadeId})`} />
-                </g>
+        {night ? (() => {
+          const mr = 6.5;
+          const p = moon.phaseFraction;
+          const waxing = p < 0.5;
+          const gibbous = p > 0.25 && p < 0.75;
+          const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * mr);
+          const outerSweep = waxing ? 1 : 0;
+          const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
+          const litPath = `M ${sx},${sy - mr} A ${mr},${mr} 0 0,${outerSweep} ${sx},${sy + mr} A ${rx},${mr} 0 0,${innerSweep} ${sx},${sy - mr} Z`;
+          const clipId = `${gid}-moonclip`;
+          const shadeId = `${gid}-moonshade`;
+          return (
+            <g
+              style={{
+                opacity: 0,
+                animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
+                filter: "drop-shadow(0 0 5px rgba(220,230,255,0.7))",
+              }}
+            >
+              <defs>
+                <clipPath id={clipId}><circle cx={sx} cy={sy} r={mr} /></clipPath>
+                <radialGradient id={shadeId} cx="50%" cy="50%">
+                  <stop offset="0%" stopColor="#05060a" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#01010a" stopOpacity="0.98" />
+                </radialGradient>
+              </defs>
+              <g clipPath={`url(#${clipId})`}>
+                <image href={moonRealAsset.url} x={sx - mr} y={sy - mr} width={mr * 2} height={mr * 2} preserveAspectRatio="xMidYMid slice" />
+                <path d={litPath} fill={`url(#${shadeId})`} />
               </g>
-            );
-          })()
-        ) : (
+            </g>
+          );
+        })() : (
           <circle
-            cx={sx}
-            cy={sy}
-            r="4.5"
-            fill="#fff"
+            cx={sx} cy={sy} r="4.5" fill="#fff"
             style={{
               opacity: 0,
               animation: "wx-sun-in 1.2s ease-out 1.1s forwards",
@@ -3127,10 +2581,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
     if (!moderateOrHigher.length) return "Lavt gjennom hele dagen.";
     const start = moderateOrHigher[0].time;
     const end = moderateOrHigher[moderateOrHigher.length - 1].time;
-    const startH = new Date(start).toLocaleTimeString("nb-NO", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const startH = new Date(start).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
     const endH = new Date(end).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
     if (uvNow != null && uvNow < 3) {
       return `Lavt gjennom resten av dagen. Moderat eller høyt nivå ble nådd fra kl. ${startH} til ${endH}.`;
@@ -3172,6 +2623,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
       {/* Chart (med tall over hver kurvepunkt) */}
       <UvIosChart hours={slice} nowProgress={nowProgress} uvNow={uvNow ?? 0} />
 
+
       {/* Now + description */}
       {description && (
         <div className="mt-3 border-t border-white/10 pt-3">
@@ -3184,9 +2636,7 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
 
       {/* Day comparison */}
       <div className="mt-4 rounded-xl bg-black/15 p-3">
-        <div className="text-[11px] tracking-wider text-white/70 uppercase mb-2">
-          Dagsforskjeller
-        </div>
+        <div className="text-[11px] tracking-wider text-white/70 uppercase mb-2">Dagsforskjeller</div>
         <div className="text-[13px] text-white/90 mb-2">
           {uvMaxToday != null
             ? `UV-strålingen nådde toppen på ${uvMaxToday.toFixed(0)} i dag.`
@@ -3198,25 +2648,15 @@ function IosUvCard({ lat, lon, now }: { lat: number; lon: number; now: Date }) {
               <div className="flex-1 h-8 rounded bg-white/10 flex items-center px-2 relative overflow-hidden">
                 <div
                   className="absolute inset-y-0 left-0 rounded"
-                  style={{
-                    width: `${Math.min(100, (uvMaxToday / 11) * 100)}%`,
-                    backgroundColor: uvLevel(uvMaxToday).color,
-                    opacity: 0.55,
-                  }}
+                  style={{ width: `${Math.min(100, (uvMaxToday / 11) * 100)}%`, backgroundColor: uvLevel(uvMaxToday).color, opacity: 0.55 }}
                 />
                 <span className="text-[11px] relative z-10 font-medium text-white/90">I dag</span>
               </div>
-              <span className="text-lg font-light tabular-nums w-6 text-right">
-                {uvMaxToday.toFixed(0)}
-              </span>
+              <span className="text-lg font-light tabular-nums w-6 text-right">{uvMaxToday.toFixed(0)}</span>
             </div>
             {uvMaxTimeToday && (
               <div className="text-[11px] text-white/50">
-                Topp kl.{" "}
-                {new Date(uvMaxTimeToday).toLocaleTimeString("nb-NO", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                Topp kl. {new Date(uvMaxTimeToday).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}
               </div>
             )}
           </div>
@@ -3268,10 +2708,8 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
             background: `conic-gradient(from 0deg, transparent 0deg, ${color} 12deg, transparent 24deg, transparent 90deg, ${color} 102deg, transparent 114deg, transparent 180deg, ${color} 192deg, transparent 204deg, transparent 270deg, ${color} 282deg, transparent 294deg)`,
             opacity: rayOpacity * 1.1,
             animation: `uvOrbSpin ${(8 - t * 5).toFixed(2)}s linear infinite`,
-            maskImage:
-              "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
-            WebkitMaskImage:
-              "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
+            maskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
+            WebkitMaskImage: "radial-gradient(circle, transparent 35%, black 45%, black 70%, transparent 78%)",
           }}
         />
       )}
@@ -3303,15 +2741,7 @@ function UvOrb({ uv, color }: { uv: number; color: string }) {
   );
 }
 
-function UvIosChart({
-  hours,
-  nowProgress,
-  uvNow,
-}: {
-  hours: { time: string; uv: number }[];
-  nowProgress: number | null;
-  uvNow: number;
-}) {
+function UvIosChart({ hours, nowProgress, uvNow }: { hours: { time: string; uv: number }[]; nowProgress: number | null; uvNow: number }) {
   const W = 340;
   const H = 130;
   const padL = 70;
@@ -3373,14 +2803,7 @@ function UvIosChart({
         const y = padT + chartH - (l.uv / maxUV) * chartH;
         return (
           <g key={l.uv}>
-            <line
-              x1={padL}
-              x2={padL + chartW}
-              y1={y}
-              y2={y}
-              stroke="rgba(255,255,255,0.1)"
-              strokeWidth="0.5"
-            />
+            <line x1={padL} x2={padL + chartW} y1={y} y2={y} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" />
             <text x={padL - 4} y={y + 3} fontSize="7" fill="rgba(255,255,255,0.4)" textAnchor="end">
               {l.label}
             </text>
@@ -3392,14 +2815,7 @@ function UvIosChart({
       {[0, 3, 6, 8, 11].map((v) => {
         const y = padT + chartH - (v / maxUV) * chartH;
         return (
-          <text
-            key={v}
-            x={padL + chartW + 3}
-            y={y + 3}
-            fontSize="7"
-            fill="rgba(255,255,255,0.3)"
-            textAnchor="start"
-          >
+          <text key={v} x={padL + chartW + 3} y={y + 3} fontSize="7" fill="rgba(255,255,255,0.3)" textAnchor="start">
             {v}
           </text>
         );
@@ -3409,14 +2825,7 @@ function UvIosChart({
       {ticks.map((t, i) => {
         const x = padL + t.idx * stepX;
         return (
-          <text
-            key={i}
-            x={x}
-            y={H - 3}
-            fontSize="7"
-            fill="rgba(255,255,255,0.35)"
-            textAnchor="middle"
-          >
+          <text key={i} x={x} y={H - 3} fontSize="7" fill="rgba(255,255,255,0.35)" textAnchor="middle">
             {t.time.slice(11, 16)}
           </text>
         );
@@ -3426,14 +2835,7 @@ function UvIosChart({
       <path d={areaPath} fill="url(#uvAreaGrad)" />
 
       {/* Line */}
-      <path
-        d={`M${points}`}
-        fill="none"
-        stroke="url(#uvLineGrad)"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
+      <path d={`M${points}`} fill="none" stroke="url(#uvLineGrad)" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
 
       {/* Per-time UV numbers — plassert rett over hver kurvepunkt */}
       {hours.map((h, i) => {
@@ -3452,6 +2854,7 @@ function UvIosChart({
           </text>
         );
       })}
+
 
       {/* Now marker */}
       {nowProgress != null && (
@@ -3489,13 +2892,7 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
   const feels = w > 1.5 && t < 15 ? Math.round(t - w * 0.5) : Math.round(t);
   const hint = w > 1.5 && t < 15 ? "Vinden gjør at det føles kaldere." : "Komfortabelt.";
   const cold = feels <= 5;
-  const fx = cold ? (
-    <SnowFX intensity={0.5} />
-  ) : feels >= 18 ? (
-    <HeatwaveFX intensity={1} />
-  ) : (
-    <HeatwaveFX intensity={-1} />
-  );
+  const fx = cold ? <SnowFX intensity={0.5} /> : feels >= 18 ? <HeatwaveFX intensity={1} /> : <HeatwaveFX intensity={-1} />;
   return (
     <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${feels}°` : "—"}</div>
@@ -3508,12 +2905,9 @@ function CloudCard({ hour }: { hour: Hour | null }) {
   const c = Math.round(hour?.cloud ?? 0);
   const rainy = (hour?.precipProbability ?? 0) >= 20 || (hour?.precip ?? 0) >= 0.2;
   const label = c < 25 ? "Klar himmel" : c < 60 ? "Delvis skyet" : c < 85 ? "Skyet" : "Overskyet";
-  const fx =
-    c < 25 ? (
-      <SunFX intensity={0.8} />
-    ) : (
-      <DriftingClouds intensity={Math.min(1, c / 100)} seed={c + 7} rainy={rainy} />
-    );
+  const fx = c < 25
+    ? <SunFX intensity={0.8} />
+    : <DriftingClouds intensity={Math.min(1, c / 100)} seed={c + 7} rainy={rainy} />;
   return (
     <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${c} %` : "—"}</div>
@@ -3522,24 +2916,14 @@ function CloudCard({ hour }: { hour: Hour | null }) {
   );
 }
 
-function PrecipTodayCard({
-  day,
-  days,
-}: {
-  day: ForecastDay | undefined;
-  days: ForecastDay[] | null;
-}) {
+function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: ForecastDay[] | null }) {
   const mm = day?.precip ?? 0;
   const nextRainDay = days?.slice(1, 7).find((d) => d.precip >= 0.2);
   const hint = nextRainDay
     ? `${nextRainDay.precip.toFixed(1)} mm ventes ${weekdayShort(nextRainDay.date)}.`
     : "Tørt de neste dagene.";
   return (
-    <GlassCard
-      eyebrow="Nedbør"
-      icon={<CloudRain size={14} />}
-      fx={<RainFX intensity={Math.min(1, mm / 8)} />}
-    >
+    <GlassCard eyebrow="Nedbør" icon={<CloudRain size={14} />} fx={<RainFX intensity={Math.min(1, mm / 8)} />}>
       <div className="relative">
         <div className="text-3xl font-light tabular-nums">{mm.toFixed(mm < 10 ? 1 : 0)} mm</div>
         <div className="text-sm text-white/85">I dag</div>
@@ -3553,16 +2937,10 @@ function GustCard({ hour }: { hour: Hour | null }) {
   const w = hour?.wind ?? 0;
   const g = hour?.windGust ?? w;
   return (
-    <GlassCard
-      eyebrow="Vindkast"
-      icon={<Wind size={14} />}
-      fx={<GustFX intensity={Math.min(1, g / 15)} />}
-    >
+    <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />} fx={<GustFX intensity={Math.min(1, g / 15)} />}>
       <div className="text-3xl font-light tabular-nums">{g.toFixed(1)}</div>
       <div className="text-sm text-white/85">m/s</div>
-      <div className="text-[12px] text-white/75 mt-2 leading-snug">
-        Gjennomsnitt {w.toFixed(1)} m/s.
-      </div>
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {w.toFixed(1)} m/s.</div>
     </GlassCard>
   );
 }
@@ -3570,11 +2948,7 @@ function GustCard({ hour }: { hour: Hour | null }) {
 function HumidityCard({ hour }: { hour: Hour | null }) {
   const h = Math.round(hour?.humidity ?? 0);
   return (
-    <GlassCard
-      eyebrow="Luftfuktighet"
-      icon={<Droplets size={14} />}
-      fx={<HumidityFX intensity={h / 100} />}
-    >
+    <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />} fx={<HumidityFX intensity={h / 100} />}>
       <div className="text-3xl font-light tabular-nums">{h} %</div>
       <div className="text-[12px] text-white/75 mt-3 leading-snug">
         Duggpunkt ca {Math.round((hour?.temp ?? 0) - (100 - h) / 5)}°.
@@ -3585,52 +2959,26 @@ function HumidityCard({ hour }: { hour: Hour | null }) {
 
 function PressureCard({ hour }: { hour: Hour | null }) {
   const p = hour?.pressure ?? 0;
-  const min = 980,
-    max = 1040;
+  const min = 980, max = 1040;
   const pct = Math.max(0, Math.min(1, (p - min) / (max - min)));
   return (
     <GlassCard eyebrow="Lufttrykk" icon={<Gauge size={14} />} fx={<PressureFX intensity={pct} />}>
       <div className="relative h-16 mt-1">
         <svg viewBox="0 0 100 50" className="w-full h-full">
-          <path
-            d="M 10 45 A 40 40 0 0 1 90 45"
-            fill="none"
-            stroke="rgba(255,255,255,0.25)"
-            strokeWidth="2"
-          />
+          <path d="M 10 45 A 40 40 0 0 1 90 45" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" />
           {Array.from({ length: 21 }).map((_, i) => {
             const a = Math.PI + (i / 20) * Math.PI;
             const x1 = 50 + 38 * Math.cos(a);
             const y1 = 45 + 38 * Math.sin(a);
             const x2 = 50 + (i % 5 === 0 ? 32 : 35) * Math.cos(a);
             const y2 = 45 + (i % 5 === 0 ? 32 : 35) * Math.sin(a);
-            return (
-              <line
-                key={i}
-                x1={x1}
-                y1={y1}
-                x2={x2}
-                y2={y2}
-                stroke="rgba(255,255,255,0.5)"
-                strokeWidth="0.5"
-              />
-            );
+            return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />;
           })}
           {(() => {
             const a = Math.PI + pct * Math.PI;
             const x = 50 + 36 * Math.cos(a);
             const y = 45 + 36 * Math.sin(a);
-            return (
-              <line
-                x1="50"
-                y1="45"
-                x2={x}
-                y2={y}
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            );
+            return <line x1="50" y1="45" x2={x} y2={y} stroke="white" strokeWidth="1.5" strokeLinecap="round" />;
           })()}
         </svg>
       </div>
@@ -3639,8 +2987,7 @@ function PressureCard({ hour }: { hour: Hour | null }) {
         <div className="text-[11px] text-white/70">hPa</div>
       </div>
       <div className="flex justify-between text-[10px] text-white/70 -mt-1">
-        <span>Lavt</span>
-        <span>Høyt</span>
+        <span>Lavt</span><span>Høyt</span>
       </div>
     </GlassCard>
   );
@@ -3651,46 +2998,19 @@ function PressureCard({ hour }: { hour: Hour | null }) {
 // ============================================================
 
 function NetatmoTile({
-  label,
-  temp,
-  wind,
-  rain,
-  humidity,
-  pressure,
+  label, temp, wind, rain, humidity, pressure,
 }: {
-  label: string;
-  temp: number | null;
-  wind: number | null;
-  rain: number | null;
-  humidity: number | null;
-  pressure: number | null;
+  label: string; temp: number | null; wind: number | null; rain: number | null; humidity: number | null; pressure: number | null;
 }) {
   return (
     <div className="rounded-xl bg-black/15 border border-white/10 p-3">
       <div className="text-[11px] tracking-wider text-white/75 uppercase mb-2">{label}</div>
       <div className="grid grid-cols-2 gap-y-1.5 text-[12px]">
-        {temp !== null && (
-          <>
-            <span className="text-white/70">Temp</span>
-            <span className="text-right tabular-nums">{temp.toFixed(1)}°</span>
-          </>
-        )}
-        <span className="text-white/70">Vind</span>
-        <span className="text-right tabular-nums">
-          {wind !== null ? `${wind.toFixed(1)} m/s` : "—"}
-        </span>
-        <span className="text-white/70">Regn i dag</span>
-        <span className="text-right tabular-nums">
-          {rain !== null ? `${rain.toFixed(1)} mm` : "—"}
-        </span>
-        <span className="text-white/70">Fukt</span>
-        <span className="text-right tabular-nums">
-          {humidity !== null ? `${Math.round(humidity)} %` : "—"}
-        </span>
-        <span className="text-white/70">Trykk</span>
-        <span className="text-right tabular-nums">
-          {pressure !== null ? `${Math.round(pressure)} hPa` : "—"}
-        </span>
+        {temp !== null && (<><span className="text-white/70">Temp</span><span className="text-right tabular-nums">{temp.toFixed(1)}°</span></>)}
+        <span className="text-white/70">Vind</span><span className="text-right tabular-nums">{wind !== null ? `${wind.toFixed(1)} m/s` : "—"}</span>
+        <span className="text-white/70">Regn i dag</span><span className="text-right tabular-nums">{rain !== null ? `${rain.toFixed(1)} mm` : "—"}</span>
+        <span className="text-white/70">Fukt</span><span className="text-right tabular-nums">{humidity !== null ? `${Math.round(humidity)} %` : "—"}</span>
+        <span className="text-white/70">Trykk</span><span className="text-right tabular-nums">{pressure !== null ? `${Math.round(pressure)} hPa` : "—"}</span>
       </div>
     </div>
   );
@@ -3718,13 +3038,17 @@ function alertFxFor(alert: MetAlert): React.ReactNode {
 function AlertCompactTile({ alert }: { alert: MetAlert }) {
   const color = alertColor(alert.awarenessColor);
   const { tone } = useTileTone();
-  const [open, setOpen] = usePerUserPersistedState<boolean>(`var:alert-open:${alert.id}`, false);
+  const [open, setOpen] = usePerUserPersistedState<boolean>(
+    `var:alert-open:${alert.id}`,
+    false,
+  );
   const fx = open ? alertFxFor(alert) : null;
   return (
     <div
       className={toneCardCn(tone, "border-l-[4px] relative overflow-hidden p-0")}
       style={{ borderLeftColor: color }}
     >
+
       {fx}
       <button
         type="button"
@@ -3734,9 +3058,7 @@ function AlertCompactTile({ alert }: { alert: MetAlert }) {
       >
         <AlertTriangle size={14} style={{ color }} className="shrink-0" />
         <div className="flex-1 min-w-0">
-          <div className="text-[9px] tracking-[0.15em] uppercase font-semibold text-white/70">
-            Fare for
-          </div>
+          <div className="text-[9px] tracking-[0.15em] uppercase font-semibold text-white/70">Fare for</div>
           <div className="text-[11px] font-medium leading-tight truncate">{alert.title}</div>
         </div>
         <ChevronDown
@@ -3746,8 +3068,12 @@ function AlertCompactTile({ alert }: { alert: MetAlert }) {
       </button>
       {open && (
         <div className="relative px-2 pb-2 pl-7 -mt-0.5">
-          {alert.description && <p className="text-[11px] text-white/85">{alert.description}</p>}
-          {alert.area && <div className="text-[9px] text-white/70 mt-1">{alert.area}</div>}
+          {alert.description && (
+            <p className="text-[11px] text-white/85">{alert.description}</p>
+          )}
+          {alert.area && (
+            <div className="text-[9px] text-white/70 mt-1">{alert.area}</div>
+          )}
         </div>
       )}
     </div>
@@ -3758,21 +3084,13 @@ function AlertCompactTile({ alert }: { alert: MetAlert }) {
 // Wind rose (light theme adapted)
 // ============================================================
 
-function WindRose({
-  name,
-  hours,
-  rangeHours,
-}: {
-  name: string;
-  hours: Hour[] | null;
-  rangeHours: number;
-}) {
+function WindRose({ name, hours, rangeHours }: { name: string; hours: Hour[] | null; rangeHours: number }) {
   if (!hours) return <div className="text-white/70 italic text-sm">{name}: laster…</div>;
   const next = hours.slice(0, rangeHours);
   const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
   const buckets = new Array(8).fill(0).map(() => ({ count: 0, sumWind: 0 }));
   for (const h of next) {
-    const idx = Math.round((h.windDir % 360) / 45) % 8;
+    const idx = Math.round(((h.windDir % 360) / 45)) % 8;
     buckets[idx].count += 1;
     buckets[idx].sumWind += h.wind;
   }
@@ -3780,24 +3098,14 @@ function WindRose({
   const maxWind = Math.max(...next.map((h) => h.wind));
   const avgWind = next.reduce((sum, h) => sum + h.wind, 0) / next.length;
   const dominantIdx = buckets.indexOf(buckets.reduce((a, b) => (b.count > a.count ? b : a)));
-  const cx = 100,
-    cy = 100,
-    rOuter = 80;
+  const cx = 100, cy = 100, rOuter = 80;
   return (
     <div className="rounded-xl bg-black/10 p-3">
       <div className="text-[11px] text-white/80 uppercase tracking-wider mb-2">{name}</div>
       <div className="grid grid-cols-[1fr_auto] gap-3 items-center">
         <svg viewBox="0 0 200 200" className="w-full max-w-[220px] mx-auto">
           {[0.33, 0.66, 1].map((f) => (
-            <circle
-              key={f}
-              cx={cx}
-              cy={cy}
-              r={rOuter * f}
-              fill="none"
-              stroke="rgba(255,255,255,0.25)"
-              strokeDasharray="2 3"
-            />
+            <circle key={f} cx={cx} cy={cy} r={rOuter * f} fill="none" stroke="rgba(255,255,255,0.25)" strokeDasharray="2 3" />
           ))}
           <line x1={cx} y1={cy - rOuter} x2={cx} y2={cy + rOuter} stroke="rgba(255,255,255,0.2)" />
           <line x1={cx - rOuter} y1={cy} x2={cx + rOuter} y2={cy} stroke="rgba(255,255,255,0.2)" />
@@ -3814,50 +3122,23 @@ function WindRose({
             const y2 = cy + r * Math.sin(a2);
             const path = `M ${cx} ${cy} L ${x1.toFixed(1)} ${y1.toFixed(1)} A ${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z`;
             const intensity = b.sumWind / Math.max(1, b.count) / Math.max(1, maxWind);
-            return (
-              <path
-                key={i}
-                d={path}
-                fill="#7dd3fc"
-                opacity={0.4 + intensity * 0.5}
-                stroke="#7dd3fc"
-                strokeWidth="0.5"
-              />
-            );
+            return <path key={i} d={path} fill="#7dd3fc" opacity={0.4 + intensity * 0.5} stroke="#7dd3fc" strokeWidth="0.5" />;
           })}
           {dirs.map((d, i) => {
             const angle = (i * 45 - 90) * (Math.PI / 180);
             const x = cx + (rOuter + 12) * Math.cos(angle);
             const y = cy + (rOuter + 12) * Math.sin(angle) + 3;
             return (
-              <text
-                key={d}
-                x={x}
-                y={y}
-                fontSize="10"
-                fill={i === dominantIdx ? "#fde68a" : "white"}
-                textAnchor="middle"
-                fontWeight={i === dominantIdx ? 700 : 400}
-              >
+              <text key={d} x={x} y={y} fontSize="10" fill={i === dominantIdx ? "#fde68a" : "white"} textAnchor="middle" fontWeight={i === dominantIdx ? 700 : 400}>
                 {d}
               </text>
             );
           })}
         </svg>
         <div className="space-y-2 text-center text-xs">
-          <div>
-            <div className="text-white/70 uppercase tracking-wider text-[10px]">Snitt</div>
-            <div className="text-xl font-light tabular-nums">{avgWind.toFixed(1)}</div>
-            <div className="text-[10px] text-white/60">m/s</div>
-          </div>
-          <div>
-            <div className="text-white/70 uppercase tracking-wider text-[10px]">Maks</div>
-            <div className="text-base font-light tabular-nums">{maxWind.toFixed(1)}</div>
-          </div>
-          <div>
-            <div className="text-white/70 uppercase tracking-wider text-[10px]">Fra</div>
-            <div className="text-base font-light">{dirs[dominantIdx]}</div>
-          </div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Snitt</div><div className="text-xl font-light tabular-nums">{avgWind.toFixed(1)}</div><div className="text-[10px] text-white/60">m/s</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Maks</div><div className="text-base font-light tabular-nums">{maxWind.toFixed(1)}</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Fra</div><div className="text-base font-light">{dirs[dominantIdx]}</div></div>
         </div>
       </div>
     </div>
@@ -3868,13 +3149,7 @@ function WindRose({
 // Range selector (compact)
 // ============================================================
 
-function RangeSelector({
-  value,
-  onChange,
-}: {
-  value: 24 | 72 | 168;
-  onChange: (v: 24 | 72 | 168) => void;
-}) {
+function RangeSelector({ value, onChange }: { value: 24 | 72 | 168; onChange: (v: 24 | 72 | 168) => void }) {
   const opts: { v: 24 | 72 | 168; label: string }[] = [
     { v: 24, label: "24t" },
     { v: 72, label: "3d" },
@@ -3885,13 +3160,8 @@ function RangeSelector({
       {opts.map((o) => {
         const active = value === o.v;
         return (
-          <button
-            key={o.v}
-            onClick={() => onChange(o.v)}
-            className={
-              "px-3 py-1 text-[11px] uppercase tracking-wider rounded transition-colors " +
-              (active ? "bg-white text-slate-800" : "text-white/80")
-            }
+          <button key={o.v} onClick={() => onChange(o.v)}
+            className={"px-3 py-1 text-[11px] uppercase tracking-wider rounded transition-colors " + (active ? "bg-white text-slate-800" : "text-white/80")}
           >
             {o.label}
           </button>
@@ -3928,11 +3198,7 @@ function CollapsibleMap() {
   const [open, setOpen] = usePerUserPersistedState<boolean>("var:windyMap", false);
   return (
     <GlassCard eyebrow="Live værkart · Windy" icon={<MapIcon size={14} />}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between text-sm"
-      >
+      <button type="button" onClick={() => setOpen((o) => !o)} className="w-full flex items-center justify-between text-sm">
         <span>{open ? "Lukk kartet" : "Åpne live værkart"}</span>
         {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
@@ -3945,22 +3211,9 @@ function WindyMap() {
   const [overlay, setOverlay] = useState("wind");
   const src = useMemo(() => {
     const params = new URLSearchParams({
-      lat: "59.6",
-      lon: "9.2",
-      zoom: "8",
-      level: "surface",
-      overlay,
-      product: "ecmwf",
-      menu: "",
-      message: "",
-      marker: "",
-      calendar: "now",
-      pressure: "",
-      type: "map",
-      location: "coordinates",
-      metricWind: "m/s",
-      metricTemp: "°C",
-      radarRange: "-1",
+      lat: "59.6", lon: "9.2", zoom: "8",
+      level: "surface", overlay, product: "ecmwf", menu: "", message: "", marker: "", calendar: "now", pressure: "", type: "map", location: "coordinates",
+      metricWind: "m/s", metricTemp: "°C", radarRange: "-1",
     });
     return `https://embed.windy.com/embed2.html?${params.toString()}`;
   }, [overlay]);
@@ -3970,32 +3223,16 @@ function WindyMap() {
         {WINDY_OVERLAYS.map((o) => {
           const active = o.key === overlay;
           return (
-            <button
-              key={o.key}
-              onClick={() => setOverlay(o.key)}
-              className={
-                "px-2 py-1 rounded-md text-[11px] uppercase tracking-wider border transition-colors " +
-                (active
-                  ? "bg-white text-slate-800 border-white"
-                  : "bg-white/5 border-white/20 text-white/80 hover:bg-white/10")
-              }
+            <button key={o.key} onClick={() => setOverlay(o.key)}
+              className={"px-2 py-1 rounded-md text-[11px] uppercase tracking-wider border transition-colors " + (active ? "bg-white text-slate-800 border-white" : "bg-white/5 border-white/20 text-white/80 hover:bg-white/10")}
             >
-              <span className="mr-1">{o.icon}</span>
-              {o.label}
+              <span className="mr-1">{o.icon}</span>{o.label}
             </button>
           );
         })}
       </div>
       <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "4 / 3" }}>
-        <iframe
-          key={overlay}
-          title={`Windy — ${overlay}`}
-          src={src}
-          className="absolute inset-0 w-full h-full border-0"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          allow="fullscreen"
-        />
+        <iframe key={overlay} title={`Windy — ${overlay}`} src={src} className="absolute inset-0 w-full h-full border-0" loading="lazy" referrerPolicy="no-referrer" allow="fullscreen" />
       </div>
     </div>
   );
@@ -4021,14 +3258,10 @@ function rangeLabel(h: number): string {
 
 function alertColor(c: string): string {
   switch (c) {
-    case "red":
-      return "#ef4444";
-    case "orange":
-      return "#fb923c";
-    case "yellow":
-      return "#fde047";
-    default:
-      return "#86efac";
+    case "red": return "#ef4444";
+    case "orange": return "#fb923c";
+    case "yellow": return "#fde047";
+    default: return "#86efac";
   }
 }
 
@@ -4042,33 +3275,17 @@ function readCap(d: DeviceLike | null | undefined, cap: string): number | null {
 function hasAnyRainCap(d: DeviceLike | null | undefined): boolean {
   if (!d?.capabilities) return false;
   for (const k of Object.keys(d.capabilities)) {
-    if (k.toLowerCase().includes("rain") && typeof d.capabilities[k]?.value === "number")
-      return true;
+    if (k.toLowerCase().includes("rain") && typeof d.capabilities[k]?.value === "number") return true;
   }
   return false;
 }
 function readDailyRain(d: DeviceLike | null | undefined): number | null {
   if (!d?.capabilities) return null;
   const caps = d.capabilities;
-  const priority = [
-    "meter_rain.today",
-    "meter_rain.daily",
-    "meter_rain.day",
-    "measure_rain.today",
-    "measure_rain.daily",
-    "measure_rain.day",
-    "meter_rain",
-    "measure_rain.24h",
-    "measure_rain.1h",
-    "measure_rain",
-  ];
-  for (const cap of priority) {
-    const v = caps[cap]?.value;
-    if (typeof v === "number") return v;
-  }
+  const priority = ["meter_rain.today","meter_rain.daily","meter_rain.day","measure_rain.today","measure_rain.daily","measure_rain.day","meter_rain","measure_rain.24h","measure_rain.1h","measure_rain"];
+  for (const cap of priority) { const v = caps[cap]?.value; if (typeof v === "number") return v; }
   for (const [k, val] of Object.entries(caps)) {
-    if (k.toLowerCase().includes("rain") && typeof val?.value === "number")
-      return val.value as number;
+    if (k.toLowerCase().includes("rain") && typeof val?.value === "number") return val.value as number;
   }
   return null;
 }
@@ -4094,15 +3311,9 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
     const maxPrecip = d1.precipitation_amount_max ?? d6.precipitation_amount_max ?? meanPrecip;
     // Bruk max som "har det regn?"-indikator slik Yr gjør, så lett nedbør ikke skjules.
     const precip = Math.max(meanPrecip, maxPrecip);
-    const precipProbability =
-      d1.probability_of_precipitation ?? d6.probability_of_precipitation ?? 0;
+    const precipProbability = d1.probability_of_precipitation ?? d6.probability_of_precipitation ?? 0;
     hours.push({
-      time,
-      temp,
-      precip,
-      precipMin: minPrecip,
-      precipMax: maxPrecip,
-      precipProbability,
+      time, temp, precip, precipMin: minPrecip, precipMax: maxPrecip, precipProbability,
       wind: inst.wind_speed ?? 0,
       windGust: inst.wind_speed_of_gust ?? inst.wind_speed ?? 0,
       windDir: inst.wind_from_direction ?? 0,
@@ -4118,15 +3329,7 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
     const existing = dayMap.get(date);
     const wind = inst.wind_speed ?? 0;
     if (!existing) {
-      dayMap.set(date, {
-        date,
-        tempMin: temp,
-        tempMax: temp,
-        symbol,
-        precip,
-        precipProbability,
-        windMax: wind,
-      });
+      dayMap.set(date, { date, tempMin: temp, tempMax: temp, symbol, precip, precipProbability, windMax: wind });
     } else {
       existing.tempMin = Math.min(existing.tempMin, temp);
       existing.tempMax = Math.max(existing.tempMax, temp);
@@ -4169,9 +3372,7 @@ function conditionFromSymbol(symbol: string | null): string {
 }
 
 function weekdayShort(iso: string) {
-  return new Date(iso + "T00:00:00")
-    .toLocaleDateString("nb-NO", { weekday: "short" })
-    .replace(".", ".");
+  return new Date(iso + "T00:00:00").toLocaleDateString("nb-NO", { weekday: "short" }).replace(".", ".");
 }
 function formatTime(d: Date | null): string {
   if (!d) return "—";
@@ -4201,26 +3402,15 @@ function computeSunForDate(date: Date, lat: number, lon: number) {
   const a = Math.floor((14 - m) / 12);
   const yy = y + 4800 - a;
   const mm = m + 12 * a - 3;
-  const JDN =
-    d +
-    Math.floor((153 * mm + 2) / 5) +
-    365 * yy +
-    Math.floor(yy / 4) -
-    Math.floor(yy / 100) +
-    Math.floor(yy / 400) -
-    32045;
+  const JDN = d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
   const n = JDN - 2451545.0 + 0.0008;
   const Jstar = n - lon / 360;
   const M = (357.5291 + 0.98560028 * Jstar) % 360;
-  const C =
-    1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
   const lambda = (M + C + 180 + 102.9372) % 360;
-  const Jtransit =
-    2451545.0 + Jstar + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lambda * rad);
+  const Jtransit = 2451545.0 + Jstar + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * lambda * rad);
   const delta = Math.asin(Math.sin(lambda * rad) * Math.sin(23.44 * rad));
-  const cosH =
-    (Math.sin(-0.83 * rad) - Math.sin(lat * rad) * Math.sin(delta)) /
-    (Math.cos(lat * rad) * Math.cos(delta));
+  const cosH = (Math.sin(-0.83 * rad) - Math.sin(lat * rad) * Math.sin(delta)) / (Math.cos(lat * rad) * Math.cos(delta));
   if (cosH > 1 || cosH < -1) {
     return { sunrise: null, sunset: null, dayLengthMinutes: cosH > 1 ? 0 : 24 * 60 };
   }
@@ -4242,34 +3432,15 @@ function moonPhase(date: Date) {
   const phaseFraction = phase / synodic; // 0=new, .25=first quarter, .5=full, .75=last
   const illumination = (1 - Math.cos((2 * Math.PI * phase) / synodic)) / 2;
   let name: string, icon: string;
-  if (phase < 1.84566) {
-    name = "Nymåne";
-    icon = "🌑";
-  } else if (phase < 5.53699) {
-    name = "Voksende månesigd";
-    icon = "🌒";
-  } else if (phase < 9.22831) {
-    name = "Første kvarter";
-    icon = "🌓";
-  } else if (phase < 12.91963) {
-    name = "Voksende halvmåne";
-    icon = "🌔";
-  } else if (phase < 16.61096) {
-    name = "Fullmåne";
-    icon = "🌕";
-  } else if (phase < 20.30228) {
-    name = "Avtagende halvmåne";
-    icon = "🌖";
-  } else if (phase < 23.99361) {
-    name = "Siste kvarter";
-    icon = "🌗";
-  } else if (phase < 27.68493) {
-    name = "Avtagende månesigd";
-    icon = "🌘";
-  } else {
-    name = "Nymåne";
-    icon = "🌑";
-  }
+  if (phase < 1.84566) { name = "Nymåne"; icon = "🌑"; }
+  else if (phase < 5.53699) { name = "Voksende månesigd"; icon = "🌒"; }
+  else if (phase < 9.22831) { name = "Første kvarter"; icon = "🌓"; }
+  else if (phase < 12.91963) { name = "Voksende halvmåne"; icon = "🌔"; }
+  else if (phase < 16.61096) { name = "Fullmåne"; icon = "🌕"; }
+  else if (phase < 20.30228) { name = "Avtagende halvmåne"; icon = "🌖"; }
+  else if (phase < 23.99361) { name = "Siste kvarter"; icon = "🌗"; }
+  else if (phase < 27.68493) { name = "Avtagende månesigd"; icon = "🌘"; }
+  else { name = "Nymåne"; icon = "🌑"; }
   return { name, icon, illumination, phaseFraction };
 }
 function nextMoonset(now: Date): Date | null {
@@ -4277,7 +3448,7 @@ function nextMoonset(now: Date): Date | null {
   // For ikon-formål — bruker tidspunkt mellom 21:00 og 02:00 forskjøvet med faseprogresjon
   const synodic = 29.53058867;
   const ref = Date.UTC(2000, 0, 6, 18, 14, 0);
-  const phase = ((((now.getTime() - ref) / 86_400_000) % synodic) + synodic) % synodic;
+  const phase = (((now.getTime() - ref) / 86_400_000) % synodic + synodic) % synodic;
   const offset = (phase / synodic) * 24 * 60; // minutter
   const base = new Date(now);
   base.setHours(20, 0, 0, 0);
@@ -4288,7 +3459,7 @@ function nextMoonset(now: Date): Date | null {
 function daysUntilFullMoon(now: Date): number {
   const synodic = 29.53058867;
   const ref = Date.UTC(2000, 0, 6, 18, 14, 0);
-  const phase = ((((now.getTime() - ref) / 86_400_000) % synodic) + synodic) % synodic;
+  const phase = (((now.getTime() - ref) / 86_400_000) % synodic + synodic) % synodic;
   const full = 14.77;
   let d = full - phase;
   if (d < 0) d += synodic;
