@@ -8,6 +8,7 @@ import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 import { UserLocationBar, useUserLocation } from "@/hooks/use-user-location";
 import type { ActiveLocation } from "@/components/LocationPicker";
 import { reverseGeocode } from "@/lib/user-locations.functions";
+import { TileToneProvider, useTileTone, tileToneClasses } from "@/components/weather/TileTone";
 
 export const Route = createFileRoute("/varfavoritter")({
   head: () => ({
@@ -16,8 +17,16 @@ export const Route = createFileRoute("/varfavoritter")({
       { name: "description", content: "Alle dine lagrede værsteder på ett sted, med animert vær." },
     ],
   }),
-  component: FavoritesPage,
+  component: FavoritesPageWithTone,
 });
+
+function FavoritesPageWithTone() {
+  return (
+    <TileToneProvider>
+      <FavoritesPage />
+    </TileToneProvider>
+  );
+}
 
 const FAV_KEY = "loc:fav:var";
 const CHOSEN_KEY = "loc:chosen:var";
@@ -66,6 +75,7 @@ function FavoritesPage() {
   const reverse = useServerFn(reverseGeocode);
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
   const [autoLocated, setAutoLocated] = useState(false);
+  const { tone } = useTileTone();
 
   const pickLocation = (loc: ActiveLocation, source: ActiveLocation["source"] = "favorite") => {
     try {
@@ -170,7 +180,7 @@ function FavoritesPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-visible relative z-40">
+          <div className={`rounded-2xl border overflow-hidden backdrop-blur-xl relative z-40 ${tileToneClasses(tone)}`}>
             <UserLocationBar page="var" state={userLoc} transparent hideActions />
           </div>
 
