@@ -67,11 +67,11 @@ function FavoritesPage() {
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
   const [autoLocated, setAutoLocated] = useState(false);
 
-  const pickLocation = (loc: ActiveLocation) => {
+  const pickLocation = (loc: ActiveLocation, source: ActiveLocation["source"] = "favorite") => {
     try {
       localStorage.setItem(
         CHOSEN_KEY,
-        JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon, source: "favorite" }),
+        JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon, source }),
       );
     } catch {
       // ignore
