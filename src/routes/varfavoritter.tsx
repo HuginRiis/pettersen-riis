@@ -111,7 +111,7 @@ function FavoritesPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-visible relative z-40">
-            <UserLocationBar page="var" state={barState} transparent />
+            <UserLocationBar page="var" state={userLoc} transparent />
           </div>
 
           {rows.length === 0 ? (
