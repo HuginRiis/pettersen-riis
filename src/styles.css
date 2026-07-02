@@ -1157,9 +1157,9 @@ main .container {
   opacity: 0.85;
   border-radius: 50%;
 }
-.fancy-wx__cloud--a { top: 24%; left: -25%; width: 240px; height: 90px; animation: fancyWxDrift 38s linear infinite; }
-.fancy-wx__cloud--b { top: 12%; left: -40%; width: 320px; height: 110px; opacity: 0.7; animation: fancyWxDrift 55s linear infinite; animation-delay: -18s; }
-.fancy-wx__cloud--c { top: 38%; left: -30%; width: 200px; height: 78px; opacity: 0.6; animation: fancyWxDrift 46s linear infinite; animation-delay: -8s; }
+.fancy-wx__cloud--a { top: 20%; left: -25%; width: 200px; height: 78px; animation: fancyWxDrift calc(38s / var(--wx-wind)) linear infinite; }
+.fancy-wx__cloud--b { top: 8%;  left: -40%; width: 260px; height: 92px; opacity: 0.7; animation: fancyWxDrift calc(55s / var(--wx-wind)) linear infinite; animation-delay: -18s; }
+.fancy-wx__cloud--c { top: 34%; left: -30%; width: 170px; height: 66px; opacity: 0.6; animation: fancyWxDrift calc(46s / var(--wx-wind)) linear infinite; animation-delay: -8s; }
 @keyframes fancyWxDrift {
   0%   { transform: translateX(0); }
   100% { transform: translateX(180%); }
