@@ -3057,6 +3057,7 @@ function alertFxFor(alert: MetAlert): React.ReactNode {
 
 function AlertCompactTile({ alert }: { alert: MetAlert }) {
   const color = alertColor(alert.awarenessColor);
+  const { tone } = useTileTone();
   const [open, setOpen] = usePerUserPersistedState<boolean>(
     `var:alert-open:${alert.id}`,
     false,
@@ -3064,9 +3065,10 @@ function AlertCompactTile({ alert }: { alert: MetAlert }) {
   const fx = open ? alertFxFor(alert) : null;
   return (
     <div
-      className={toneCardCn("border-l-[4px] relative overflow-hidden p-0")}
+      className={toneCardCn(tone, "border-l-[4px] relative overflow-hidden p-0")}
       style={{ borderLeftColor: color }}
     >
+
       {fx}
       <button
         type="button"
