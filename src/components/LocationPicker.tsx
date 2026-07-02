@@ -399,37 +399,7 @@ export function LocationPicker({
         )}
       </div>
 
-      {/* Favoritter */}
-      {favorites.length > 0 && (
-        <div className="mt-3">
-          <div className={`flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] mb-1.5 ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
-            <Star size={10} className="fill-yellow-400 text-yellow-400" /> Favoritter
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {favorites.map((f) => (
-              <span key={`fav-${f.label}`} className="flex items-stretch min-w-0">
-                <button
-                  type="button"
-                  onClick={() => handlePickStored(f)}
-                  className={`${chipBtnClass} rounded-r-none pr-1 flex-1 min-w-0`}
-                  title={`Bytt til ${f.label}`}
-                >
-                  <span className="truncate">{f.label}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeFavorite(f)}
-                  aria-label="Fjern favoritt"
-                  title="Fjern favoritt"
-                  className={`${chipBtnClass} rounded-l-none border-l-0 px-1.5`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Favoritt-pilleliste fjernet – favoritter vises som flisene under. */}
     </div>
   );
 }
