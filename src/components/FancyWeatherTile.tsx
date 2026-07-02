@@ -260,12 +260,17 @@ function parse(data: any): Day[] {
       next6?.details?.precipitation_amount ??
       0;
     const wind = inst.wind_speed ?? 0;
+    const thunderProb =
+      next1?.details?.probability_of_thunder ??
+      next6?.details?.probability_of_thunder ??
+      0;
     const date = time.slice(0, 10);
-    const hour: Hour = { time, temp, precip, wind, symbol };
+    const hour: Hour = { time, temp, precip, wind, symbol, thunderProb };
     const existing = map.get(date);
     if (!existing) {
       map.set(date, {
         date,
+        thunderProb,
         tempMin: temp,
         tempMax: temp,
         precip,
@@ -276,6 +281,7 @@ function parse(data: any): Day[] {
       existing.tempMin = Math.min(existing.tempMin, temp);
       existing.tempMax = Math.max(existing.tempMax, temp);
       existing.precip += precip;
+      existing.thunderProb = Math.max(existing.thunderProb, thunderProb);
       const h = parseInt(time.slice(11, 13));
       if (h >= 11 && h <= 14 && symbol) existing.symbol = symbol;
       existing.hours.push(hour);
