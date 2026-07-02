@@ -16,7 +16,10 @@ export type ActiveLocation = {
   label: string;
   lat: number;
   lon: number;
+  /** Hvordan stedet ble valgt — brukes av indikator for å skille GPS/pil fra favoritter. */
+  source?: "gps" | "favorite" | "search";
 };
+
 
 type Props = {
   page: LocationPage;
@@ -148,7 +151,7 @@ export function LocationPicker({
   };
 
   const handlePick = (h: PlaceHit) => {
-    const loc = { label: h.label, lat: h.lat, lon: h.lon };
+    const loc = { label: h.label, lat: h.lat, lon: h.lon, source: "search" as const };
     onChange(loc);
     pushRecent(loc);
     setQuery("");
@@ -157,8 +160,8 @@ export function LocationPicker({
   };
 
   const handlePickStored = (loc: ActiveLocation) => {
-    onChange(loc);
-    pushRecent(loc);
+    onChange({ ...loc, source: "favorite" as const });
+    pushRecent({ ...loc, source: "favorite" as const });
   };
 
   const toggleFavorite = () => {
@@ -216,11 +219,11 @@ export function LocationPicker({
         const lon = pos.coords.longitude;
         try {
           const r = await reverse({ data: { lat, lon } });
-          const loc = { label: r.label, lat: r.lat, lon: r.lon };
+          const loc = { label: r.label, lat: r.lat, lon: r.lon, source: "gps" as const };
           onChange(loc);
           pushRecent(loc);
         } catch {
-          onChange({ label: `${lat.toFixed(4)}°N ${lon.toFixed(4)}°Ø`, lat, lon });
+          onChange({ label: `${lat.toFixed(4)}°N ${lon.toFixed(4)}°Ø`, lat, lon, source: "gps" as const });
         } finally {
           setLocating(false);
         }
