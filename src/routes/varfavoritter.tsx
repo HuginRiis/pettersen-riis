@@ -1,11 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 
 import { ArrowLeft, Star } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 import { UserLocationBar, useUserLocation } from "@/hooks/use-user-location";
 import type { ActiveLocation } from "@/components/LocationPicker";
+import { reverseGeocode } from "@/lib/user-locations.functions";
 
 export const Route = createFileRoute("/varfavoritter")({
   head: () => ({
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/varfavoritter")({
 });
 
 const FAV_KEY = "loc:fav:var";
+const CHOSEN_KEY = "loc:chosen:var";
 
 function readFavs(): ActiveLocation[] {
   if (typeof window === "undefined") return [];
@@ -27,6 +30,16 @@ function readFavs(): ActiveLocation[] {
   } catch {
     return [];
   }
+}
+
+function distKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLon = ((b.lon - a.lon) * Math.PI) / 180;
+  const la1 = (a.lat * Math.PI) / 180;
+  const la2 = (b.lat * Math.PI) / 180;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(la1) * Math.cos(la2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
 }
 
 function useBgGradient() {
@@ -50,12 +63,14 @@ function FavoritesPage() {
   const userLoc = useUserLocation("var");
   const bg = useBgGradient();
   const navigate = useNavigate();
+  const reverse = useServerFn(reverseGeocode);
   const [favs, setFavs] = useState<ActiveLocation[]>([]);
+  const [autoLocated, setAutoLocated] = useState(false);
 
   const pickLocation = (loc: ActiveLocation) => {
     try {
-      sessionStorage.setItem(
-        "loc:pending:var",
+      localStorage.setItem(
+        CHOSEN_KEY,
         JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon }),
       );
     } catch {
@@ -64,20 +79,58 @@ function FavoritesPage() {
     navigate({ to: "/var" });
   };
 
-  // På favoritt-siden skal søk oppføre seg normalt (sette aktivt sted + tillate
-  // å stjerne-lagre som favoritt). Navigasjon tilbake til vær-siden skjer kun
-  // når man klikker på en flis i lista.
-
-
-
   useEffect(() => {
     setFavs(readFavs());
+    const refresh = () => setFavs(readFavs());
     const onStorage = (e: StorageEvent) => {
-      if (e.key === FAV_KEY) setFavs(readFavs());
+      if (e.key === FAV_KEY) refresh();
     };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("loc-favs-changed", refresh);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("loc-favs-changed", refresh);
+    };
   }, []);
+
+  // Auto-geolokaliser toppboksen: viser stedet mobilen er hver gang siden åpnes.
+  // Hvis GPS nektes/feiler → bruk nærmeste favoritt (om noen).
+  useEffect(() => {
+    if (autoLocated) return;
+    if (!userLoc.ready) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setAutoLocated(true);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+          const r = await reverse({ data: { lat, lon } });
+          userLoc.setActive({ label: r.label, lat: r.lat, lon: r.lon });
+        } catch {
+          const list = readFavs();
+          if (list.length) {
+            const nearest = [...list].sort(
+              (a, b) => distKm({ lat, lon }, a) - distKm({ lat, lon }, b),
+            )[0];
+            userLoc.setActive(nearest);
+          } else {
+            userLoc.setActive({ label: `${lat.toFixed(3)}°N ${lon.toFixed(3)}°Ø`, lat, lon });
+          }
+        } finally {
+          setAutoLocated(true);
+        }
+      },
+      () => {
+        // Nektet / feilet — behold aktivt sted som er
+        setAutoLocated(true);
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 5 * 60_000 },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLoc.ready]);
 
   // Alltid vis aktivt sted øverst (som "høydepunkt"), + favoritter under
   const rows = useMemo(() => {
@@ -111,7 +164,7 @@ function FavoritesPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-visible relative z-40">
-            <UserLocationBar page="var" state={userLoc} transparent />
+            <UserLocationBar page="var" state={userLoc} transparent hideActions />
           </div>
 
           {rows.length === 0 ? (
