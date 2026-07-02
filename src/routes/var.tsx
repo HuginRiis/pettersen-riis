@@ -406,30 +406,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
-          {/* LYD + TONE brytere (øverst) */}
-          <div className="flex justify-between items-center">
-            <button
-              type="button"
-              onClick={() => setSoundEnabled((v) => !v)}
-              aria-pressed={soundEnabled}
-              aria-label={soundEnabled ? "Slå av værlyd" : "Slå på værlyd"}
-              title={soundEnabled ? "Værlyd: på" : "Værlyd: av"}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-medium backdrop-blur-xl border transition-all ${
-                soundEnabled
-                  ? "bg-white text-slate-900 border-white shadow"
-                  : "bg-white/10 text-white/80 border-white/15 hover:bg-white/20"
-              }`}
-            >
-              {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-              <span>Lyd</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <TileColorToggle />
-              <TileGlassToggle />
-              <TileOpacityToggle />
-              {!tileColor && <TileToneToggle />}
-            </div>
-          </div>
+          {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
 
           {/* HERO — sticky under toppmenyen, krymper når man scroller */}
           <div
@@ -828,8 +805,8 @@ function WeatherMenuButton({
       </button>
 
       {open && (
-        <div className="absolute bottom-14 right-0 p-2 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2 min-w-[168px]">
-          <div className="flex items-center justify-between px-2 py-1.5">
+        <div className="absolute bottom-14 right-0 p-3 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2.5 w-[260px] max-h-[70vh] overflow-y-auto">
+          <div className="flex items-center justify-between px-1">
             <span className="text-xs text-white/70">Værlyd</span>
             <button
               type="button"
@@ -846,12 +823,13 @@ function WeatherMenuButton({
             </button>
           </div>
 
-          <div className="h-px bg-white/10 mx-2" />
+          <div className="h-px bg-white/10" />
 
-          <div className="flex flex-col gap-1.5 px-2 py-1">
+          <TileColorToggle />
+
+          <div className="flex flex-col gap-1.5">
             <span className="text-[10px] text-white/50 uppercase tracking-wider">Flis-stil</span>
-            <div className="flex items-center gap-2">
-              <TileColorToggle />
+            <div className="flex flex-wrap items-center gap-1.5">
               <TileGlassToggle />
               <TileOpacityToggle />
               <TileToneToggle />
