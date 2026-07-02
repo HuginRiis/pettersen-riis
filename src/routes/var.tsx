@@ -442,23 +442,33 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                 {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
               </div>
               <div
-                className="font-medium transition-all duration-200"
+                className="font-medium transition-all duration-200 overflow-hidden"
                 style={{
                   fontSize: `${20 - heroT * 6}px`,
                   marginTop: `${8 - heroT * 6}px`,
                   display: collapsed ? "inline-block" : "block",
                   marginLeft: collapsed ? 8 : 0,
+                  opacity: `${Math.max(0, 1 - heroT * 5)}`,
+                  maxHeight: heroT > 0.22 ? 0 : `${24}px`,
                 }}
               >
-                {collapsed ? `| ${condition}` : condition}
+                {condition}
               </div>
-              {todayDay && !collapsed && (
-                <div className="text-base font-medium mt-1 tabular-nums">
+              {todayDay && (
+                <div
+                  className="text-base font-medium mt-1 tabular-nums transition-all duration-200 overflow-hidden"
+                  style={{ opacity: `${Math.max(0, 1 - heroT * 5)}`, maxHeight: heroT > 0.22 ? 0 : "24px" }}
+                >
                   H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
                 </div>
               )}
-              {headline && !collapsed && (
-                <div className="text-sm text-white/90 mt-3">{headline}</div>
+              {headline && (
+                <div
+                  className="text-sm text-white/90 mt-3 transition-all duration-200 overflow-hidden"
+                  style={{ opacity: `${Math.max(0, 1 - heroT * 5)}`, maxHeight: heroT > 0.22 ? 0 : "40px" }}
+                >
+                  {headline}
+                </div>
               )}
             </header>
           </div>
@@ -2219,7 +2229,7 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
   const daysToFull = useMemo(() => daysUntilFullMoon(now), [now]);
   return (
     <GlassCard eyebrow="Månefase" icon={<Moon size={14} />} fx={<StarFX />}>
-      <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
+      <div className="grid grid-cols-[1fr_auto] gap-4 items-center" suppressHydrationWarning>
         <div className="space-y-2 text-sm">
           <Row label="Fase" value={`${moon.icon} ${moon.name}`} />
           <Row label="Lyst" value={`${Math.round(moon.illumination * 100)} %`} />
@@ -2257,6 +2267,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
           animation: "wxMoonHalo 4s ease-in-out infinite",
           filter: "blur(2px)",
         }}
+        suppressHydrationWarning
       />
       <span className="absolute" style={{ top: "10%", left: "8%", width: 2, height: 2, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 2.4s ease-in-out infinite", opacity: 0.8 }} />
       <span className="absolute" style={{ top: "78%", left: "12%", width: 1.5, height: 1.5, background: "#fff", borderRadius: "50%", animation: "wxMoonTwinkle 3.1s ease-in-out infinite", animationDelay: "0.7s", opacity: 0.7 }} />
@@ -2380,8 +2391,8 @@ function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now:
       fx={night ? <MoonFX intensity={0.9} /> : <SunFX intensity={above ? 1 : 0.3} />}
       className={night ? "bg-[#0a1024]/70 border-white/10 shadow-black/40" : ""}
     >
-      <div className="text-3xl font-light tabular-nums">{headlineLabel}</div>
-      {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5">{remainingLabel}</div>}
+      <div className="text-3xl font-light tabular-nums" suppressHydrationWarning>{headlineLabel}</div>
+      {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5" suppressHydrationWarning>{remainingLabel}</div>}
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28 mt-2 overflow-visible">
         <defs>
           <linearGradient id={`${gid}-sky`} x1="0" x2="0" y1="0" y2="1">
