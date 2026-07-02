@@ -9,6 +9,8 @@ import { getNetatmoWeatherStation, type WeatherModule } from "@/lib/netatmo-weat
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
+import { reverseGeocode } from "@/lib/user-locations.functions";
+import type { ActiveLocation } from "@/components/LocationPicker";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
