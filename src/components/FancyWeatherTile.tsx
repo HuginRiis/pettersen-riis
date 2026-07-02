@@ -42,7 +42,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     (async () => {
       try {
         const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`,
+          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
           { headers: { Accept: "application/json" } },
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
