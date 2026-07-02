@@ -1,4 +1,17 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+/**
+ * Alle FX-komponenter bruker Math.random() ved rendering, noe som gir
+ * hydration-mismatch mellom SSR og klient. React kaster da hele treet og
+ * rebuilder — det gir stygg hakking første sekundet på siden. Vi gater
+ * derfor alle FX bak en klient-mount slik at SSR sender tomt og klienten
+ * bygger dem én gang etter hydration.
+ */
+function useMounted() {
+  const [m, setM] = useState(false);
+  useEffect(() => setM(true), []);
+  return m;
+}
 
 /**
  * Deterministisk pseudo-random-generator for SSR/CLI-hydrering.
