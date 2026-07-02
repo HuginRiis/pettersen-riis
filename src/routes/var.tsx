@@ -2391,8 +2391,8 @@ function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now:
       fx={night ? <MoonFX intensity={0.9} /> : <SunFX intensity={above ? 1 : 0.3} />}
       className={night ? "bg-[#0a1024]/70 border-white/10 shadow-black/40" : ""}
     >
-      <div className="text-3xl font-light tabular-nums">{headlineLabel}</div>
-      {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5">{remainingLabel}</div>}
+      <div className="text-3xl font-light tabular-nums" suppressHydrationWarning>{headlineLabel}</div>
+      {remainingLabel && <div className="text-[11px] text-white/70 mt-0.5" suppressHydrationWarning>{remainingLabel}</div>}
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-28 mt-2 overflow-visible">
         <defs>
           <linearGradient id={`${gid}-sky`} x1="0" x2="0" y1="0" y2="1">
