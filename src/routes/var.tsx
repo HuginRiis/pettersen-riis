@@ -496,7 +496,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { color: tileColor } = useTileColor();
   const { tone } = useTileTone();
 
-  // Scroll-drevet "shrink" på hero-header (sticky under toppmenyen)
+  // Scroll-drevet hero: full forsvinner opp, mini-header zoomer frem
   const [heroT, setHeroT] = useState(0); // 0 = full, 1 = kollapset
   useEffect(() => {
     const SHRINK_PX = 120;
