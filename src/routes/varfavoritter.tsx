@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
-import { ArrowLeft, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { FancyWeatherTile } from "@/components/FancyWeatherTile";
 import { UserLocationBar, useUserLocation } from "@/hooks/use-user-location";
@@ -151,20 +151,14 @@ function FavoritesPage() {
     <PageShell>
       <div className={`min-h-screen bg-gradient-to-b ${bg} transition-colors duration-1000 relative`}>
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/var"
-              className="inline-flex items-center gap-1.5 text-sm text-white/90 hover:text-white transition-colors"
-            >
-              <ArrowLeft size={16} /> Tilbake til vær
-            </Link>
+          <div className="flex items-center justify-end">
             <div className="inline-flex items-center gap-1.5 text-[10px] tracking-[0.25em] uppercase text-white/60">
               <Star size={11} className="fill-yellow-400 text-yellow-400" /> Favoritter
             </div>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-visible relative z-40">
-            <UserLocationBar page="var" state={userLoc} transparent hideActions />
+            <UserLocationBar page="var" state={userLoc} transparent hideActions title="Min posisjon" />
           </div>
 
           {rows.length === 0 ? (

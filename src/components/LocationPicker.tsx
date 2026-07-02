@@ -32,6 +32,8 @@ type Props = {
   transparent?: boolean;
   /** Når true: skjul 📍-knapp og "Sett som standard"-knapp. */
   hideActions?: boolean;
+  /** Overskrift/etikett som vises øverst i boksen. */
+  title?: string;
 };
 
 const MAX_RECENT = 3;
@@ -66,6 +68,7 @@ export function LocationPicker({
   authenticated = false,
   transparent = false,
   hideActions = false,
+  title,
 }: Props) {
   const search = useServerFn(searchPlaces);
   const saveDefault = useServerFn(setDefaultLocation);
@@ -254,6 +257,11 @@ export function LocationPicker({
 
   return (
     <div className={rootClass}>
+      {title && (
+        <div className={`text-[10px] uppercase tracking-[0.25em] mb-2 ${transparent ? "text-white/50" : "text-muted-foreground"}`}>
+          {title}
+        </div>
+      )}
       {/* Topplinje: bruker + aktivt sted + favoritt-toggle */}
       <div className="flex flex-wrap items-center gap-2 justify-between">
         {(() => {

@@ -154,12 +154,14 @@ export function UserLocationBar({
   readOnlyWho = false,
   transparent = false,
   hideActions = false,
+  title,
 }: {
   page: LocationPage;
   state: ReturnType<typeof useUserLocation>;
   readOnlyWho?: boolean;
   transparent?: boolean;
   hideActions?: boolean;
+  title?: string;
 }) {
   return (
     <LocationPicker
@@ -174,6 +176,7 @@ export function UserLocationBar({
       readOnlyWho={readOnlyWho}
       transparent={transparent}
       hideActions={hideActions}
+      title={title}
     />
   );
 }
