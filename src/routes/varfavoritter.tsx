@@ -179,14 +179,25 @@ function FavoritesPage() {
                         Min posisjon
                       </div>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => pickLocation(f, isMyPosition ? "gps" : "favorite")}
-                      className="block w-full text-left rounded-2xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/40 transition-transform active:scale-[0.99]"
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        // Ikke naviger hvis brukeren klikket på en indre kontroll (f.eks. I dag / I morgen / Helg)
+                        if ((e.target as HTMLElement).closest("button, a, [role=tab]")) return;
+                        pickLocation(f, isMyPosition ? "gps" : "favorite");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          pickLocation(f, isMyPosition ? "gps" : "favorite");
+                        }
+                      }}
+                      className="block w-full text-left rounded-2xl overflow-hidden focus:outline-none focus:ring-2 focus:ring-white/40 transition-transform active:scale-[0.99] cursor-pointer"
                       aria-label={`Åpne vær for ${f.label}`}
                     >
                       <FancyWeatherTile label={f.label} lat={f.lat} lon={f.lon} />
-                    </button>
+                    </div>
                   </div>
                 );
               })}
