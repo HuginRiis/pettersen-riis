@@ -2235,10 +2235,11 @@ function MoonCard({ moon, now }: { moon: { name: string; icon: string; illuminat
 function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; illumination: number }) {
   const r = 36;
   const cx = 50, cy = 50;
-  const p = phaseFraction;
+  // Rund av for å unngå ørsmå SSR/klient-forskjeller som gir hydration-mismatch
+  const p = Math.round(phaseFraction * 10000) / 10000;
   const waxing = p < 0.5;
   const gibbous = p > 0.25 && p < 0.75;
-  const rx = Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r);
+  const rx = Math.round(Math.max(0.01, Math.abs(Math.cos(2 * Math.PI * p)) * r) * 1000) / 1000;
   const outerSweep = waxing ? 1 : 0;
   const innerSweep = gibbous ? (waxing ? 0 : 1) : outerSweep;
   const litPath = `M ${cx},${cy - r} A ${r},${r} 0 0,${outerSweep} ${cx},${cy + r} A ${rx},${r} 0 0,${innerSweep} ${cx},${cy - r} Z`;
