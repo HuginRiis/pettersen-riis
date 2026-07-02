@@ -711,9 +711,10 @@ function GlassCard({
   className?: string;
   fx?: React.ReactNode;
 }) {
+  const mounted = useClientOnly();
   return (
     <article className={toneCardCn(className)}>
-      {fx}
+      {mounted ? fx : null}
       <div className="relative">
         {eyebrow && (
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
