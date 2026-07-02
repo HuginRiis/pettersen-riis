@@ -123,7 +123,7 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
       try {
         localStorage.setItem(
           `loc:chosen:${page}`,
-          JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon }),
+          JSON.stringify({ label: loc.label, lat: loc.lat, lon: loc.lon, source: loc.source }),
         );
       } catch {
         // ignore
