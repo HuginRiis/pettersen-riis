@@ -64,18 +64,9 @@ function FavoritesPage() {
     navigate({ to: "/var" });
   };
 
-  // Når brukeren søker/velger et nytt sted i søkeboksen: send det som pending
-  // pick og naviger tilbake til vær-siden i stedet for å bare oppdatere aktivt
-  // sted lokalt.
-  const barState = useMemo(
-    () => ({
-      ...userLoc,
-      setActive: (loc: ActiveLocation) => pickLocation(loc),
-    }),
-    // pickLocation er stabil i denne komponenten
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [userLoc.who, userLoc.active, userLoc.defaultLoc, userLoc.ready, userLoc.authenticated],
-  );
+  // På favoritt-siden skal søk oppføre seg normalt (sette aktivt sted + tillate
+  // å stjerne-lagre som favoritt). Navigasjon tilbake til vær-siden skjer kun
+  // når man klikker på en flis i lista.
 
 
 
@@ -120,7 +111,7 @@ function FavoritesPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-visible relative z-40">
-            <UserLocationBar page="var" state={barState} transparent />
+            <UserLocationBar page="var" state={userLoc} transparent />
           </div>
 
           {rows.length === 0 ? (
