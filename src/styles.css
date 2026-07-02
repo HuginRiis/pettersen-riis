@@ -1078,10 +1078,11 @@ main .container {
 .iphone-mode .fancy-wx-wrap { display: block; margin-top: 14px; }
 
 .fancy-wx {
+  --wx-wind: 1;
   position: relative;
   border-radius: 22px;
   overflow: hidden;
-  min-height: 360px;
+  min-height: 220px;
   color: #fff;
   isolation: isolate;
   box-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.06);
