@@ -35,7 +35,7 @@ export function MenuFoldersPanel() {
   for (const f of folders) for (const p of f.items) folderByPath.set(p, f.id);
 
   return (
-    <section className="container mx-auto px-4 pt-4">
+    <section className="pt-4">
       <article className="panel rounded-lg p-4">
         <h3 className="text-foreground font-semibold flex items-center gap-2">
           <Folder size={18} className="text-primary" /> Kataloger i topp-menyen

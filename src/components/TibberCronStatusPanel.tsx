@@ -153,7 +153,7 @@ export function TibberCronStatusPanel() {
   const days = lastNDays(7);
 
   return (
-    <section className="container mx-auto px-4 pt-4">
+    <section className="pt-4">
       <article className="panel rounded-lg p-4">
         <div className="flex items-start gap-3 flex-wrap">
           <Activity size={20} className="text-primary mt-0.5 shrink-0" />

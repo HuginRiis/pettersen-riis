@@ -106,7 +106,7 @@ export function FavoritesManagerPanel() {
   const felles = rows.filter((r) => r.who === "Alle");
 
   return (
-    <section className="container mx-auto px-4 pt-4">
+    <section className="pt-4">
       <article className="panel rounded-lg p-4">
         <h3 className="text-foreground font-semibold flex items-center gap-2">
           <Globe size={18} className="text-primary" /> Favoritter — nettsidesnarveier

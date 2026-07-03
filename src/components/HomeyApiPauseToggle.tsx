@@ -53,7 +53,7 @@ export function HomeyApiPauseToggle() {
   const dot = paused ? "bg-destructive" : "bg-primary";
 
   return (
-    <section className="container mx-auto px-4 pt-6">
+    <section className="pt-4">
       <div className="panel rounded-lg p-4 flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <span className={`inline-block w-2 h-2 rounded-full ${dot} ${paused ? "" : "animate-pulse"}`} />
