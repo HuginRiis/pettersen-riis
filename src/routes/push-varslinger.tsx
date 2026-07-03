@@ -200,7 +200,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-sensor-dashboard" title="📡 Sensor-dashboard (Homey)" icon={<Activity className="h-4 w-4" />}><HomeySensorSettings /></SettingsBox>
       <SettingsBox id="sec-homey-pause" title="🐦‍⬛ Homey API — pause ravnene"><HomeyApiPauseToggle /></SettingsBox>
 
-      <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
+      <div className="container mx-auto px-2 sm:px-4 pb-12 grid md:grid-cols-2 gap-4">
         <SettingsBox id="sec-agenda" title="📅 Agenda-meldinger" inGrid>
           <CategoryCard
             icon={Calendar} title="Agenda-meldinger" editPath="/agenda"
