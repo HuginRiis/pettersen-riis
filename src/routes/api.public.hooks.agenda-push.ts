@@ -77,6 +77,13 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[weather-push] failed", err);
           }
+          let weatherSummary = { checked: 0, sent: 0, errors: 0, skipped: 0 };
+          try {
+            const wsmod = await import("@/lib/weather-summary-push.server");
+            weatherSummary = await wsmod.processWeatherSummaryNotifications();
+          } catch (err) {
+            console.error("[weather-summary-push] failed", err);
+          }
           let lightIdle = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
             const lmod = await import("@/lib/light-idle-push.server");
