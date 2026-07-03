@@ -116,7 +116,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
 
 function SettingsTOC() {
   return (
-    <section className="container mx-auto px-4 pt-4">
+    <section className="container mx-auto px-2 sm:px-4 pt-4">
       <nav aria-label="Innholdsfortegnelse" className="panel rounded-lg p-3">
         <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-2">
           Innholdsfortegnelse — alle innstillinger og bokser
