@@ -87,6 +87,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-uv", label: "UV / Solkrem", emoji: "🧴" },
   { id: "sec-luftkvalitet", label: "Luftkvalitet / forurensning", emoji: "💨" },
   { id: "sec-vaer", label: "Vær push", emoji: "🪶" },
+  { id: "sec-vaer-daglig", label: "Daglig værmelding (per bruker)", emoji: "🌅" },
   { id: "sec-lys", label: "Lys på", emoji: "💡" },
   { id: "sec-post", label: "Posten", emoji: "📬" },
   { id: "sec-garmin", label: "Garmin", emoji: "⌚" },
