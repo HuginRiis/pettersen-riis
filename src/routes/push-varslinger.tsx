@@ -116,7 +116,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
 
 function SettingsTOC() {
   return (
-    <section className="container mx-auto px-4 pt-4">
+    <section className="container mx-auto px-2 sm:px-4 pt-4">
       <nav aria-label="Innholdsfortegnelse" className="panel rounded-lg p-3">
         <h2 className="text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-2">
           Innholdsfortegnelse — alle innstillinger og bokser
@@ -200,7 +200,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-sensor-dashboard" title="📡 Sensor-dashboard (Homey)" icon={<Activity className="h-4 w-4" />}><HomeySensorSettings /></SettingsBox>
       <SettingsBox id="sec-homey-pause" title="🐦‍⬛ Homey API — pause ravnene"><HomeyApiPauseToggle /></SettingsBox>
 
-      <div className="container mx-auto px-4 pb-12 grid md:grid-cols-2 gap-4">
+      <div className="container mx-auto px-2 sm:px-4 pb-12 grid md:grid-cols-2 gap-4">
         <SettingsBox id="sec-agenda" title="📅 Agenda-meldinger" inGrid>
           <CategoryCard
             icon={Calendar} title="Agenda-meldinger" editPath="/agenda"
@@ -306,8 +306,8 @@ function SettingsBox({
       id={id}
       className={
         inGrid
-          ? "block scroll-mt-24"
-          : "container mx-auto px-4 pb-4 scroll-mt-24"
+          ? "block scroll-mt-24 min-w-0"
+          : "container mx-auto px-2 sm:px-4 pb-4 scroll-mt-24"
       }
     >
       <CollapsibleSection id={id} title={title} icon={icon} className={accent ? `border ${accent}` : undefined}>
@@ -315,6 +315,7 @@ function SettingsBox({
       </CollapsibleSection>
     </section>
   );
+
 }
 
 async function loadCounts(): Promise<Counts> {

@@ -43,7 +43,7 @@ export function CollapsibleSection({
         aria-expanded={open}
         aria-controls={`${id}-content`}
         className={cn(
-          "w-full flex items-center justify-between gap-3 px-4 py-3 text-left rounded-lg hover:bg-primary/5 transition-colors",
+          "w-full flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 py-3 text-left rounded-lg hover:bg-primary/5 transition-colors",
           headerClassName,
         )}
       >
@@ -62,10 +62,11 @@ export function CollapsibleSection({
         />
       </button>
       {open && (
-        <div id={`${id}-content`} className={cn("px-4 pb-4", contentClassName)}>
+        <div id={`${id}-content`} className={cn("px-2 sm:px-4 pb-3 sm:pb-4", contentClassName)}>
           {children}
         </div>
       )}
+
     </div>
   );
 }

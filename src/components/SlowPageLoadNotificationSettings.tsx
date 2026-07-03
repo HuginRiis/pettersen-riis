@@ -103,7 +103,7 @@ export function SlowPageLoadNotificationSettings() {
   }
 
   return (
-    <section className="container mx-auto px-4 pt-4 space-y-4">
+    <section className="pt-4 space-y-4">
       {/* Hoved-varsel: treg sidelasting */}
       <article className="panel rounded-lg p-4">
         <div className="flex items-start gap-3">

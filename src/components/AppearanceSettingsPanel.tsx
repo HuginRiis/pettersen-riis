@@ -27,7 +27,7 @@ export function AppearanceSettingsPanel() {
   const scene = useSceneMarquee();
 
   return (
-    <div className="container mx-auto px-4 pt-4">
+    <div className="pt-4">
       <div className="panel rounded-lg p-4 space-y-6">
         <header>
           <h2 className="text-sm font-semibold uppercase tracking-wider text-primary mb-1 flex items-center gap-2">

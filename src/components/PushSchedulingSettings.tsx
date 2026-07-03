@@ -59,7 +59,7 @@ export function PushSchedulingSettings() {
   }
 
   return (
-    <section className="container mx-auto px-4 pt-4 grid md:grid-cols-2 gap-4">
+    <section className="pt-4 grid md:grid-cols-2 gap-4">
       {/* Bursdag */}
       <article className="panel rounded-lg p-4">
         <div className="flex items-start gap-3">
