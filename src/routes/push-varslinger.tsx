@@ -306,8 +306,8 @@ function SettingsBox({
       id={id}
       className={
         inGrid
-          ? "block scroll-mt-24"
-          : "container mx-auto px-4 pb-4 scroll-mt-24"
+          ? "block scroll-mt-24 min-w-0"
+          : "container mx-auto px-2 sm:px-4 pb-4 scroll-mt-24"
       }
     >
       <CollapsibleSection id={id} title={title} icon={icon} className={accent ? `border ${accent}` : undefined}>
@@ -315,6 +315,7 @@ function SettingsBox({
       </CollapsibleSection>
     </section>
   );
+
 }
 
 async function loadCounts(): Promise<Counts> {
