@@ -18,6 +18,7 @@ import { LightIdleNotificationSettings } from "@/components/LightIdleNotificatio
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 import { AirQualityNotificationSettings } from "@/components/AirQualityNotificationSettings";
 import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
+import { WeatherSummaryPushSettings } from "@/components/WeatherSummaryPushSettings";
 import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
