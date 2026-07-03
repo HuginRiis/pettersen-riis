@@ -84,18 +84,19 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const clamped = Math.max(0, Math.min(1, intensity));
   const drops = useMemo(() => {
-    // Synlig selv når det er tørt: 10–14 dråper. Øker raskt til ~50 når regnet kommer.
+    // Synlig selv når det er tørt: 10–14 dråper. Øker raskt til ~55 når regnet kommer.
     const count = clamped === 0
       ? Math.round(10 + Math.random() * 4)
-      : Math.round(14 + clamped * 36);
+      : Math.round(14 + clamped * 40);
 
     return Array.from({ length: count }).map(() => ({
       left: Math.random() * 100,
       delay: Math.random() * 1.8,
       // Faster fall when more intense
       dur: 1.6 - clamped * 0.7 + Math.random() * 0.6,
-      h: 8 + Math.random() * 10,
-      op: 0.45 + clamped * 0.35 + Math.random() * 0.25,
+      h: 10 + Math.random() * 14,
+      w: 1.5 + Math.random() * 1.5,
+      op: 0.55 + clamped * 0.35 + Math.random() * 0.25,
     }));
   }, [clamped]);
   if (!_mounted) return null;
@@ -108,15 +109,16 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
           style={{
             top: 0,
             left: `${d.left}%`,
-            width: 1.5,
+            width: d.w,
             height: d.h,
             background:
-              "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(180,220,255,0.95) 60%, rgba(140,200,255,0.95) 100%)",
+              "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(200,235,255,0.95) 55%, rgba(170,220,255,0.95) 100%)",
             borderRadius: 2,
             opacity: d.op,
             animationDuration: `${d.dur}s`,
             animationDelay: `${d.delay}s`,
             animationFillMode: "backwards",
+            filter: "drop-shadow(0 0 1px rgba(200,235,255,0.5))",
           }}
         />
       ))}
