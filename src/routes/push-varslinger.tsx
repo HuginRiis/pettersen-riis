@@ -18,6 +18,7 @@ import { LightIdleNotificationSettings } from "@/components/LightIdleNotificatio
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 import { AirQualityNotificationSettings } from "@/components/AirQualityNotificationSettings";
 import { WeatherNotificationSettings } from "@/components/WeatherNotificationSettings";
+import { WeatherSummaryPushSettings } from "@/components/WeatherSummaryPushSettings";
 import { MailDeliveryNotificationSettings } from "@/components/MailDeliveryNotificationSettings";
 import { GarminNotificationSettings } from "@/components/GarminNotificationSettings";
 import { LoginNotificationSettings } from "@/components/LoginNotificationSettings";
@@ -86,6 +87,7 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-uv", label: "UV / Solkrem", emoji: "🧴" },
   { id: "sec-luftkvalitet", label: "Luftkvalitet / forurensning", emoji: "💨" },
   { id: "sec-vaer", label: "Vær push", emoji: "🪶" },
+  { id: "sec-vaer-daglig", label: "Daglig værmelding (per bruker)", emoji: "🌅" },
   { id: "sec-lys", label: "Lys på", emoji: "💡" },
   { id: "sec-post", label: "Posten", emoji: "📬" },
   { id: "sec-garmin", label: "Garmin", emoji: "⌚" },
@@ -189,6 +191,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-uv" title="🧴 Solkrem-varsler — UV"><UvNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-luftkvalitet" title="💨 Luftkvalitet — forurensning, svevestøv, gasser"><AirQualityNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-vaer" title="🪶 Værvaktens Ravner — Push-varsler"><WeatherNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-vaer-daglig" title="🌅 Daglig værmelding — per bruker (to tidsluker)"><WeatherSummaryPushSettings /></SettingsBox>
       <SettingsBox id="sec-lys" title="💡 Lys på uten bevegelse"><LightIdleNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-post" title="📬 Postlevering — Posten"><MailDeliveryNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-garmin" title="⌚ Garmin — helse og trening"><GarminNotificationSettings /></SettingsBox>

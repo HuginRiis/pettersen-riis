@@ -3056,6 +3056,81 @@ export type Database = {
         }
         Relationships: []
       }
+      weather_summary_push_prefs: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          include_precip: boolean
+          include_summary: boolean
+          include_sunrise_sunset: boolean
+          include_symbol: boolean
+          include_temp_range: boolean
+          include_uv: boolean
+          include_wind: boolean
+          last_sent_slot1_date: string | null
+          last_sent_slot2_date: string | null
+          slot1_enabled: boolean
+          slot1_hour: number
+          slot1_minute: number
+          slot1_target: string
+          slot2_enabled: boolean
+          slot2_hour: number
+          slot2_minute: number
+          slot2_target: string
+          updated_at: string
+          who: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_precip?: boolean
+          include_summary?: boolean
+          include_sunrise_sunset?: boolean
+          include_symbol?: boolean
+          include_temp_range?: boolean
+          include_uv?: boolean
+          include_wind?: boolean
+          last_sent_slot1_date?: string | null
+          last_sent_slot2_date?: string | null
+          slot1_enabled?: boolean
+          slot1_hour?: number
+          slot1_minute?: number
+          slot1_target?: string
+          slot2_enabled?: boolean
+          slot2_hour?: number
+          slot2_minute?: number
+          slot2_target?: string
+          updated_at?: string
+          who: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_precip?: boolean
+          include_summary?: boolean
+          include_sunrise_sunset?: boolean
+          include_symbol?: boolean
+          include_temp_range?: boolean
+          include_uv?: boolean
+          include_wind?: boolean
+          last_sent_slot1_date?: string | null
+          last_sent_slot2_date?: string | null
+          slot1_enabled?: boolean
+          slot1_hour?: number
+          slot1_minute?: number
+          slot1_target?: string
+          slot2_enabled?: boolean
+          slot2_hour?: number
+          slot2_minute?: number
+          slot2_target?: string
+          updated_at?: string
+          who?: string
+        }
+        Relationships: []
+      }
       web_favorites: {
         Row: {
           created_at: string
