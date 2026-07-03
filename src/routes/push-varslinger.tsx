@@ -191,6 +191,7 @@ function PushSettingsPage() {
       <SettingsBox id="sec-uv" title="🧴 Solkrem-varsler — UV"><UvNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-luftkvalitet" title="💨 Luftkvalitet — forurensning, svevestøv, gasser"><AirQualityNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-vaer" title="🪶 Værvaktens Ravner — Push-varsler"><WeatherNotificationSettings /></SettingsBox>
+      <SettingsBox id="sec-vaer-daglig" title="🌅 Daglig værmelding — per bruker (to tidsluker)"><WeatherSummaryPushSettings /></SettingsBox>
       <SettingsBox id="sec-lys" title="💡 Lys på uten bevegelse"><LightIdleNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-post" title="📬 Postlevering — Posten"><MailDeliveryNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-garmin" title="⌚ Garmin — helse og trening"><GarminNotificationSettings /></SettingsBox>
