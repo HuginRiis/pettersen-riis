@@ -180,7 +180,7 @@ function FavoritesPage() {
             </div>
           </div>
 
-          <div className={`rounded-2xl border overflow-hidden backdrop-blur-xl relative z-40 ${tileToneClasses(tone)}`}>
+          <div className={`rounded-2xl border backdrop-blur-xl relative z-40 ${tileToneClasses(tone)}`}>
             <UserLocationBar page="var" state={userLoc} transparent hideActions />
           </div>
 
