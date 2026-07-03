@@ -94,7 +94,7 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
       // Faster fall when more intense
       dur: 1.6 - clamped * 0.7 + Math.random() * 0.6,
       h: 10 + Math.random() * 14,
-      w: 1.5 + Math.random() * 1.5,
+      w: 0.8 + Math.random() * 1.2,
       op: 0.55 + clamped * 0.35 + Math.random() * 0.25,
     }));
   }, [clamped]);
