@@ -84,10 +84,9 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const clamped = Math.max(0, Math.min(1, intensity));
   const drops = useMemo(() => {
-    // Synlig selv når det er tørt: 10–14 dråper. Øker raskt til ~55 når regnet kommer.
-    const count = clamped === 0
-      ? Math.round(10 + Math.random() * 4)
-      : Math.round(14 + clamped * 40);
+    // Synlig selv når det er tørt: 26–34 dråper totalt gir ~10–14 synlige på én gang.
+    // Øker raskt til ~55–65 når regnet kommer.
+    const count = Math.round(26 + Math.random() * 8 + clamped * 30);
 
     return Array.from({ length: count }).map(() => ({
       left: Math.random() * 100,
