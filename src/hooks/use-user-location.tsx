@@ -38,17 +38,30 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
   const fetchDefault = useServerFn(getDefaultLocation);
   const { authenticated, loading: authLoading } = useAuthStatus();
 
+  const initialChosen = ((): ActiveLocation | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(`loc:chosen:${page}`);
+      if (!raw) return null;
+      const p = JSON.parse(raw);
+      if (p && typeof p.label === "string" && typeof p.lat === "number" && typeof p.lon === "number") {
+        return { label: p.label, lat: p.lat, lon: p.lon, source: p.source };
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  })();
+
+  const fallback: ActiveLocation = {
+    label: "Tollnes, Skien",
+    lat: 59.2096,
+    lon: 9.609,
+  };
+
   const [who, setWho] = useState<WhoName>("Arne");
-  const [active, setActive] = useState<ActiveLocation>({
-    label: "Tollnes, Skien",
-    lat: 59.2096,
-    lon: 9.609,
-  });
-  const [defaultLoc, setDefaultLoc] = useState<ActiveLocation>({
-    label: "Tollnes, Skien",
-    lat: 59.2096,
-    lon: 9.609,
-  });
+  const [active, setActive] = useState<ActiveLocation>(initialChosen ?? fallback);
+  const [defaultLoc, setDefaultLoc] = useState<ActiveLocation>(fallback);
   const [ready, setReady] = useState(false);
 
   // Step 1: figure out who the IP belongs to
