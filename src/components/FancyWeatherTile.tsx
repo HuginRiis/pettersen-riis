@@ -84,7 +84,8 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
   const symbol = active?.symbol ?? null;
   const isNight = isNightNow(symbol);
   const baseMood = symbolMood(symbol);
-  const mood = (active?.thunderProb ?? 0) > 2 ? "thunder" : baseMood;
+  const mood = (active?.thunderProb ?? 0) > 10 ? "thunder" : baseMood;
+
 
   // Gjennomsnittlig vind for valgt periode → styrer skyfart
   const avgWind = useMemo(() => {
