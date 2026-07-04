@@ -15,9 +15,11 @@ function pretty(b: number): string {
 export function DbCleanupPanel() {
   const fetchFn = useServerFn(getDbCleanupEstimate);
   const runFn = useServerFn(runDbCleanup);
+  const reclaimFn = useServerFn(reclaimDbSpace);
   const [data, setData] = useState<DbCleanupEstimate | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [reclaiming, setReclaiming] = useState(false);
   const [scanning, setScanning] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<Record<string, { bytes: number; at: number }>>({});
 
@@ -33,6 +35,21 @@ export function DbCleanupPanel() {
 
   useEffect(() => { load(); }, []);
 
+  const handleReclaim = async (silent = false) => {
+    setReclaiming(true);
+    try {
+      const res = await reclaimFn({});
+      if (!silent) {
+        alert(`Diskplass frigis nå: ${res.scheduledCount} tabeller planlagt for VACUUM FULL.\n\n${res.message}\n\nDatabase-størrelsen oppdateres innen få minutter.`);
+      }
+    } catch (e: any) {
+      if (!silent) alert("Kunne ikke starte diskrensing: " + (e?.message ?? "ukjent"));
+      else console.warn("[db-cleanup] auto-reclaim failed", e);
+    } finally {
+      setReclaiming(false);
+    }
+  };
+
   const handleRun = async (mode: "unused" | "recommended" | "month30" | "full30" | "pgnet", label: string) => {
     const pwd = prompt(`Skriv inn passord for å slette ${label}:`);
     if (pwd === null) return;
@@ -44,7 +61,13 @@ export function DbCleanupPanel() {
     setBusy(mode);
     try {
       const res = await runFn({ data: { mode } });
-      alert(`Slettet ${res.totalDeleted} rader.`);
+      // Auto-frigi diskplass etter sletting (unntatt pgnet som frigir selv)
+      if (mode !== "pgnet" && res.totalDeleted > 0) {
+        await handleReclaim(true);
+        alert(`Slettet ${res.totalDeleted} rader.\n\nDiskplass frigis nå i bakgrunnen (VACUUM FULL). Størrelsen oppdateres innen få minutter.`);
+      } else {
+        alert(`Slettet ${res.totalDeleted} rader.`);
+      }
       load();
     } catch (e: any) {
       alert("Feil: " + (e?.message ?? "ukjent"));
