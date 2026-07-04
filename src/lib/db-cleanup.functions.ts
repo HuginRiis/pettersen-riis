@@ -272,3 +272,21 @@ export const runDbCleanup = createServerFn({ method: "POST" })
     }
     return { deletedPerTable, totalDeleted: total };
   });
+
+/**
+ * Kjører VACUUM FULL på alle store public-tabeller for å frigjøre faktisk
+ * diskplass etter DELETE. VACUUM FULL kan ikke kjøres inne i en funksjon,
+ * så vi planlegger den via pg_cron (kjører innen 1 minutt).
+ */
+export const reclaimDbSpace = createServerFn({ method: "POST" }).handler(
+  async (): Promise<{ scheduledCount: number; scheduled: string[]; message: string }> => {
+    const sb = supabaseAdmin as any;
+    const { data, error } = await sb.rpc("reclaim_space");
+    if (error) throw new Error(error.message);
+    return {
+      scheduledCount: Number(data?.scheduled_count ?? 0),
+      scheduled: (data?.scheduled ?? []) as string[],
+      message: String(data?.message ?? ""),
+    };
+  },
+);
