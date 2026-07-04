@@ -151,6 +151,25 @@ function WeatherPage() {
     skien: { days: null, hours: null, error: null, loading: true },
     hytta: { days: null, hours: null, error: null, loading: true },
   }));
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  // Refresh når fanen kommer tilbake i forgrunn + hver halvtime
+  useEffect(() => {
+    const onVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        setRefreshTick((t) => t + 1);
+      }
+    };
+    const onFocus = () => setRefreshTick((t) => t + 1);
+    window.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    const interval = setInterval(() => setRefreshTick((t) => t + 1), 30 * 60 * 1000);
+    return () => {
+      window.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,7 +178,7 @@ function WeatherPage() {
       try {
         const res = await fetch(
           `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${loc.lat}&lon=${loc.lon}`,
-          { headers: { Accept: "application/json" } },
+          { headers: { Accept: "application/json" }, cache: "no-store" },
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const json = await res.json();
@@ -187,7 +206,7 @@ function WeatherPage() {
       cancelled = true;
       clearInterval(c);
     };
-  }, [fetchAlerts, LOCATIONS]);
+  }, [fetchAlerts, LOCATIONS, refreshTick]);
 
   const homeyOk = data?.ok === true;
   const devices = homeyOk ? data.devices : [];
