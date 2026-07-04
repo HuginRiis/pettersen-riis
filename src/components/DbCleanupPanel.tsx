@@ -153,9 +153,21 @@ export function DbCleanupPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-        <Database size={12} />
-        Database-størrelse nå: <span className="font-medium text-foreground">{pretty(data.totals.dbBytes)}</span>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Database size={12} />
+          Database-størrelse nå: <span className="font-medium text-foreground">{pretty(data.totals.dbBytes)}</span>
+        </div>
+        <button
+          type="button"
+          disabled={reclaiming || busy !== null}
+          onClick={() => handleReclaim(false)}
+          className="text-xs px-3 py-1.5 rounded border border-cyan-500/60 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          title="Kjør VACUUM FULL for å faktisk frigjøre diskplass etter sletting"
+        >
+          {reclaiming ? <Loader2 size={12} className="animate-spin" /> : <HardDrive size={12} />}
+          Frigi diskplass nå
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
