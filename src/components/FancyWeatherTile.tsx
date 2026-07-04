@@ -36,6 +36,23 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
   const [days, setDays] = useState<Day[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("today");
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  // Tving fersk data ved åpning + når fanen kommer tilbake i forgrunn
+  useEffect(() => {
+    const onVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        setRefreshTick((t) => t + 1);
+      }
+    };
+    const onFocus = () => setRefreshTick((t) => t + 1);
+    window.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +60,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
       try {
         const res = await fetch(
           `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
-          { headers: { Accept: "application/json" } },
+          { headers: { Accept: "application/json" }, cache: "no-store" },
         );
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const data = await res.json();
@@ -57,7 +74,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [lat, lon]);
+  }, [lat, lon, refreshTick]);
 
   const active = useMemo(() => pickActive(days ?? [], tab), [days, tab]);
 
