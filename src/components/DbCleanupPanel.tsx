@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getDbCleanupEstimate, runDbCleanup, type DbCleanupEstimate } from "@/lib/db-cleanup.functions";
-import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2, Zap } from "lucide-react";
+import { getDbCleanupEstimate, runDbCleanup, reclaimDbSpace, type DbCleanupEstimate } from "@/lib/db-cleanup.functions";
+import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2, Zap, HardDrive } from "lucide-react";
 
 function pretty(b: number): string {
   if (!b) return "0 B";
@@ -15,9 +15,11 @@ function pretty(b: number): string {
 export function DbCleanupPanel() {
   const fetchFn = useServerFn(getDbCleanupEstimate);
   const runFn = useServerFn(runDbCleanup);
+  const reclaimFn = useServerFn(reclaimDbSpace);
   const [data, setData] = useState<DbCleanupEstimate | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [reclaiming, setReclaiming] = useState(false);
   const [scanning, setScanning] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<Record<string, { bytes: number; at: number }>>({});
 
@@ -33,6 +35,21 @@ export function DbCleanupPanel() {
 
   useEffect(() => { load(); }, []);
 
+  const handleReclaim = async (silent = false) => {
+    setReclaiming(true);
+    try {
+      const res = await reclaimFn({});
+      if (!silent) {
+        alert(`Diskplass frigis nå: ${res.scheduledCount} tabeller planlagt for VACUUM FULL.\n\n${res.message}\n\nDatabase-størrelsen oppdateres innen få minutter.`);
+      }
+    } catch (e: any) {
+      if (!silent) alert("Kunne ikke starte diskrensing: " + (e?.message ?? "ukjent"));
+      else console.warn("[db-cleanup] auto-reclaim failed", e);
+    } finally {
+      setReclaiming(false);
+    }
+  };
+
   const handleRun = async (mode: "unused" | "recommended" | "month30" | "full30" | "pgnet", label: string) => {
     const pwd = prompt(`Skriv inn passord for å slette ${label}:`);
     if (pwd === null) return;
@@ -44,7 +61,13 @@ export function DbCleanupPanel() {
     setBusy(mode);
     try {
       const res = await runFn({ data: { mode } });
-      alert(`Slettet ${res.totalDeleted} rader.`);
+      // Auto-frigi diskplass etter sletting (unntatt pgnet som frigir selv)
+      if (mode !== "pgnet" && res.totalDeleted > 0) {
+        await handleReclaim(true);
+        alert(`Slettet ${res.totalDeleted} rader.\n\nDiskplass frigis nå i bakgrunnen (VACUUM FULL). Størrelsen oppdateres innen få minutter.`);
+      } else {
+        alert(`Slettet ${res.totalDeleted} rader.`);
+      }
       load();
     } catch (e: any) {
       alert("Feil: " + (e?.message ?? "ukjent"));
@@ -130,9 +153,21 @@ export function DbCleanupPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-        <Database size={12} />
-        Database-størrelse nå: <span className="font-medium text-foreground">{pretty(data.totals.dbBytes)}</span>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <Database size={12} />
+          Database-størrelse nå: <span className="font-medium text-foreground">{pretty(data.totals.dbBytes)}</span>
+        </div>
+        <button
+          type="button"
+          disabled={reclaiming || busy !== null}
+          onClick={() => handleReclaim(false)}
+          className="text-xs px-3 py-1.5 rounded border border-cyan-500/60 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          title="Kjør VACUUM FULL for å faktisk frigjøre diskplass etter sletting"
+        >
+          {reclaiming ? <Loader2 size={12} className="animate-spin" /> : <HardDrive size={12} />}
+          Frigi diskplass nå
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
