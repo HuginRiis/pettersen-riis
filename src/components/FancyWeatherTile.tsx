@@ -48,9 +48,12 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     const onFocus = () => setRefreshTick((t) => t + 1);
     window.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onFocus);
+    // Auto-refresh hver halvtime så prognosen alltid er relativt fersk
+    const interval = setInterval(() => setRefreshTick((t) => t + 1), 30 * 60 * 1000);
     return () => {
       window.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onFocus);
+      clearInterval(interval);
     };
   }, []);
 
