@@ -2277,16 +2277,16 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
       <svg viewBox="0 0 100 100" className="w-full h-full relative">
         <defs>
           <radialGradient id="moonG" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="#0c0c14" stopOpacity="0.92" />
-            <stop offset="100%" stopColor="#020204" stopOpacity="0.95" />
+            <stop offset="0%" stopColor="#0c0c14" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#020204" stopOpacity="0.70" />
           </radialGradient>
           <clipPath id="moonClip"><circle cx={cx} cy={cy} r={r} /></clipPath>
         </defs>
         {/* Blå måne-bilde som base */}
         <g clipPath="url(#moonClip)" style={{ animation: "wxMoonGlow 4s ease-in-out infinite" }}>
           <image href={moonRealAsset.url} x={cx - r} y={cy - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
-          {/* Mørk skygge for fase */}
-          <path d={litPath} fill="url(#moonG)" />
+          {/* Mørk skygge for fase — gjennomsiktig så månen skimtes gjennom */}
+          <path d={litPath} fill="url(#moonG)" style={{ mixBlendMode: "multiply" }} />
         </g>
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(170,210,255,0.35)" strokeWidth="0.5" />
       </svg>
