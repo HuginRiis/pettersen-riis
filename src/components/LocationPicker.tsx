@@ -73,8 +73,6 @@ export function LocationPicker({
   title,
 }: Props) {
   const search = useServerFn(searchPlaces);
-  const saveDefault = useServerFn(setDefaultLocation);
-  
   const reverse = useServerFn(reverseGeocode);
 
   const FAV_KEY = `loc:fav:${page}`;
@@ -84,8 +82,6 @@ export function LocationPicker({
   const [hits, setHits] = useState<PlaceHit[] | null>(null);
   const [open, setOpen] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [savingDefault, setSavingDefault] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<ActiveLocation[]>([]);
