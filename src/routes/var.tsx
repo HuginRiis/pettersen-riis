@@ -606,6 +606,12 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             <GustCard hour={currentHour} />
           </div>
 
+          {/* GJENNOMSNITT TEMPERATUR + SIKT */}
+          <div className="grid grid-cols-2 gap-3">
+            <AvgTempCard hours={skienHours} />
+            <VisibilityCard hour={currentHour} />
+          </div>
+
           {/* LUFTFUKTIGHET + LUFTTRYKK */}
           <div className="grid grid-cols-2 gap-3">
             <HumidityCard hour={currentHour} />
