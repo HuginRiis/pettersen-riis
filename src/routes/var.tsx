@@ -312,13 +312,14 @@ function WeatherPage() {
 
   // Glassplate-overlay: velg effekt fra symbol + dag/natt
   const isDay = useMemo(() => {
+    if (nightModeOverride) return false;
     const t = now.getTime();
     const sr = sun.sunrise?.getTime();
     const ss = sun.sunset?.getTime();
     if (sr && ss) return t >= sr && t < ss;
     const h = now.getHours();
     return h >= 6 && h < 20;
-  }, [now, sun]);
+  }, [now, sun, nightModeOverride]);
 
   const glassKind = useMemo(() => {
     const base = glassKindFromSymbol(currentHour?.symbol ?? null, isDay);
