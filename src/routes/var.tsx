@@ -434,6 +434,16 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     nightModeOverride, setNightModeOverride,
   } = props;
 
+  const isDay = useMemo(() => {
+    if (nightModeOverride) return false;
+    const t = now.getTime();
+    const sr = sun.sunrise?.getTime();
+    const ss = sun.sunset?.getTime();
+    if (sr && ss) return t >= sr && t < ss;
+    const h = now.getHours();
+    return h >= 6 && h < 20;
+  }, [now, sun, nightModeOverride]);
+
   const homeyOk = data?.ok === true;
   const { opacity } = useTileOpacity();
   const { color: tileColor } = useTileColor();
@@ -3017,12 +3027,12 @@ function UvIosChart({ hours, nowProgress, uvNow }: { hours: { time: string; uv: 
 // SIMPLE STAT CARDS
 // ============================================================
 
-function FeelsLikeCard({ hour }: { hour: Hour | null }) {
+function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
   const t = hour?.temp ?? 0;
   const w = hour?.wind ?? 0;
   // Enkel vindavkjøling (Norge JAG-Steadman approximation): bare for visning
   const feels = w > 1.5 && t < 15 ? Math.round(t - w * 0.5) : Math.round(t);
-  const hint = w > 1.5 && t < 15 ? "Vinden gjør at det føles kaldere." : "Komfortabelt.";
+  const hint = feelsLikeReason(hour, isDay);
   const cold = feels <= 5;
   const fx = cold ? <SnowFX intensity={0.5} /> : feels >= 18 ? <HeatwaveFX intensity={1} /> : <HeatwaveFX intensity={-1} />;
   return (
@@ -3031,6 +3041,50 @@ function FeelsLikeCard({ hour }: { hour: Hour | null }) {
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{hint}</div>
     </GlassCard>
   );
+}
+
+function feelsLikeReason(hour: Hour | null, isDay: boolean): string {
+  if (!hour) return "—";
+  const t = hour.temp;
+  const w = hour.wind;
+  const hum = hour.humidity;
+  const cloud = hour.cloud;
+  const precip = hour.precip;
+  const precipProb = hour.precipProbability;
+  const clear = isClearSymbol(hour.symbol);
+  const rainy = precip >= 0.2 || precipProb >= 40;
+
+  // Sterk vind + kulde: vindavkjøling
+  if (w >= 5 && t < 10) return "Vinden gjør at det føles kaldere.";
+  if (w >= 3 && t < 15) return "Vinden gjør at det føles kjøligere.";
+
+  // Nedbør gjør det kjøligere
+  if (rainy && t < 12) return "Nedbør gjør at det føles kaldere.";
+  if (rainy && t >= 12) return "Nedbør gjør at det føles kjøligere.";
+
+  // Luftfuktighet
+  if (hum >= 80 && t >= 18) return "Høy luftfuktighet gjør varmen tyngre.";
+  if (hum >= 85 && t < 5) return "Fuktig kald luft føles rå.";
+
+  // Solvarme
+  if (clear && isDay && t >= 10) return "Sol gjør at det føles varmere.";
+
+  // Skygge
+  if (cloud > 75 && t >= 12) return "Skyggen gjør at det føles kjøligere.";
+
+  // Tørr luft
+  if (hum < 40 && t >= 22) return "Tørr varme føles lettere.";
+  if (hum < 40 && t < 0) return "Tørr kulde føles skarp.";
+
+  // Enkle temperaturbeskrivelser (ikke komfort-vurderinger)
+  if (t < -5) return "Kaldt.";
+  if (t < 5) return "Kjølig.";
+  if (t >= 25) return "Varmt.";
+  return "Mildt.";
+}
+
+function isClearSymbol(symbol: string | null): boolean {
+  return !!symbol && (symbol.includes("clearsky") || symbol.includes("fair"));
 }
 
 function CloudCard({ hour }: { hour: Hour | null }) {
