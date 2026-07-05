@@ -524,6 +524,7 @@ export function SiteHeader() {
               </div>
             )}
           </span>
+          )}
           {sortedLinks.map((l) => {
             const count = usage[l.to] ?? 0;
             const isFav = menuPrefs.favorites.includes(l.to);
