@@ -310,9 +310,14 @@ function WeatherPage() {
 
   // Glassplate-overlay: velg effekt fra symbol + dag/natt
   const isDay = useMemo(() => {
+    const t = now.getTime();
+    const sr = sun.sunrise?.getTime();
+    const ss = sun.sunset?.getTime();
+    if (sr && ss) return t >= sr && t < ss;
     const h = now.getHours();
     return h >= 6 && h < 20;
-  }, [now]);
+  }, [now, sun]);
+
   const glassKind = useMemo(() => {
     const base = glassKindFromSymbol(currentHour?.symbol ?? null, isDay);
     // Vis tordenvær-effekt (lyn/flash) så snart det er >2% sjanse for torden
