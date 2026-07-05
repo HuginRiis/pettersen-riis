@@ -431,6 +431,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     tollnesRainToday, hyttaRainToday, tollnesWind, hyttaWind, tollnesPressure, hyttaPressure,
     tollnesTemp, hyttaTemp, hyttaHumidity, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
     rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
+    nightModeOverride, setNightModeOverride,
   } = props;
 
   const homeyOk = data?.ok === true;
