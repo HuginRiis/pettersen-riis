@@ -596,7 +596,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* FØLES SOM + SKYDEKKE */}
           <div className="grid grid-cols-2 gap-3">
-            <FeelsLikeCard hour={currentHour} />
+            <FeelsLikeCard hour={currentHour} isDay={isDay} />
             <CloudCard hour={currentHour} />
           </div>
 
