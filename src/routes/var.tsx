@@ -661,7 +661,12 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           </p>
         </div>
         <LocationDots userLoc={userLoc} />
-        <WeatherMenuButton soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} />
+        <WeatherMenuButton
+          soundEnabled={soundEnabled}
+          setSoundEnabled={setSoundEnabled}
+          nightModeOverride={nightModeOverride}
+          setNightModeOverride={setNightModeOverride}
+        />
 
       </div>
     </PageShell>
