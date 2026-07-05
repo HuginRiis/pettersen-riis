@@ -6,7 +6,6 @@ import { getStoredWho } from "@/lib/push-client";
 import {
   reverseGeocode,
   searchPlaces,
-  setDefaultLocation,
   type PlaceHit,
   type WhoName,
   type LocationPage,
@@ -74,8 +73,6 @@ export function LocationPicker({
   title,
 }: Props) {
   const search = useServerFn(searchPlaces);
-  const saveDefault = useServerFn(setDefaultLocation);
-  
   const reverse = useServerFn(reverseGeocode);
 
   const FAV_KEY = `loc:fav:${page}`;
@@ -85,8 +82,6 @@ export function LocationPicker({
   const [hits, setHits] = useState<PlaceHit[] | null>(null);
   const [open, setOpen] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [savingDefault, setSavingDefault] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<ActiveLocation[]>([]);
@@ -185,27 +180,6 @@ export function LocationPicker({
     });
   };
 
-  const handleSetDefault = async () => {
-    setSavingDefault(true);
-    try {
-      await saveDefault({
-        data: {
-          who,
-          page,
-          place_label: active.label,
-          lat: active.lat,
-          lon: active.lon,
-        },
-      });
-      setSavedFlash(true);
-      onDefaultSaved?.(active);
-      setTimeout(() => setSavedFlash(false), 2200);
-    } catch { /* ignore */ }
-    finally {
-      setSavingDefault(false);
-    }
-  };
-
   const handleLocate = () => {
     setLocateError(null);
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -239,8 +213,6 @@ export function LocationPicker({
     );
   };
 
-  const isAtDefault =
-    active.label.trim().toLowerCase() === defaultLabel.trim().toLowerCase();
 
   const rootClass = transparent
     ? "p-3 md:p-4"
@@ -344,28 +316,6 @@ export function LocationPicker({
               title="Bruk min plassering"
             >
               <span aria-hidden className="text-base leading-none">{locating ? "⏳" : "📍"}</span>
-            </button>
-          )}
-          {!hideActions && (
-            <button
-              type="button"
-              disabled={savingDefault || isAtDefault}
-              onClick={handleSetDefault}
-              className={`text-[10px] uppercase tracking-wider leading-tight px-2 py-1 rounded-md border transition-colors whitespace-normal text-center ${
-                isAtDefault
-                  ? transparent
-                    ? "border-white/15 text-white/40 cursor-not-allowed"
-                    : "border-border text-muted-foreground cursor-not-allowed opacity-60"
-                  : savedFlash
-                    ? transparent
-                      ? "border-white text-white bg-white/15"
-                      : "border-primary text-primary bg-primary/10"
-                    : transparent
-                      ? "border-white/40 text-white hover:bg-white/10"
-                      : "border-primary/60 text-primary hover:bg-primary/10"
-              }`}
-            >
-              {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : (<><span className="block">Sett som</span><span className="block">standard</span></>)}
             </button>
           )}
         </div>

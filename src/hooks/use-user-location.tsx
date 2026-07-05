@@ -3,8 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { LocationPicker, type ActiveLocation } from "@/components/LocationPicker";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import {
-  getDefaultLocation,
   getNameForCurrentIp,
+  setDefaultLocation,
   type LocationPage,
   type WhoName,
 } from "@/lib/user-locations.functions";
@@ -18,16 +18,16 @@ export type UserLocationState = {
 };
 
 /**
- * Hook som styrer "vakt" (Arne/Rebekka), default-sted og aktivt sted
- * for en gitt side ('var' | 'pollen').
+ * Hook som styrer "vakt" (Arne/Rebekka) og aktivt sted for en gitt side
+ * ('var' | 'pollen').
  *
- * Atferd:
- * - Når brukeren IKKE er logget inn: Arne/Rebekka-systemet er skjult.
- *   Aktivt sted starter på Tollnes (fallback). Brukeren kan fortsatt søke
- *   og bytte sted lokalt, men kan ikke lagre default.
- * - Når brukeren ER logget inn: spør serveren hvilket navn som tilhører
- *   IP-en. Henter (who, IP, page)-default. Aktivt sted starter alltid på
- *   default — dvs. ved (re)mount havner man tilbake på sin egen default.
+ * Prinsipp:
+ *  - Ingen "Tollnes flash": SSR og første klient-render bruker samme
+ *    fallback (fallback rendres skjult via `ready`-flagget på sidene).
+ *    Etter mount leses siste valgte sted fra localStorage.
+ *  - Ingen egen "Sett som standard"-knapp: hver gang brukeren bytter sted
+ *    persisteres det i localStorage + speiles til `user_location_prefs`
+ *    slik at f.eks. daglig-vær-push bruker samme sted som skjermen.
  */
 export function useUserLocation(page: LocationPage): UserLocationState & {
   setWho: (who: WhoName) => void;
@@ -35,23 +35,8 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
   setDefaultLoc: (loc: ActiveLocation) => void;
 } {
   const fetchName = useServerFn(getNameForCurrentIp);
-  const fetchDefault = useServerFn(getDefaultLocation);
+  const saveDefault = useServerFn(setDefaultLocation);
   const { authenticated, loading: authLoading } = useAuthStatus();
-
-  const initialChosen = ((): ActiveLocation | null => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem(`loc:chosen:${page}`);
-      if (!raw) return null;
-      const p = JSON.parse(raw);
-      if (p && typeof p.label === "string" && typeof p.lat === "number" && typeof p.lon === "number") {
-        return { label: p.label, lat: p.lat, lon: p.lon, source: p.source };
-      }
-    } catch {
-      // ignore
-    }
-    return null;
-  })();
 
   const fallback: ActiveLocation = {
     label: "Tollnes, Skien",
@@ -60,13 +45,11 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
   };
 
   const [who, setWho] = useState<WhoName>("Arne");
-  const [active, setActive] = useState<ActiveLocation>(initialChosen ?? fallback);
+  const [active, setActive] = useState<ActiveLocation>(fallback);
   const [defaultLoc, setDefaultLoc] = useState<ActiveLocation>(fallback);
   const [ready, setReady] = useState(false);
 
-  // Step 1: figure out who the IP belongs to
-  // - Logged in: bruk lagret navn (Arne/Rebekka), eller default 'Arne'
-  // - Logget ut: bruk fast 'Offentlig' slik at default knyttes til (Offentlig, IP, page)
+  // Hvem eier IP-en? (Arne/Rebekka når innlogget, ellers 'Offentlig'.)
   useEffect(() => {
     if (authLoading) return;
     if (!authenticated) {
@@ -80,7 +63,7 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
         if (cancelled) return;
         if (r.who) setWho(r.who);
       } catch {
-        // ignore — keep default 'Arne'
+        // ignore
       }
     })();
     return () => {
@@ -88,48 +71,30 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
     };
   }, [fetchName, authenticated, authLoading]);
 
-  // Step 2: load default for this page+IP, scoped per (who).
-  // Også offentlige besøkende får sin egen default lagret pr IP.
+  // Etter mount: les siste valgte sted fra localStorage.
+  // Ingen server-fetch — det unngår at Tollnes blinker forbi før
+  // det ekte stedet vises.
   useEffect(() => {
-    if (authLoading) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetchDefault({ data: { who, page } });
-        if (cancelled) return;
-        const loc = { label: r.place_label, lat: r.lat, lon: r.lon };
-        setDefaultLoc(loc);
-        // Sist valgte sted (lagret i localStorage av favoritt-siden eller søk)
-        // — overstyrer default og består mellom økter, slik at man alltid
-        // ser samme sted når man åpner igjen.
-        let chosen: ActiveLocation | null = null;
-        if (typeof window !== "undefined") {
-          try {
-            const raw = localStorage.getItem(`loc:chosen:${page}`);
-            if (raw) {
-              const p = JSON.parse(raw);
-              if (p && typeof p.label === "string" && typeof p.lat === "number" && typeof p.lon === "number") {
-                chosen = { label: p.label, lat: p.lat, lon: p.lon, source: p.source };
-              }
-            }
-            // Ryd opp gammel session-nøkkel om den finnes.
-            sessionStorage.removeItem(`loc:pending:${page}`);
-          } catch {
-            // ignore
-          }
+    if (typeof window === "undefined") {
+      setReady(true);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(`loc:chosen:${page}`);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p.label === "string" && typeof p.lat === "number" && typeof p.lon === "number") {
+          const loc: ActiveLocation = { label: p.label, lat: p.lat, lon: p.lon, source: p.source };
+          setActive(loc);
+          setDefaultLoc(loc);
         }
-        setActive(chosen ?? loc);
-      } catch {
-        // keep fallback
-      } finally {
-        if (!cancelled) setReady(true);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [who, page, fetchDefault, authenticated, authLoading]);
-
+      sessionStorage.removeItem(`loc:pending:${page}`);
+    } catch {
+      // ignore
+    }
+    setReady(true);
+  }, [page]);
 
   const persistAndSetActive = (loc: ActiveLocation) => {
     if (typeof window !== "undefined") {
@@ -143,6 +108,19 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
       }
     }
     setActive(loc);
+    setDefaultLoc(loc);
+    // Speil til DB slik at server-side push (daglig værmelding m.m.)
+    // bruker samme sted som brukeren ser på skjermen. Best-effort;
+    // feiler stille hvis IP ikke er tilgjengelig.
+    void saveDefault({
+      data: {
+        who,
+        page,
+        place_label: loc.label,
+        lat: loc.lat,
+        lon: loc.lon,
+      },
+    }).catch(() => {});
   };
 
   return {
@@ -159,7 +137,6 @@ export function useUserLocation(page: LocationPage): UserLocationState & {
 
 /**
  * Render-helper som kombinerer hook + LocationPicker.
- * Brukes øverst på Vær- og Pollen-sidene.
  */
 export function UserLocationBar({
   page,
