@@ -22,6 +22,7 @@ import { useLastGood } from "@/hooks/use-last-good";
 import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
+import { useWebFavoritesMenu } from "@/hooks/use-web-favorites-menu";
 import { fetchOpenMeteoPollen } from "@/lib/air-quality-fetch.functions";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
@@ -213,6 +214,7 @@ export function SiteHeader() {
 
   const { usage, bump } = useNavUsage(who);
   const { prefs: menuPrefs, toggleFavorite } = useMenuPrefs();
+  const { enabled: webFavMenuEnabled } = useWebFavoritesMenu();
   const badgeSettings = useHeaderBadgeSettings();
   const showB = (id: string) => isBadgeVisible(badgeSettings, id, who);
 
@@ -486,7 +488,9 @@ export function SiteHeader() {
         </div>
 
         <nav className="hidden flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
+          {webFavMenuEnabled && (
           <span className="inline-flex items-center gap-0.5 relative">
+
             <button
               type="button"
               onClick={() => setFavOpen((v) => !v)}
@@ -520,6 +524,7 @@ export function SiteHeader() {
               </div>
             )}
           </span>
+          )}
           {sortedLinks.map((l) => {
             const count = usage[l.to] ?? 0;
             const isFav = menuPrefs.favorites.includes(l.to);
@@ -623,6 +628,7 @@ export function SiteHeader() {
         <nav ref={mobileMenuRef} className="mobile-menu-popup border-t border-border bg-card/95 backdrop-blur">
           <div className="container mx-auto px-4 py-2 flex flex-col max-h-[calc(100vh-64px)] overflow-y-auto overscroll-contain">
 
+            {webFavMenuEnabled && (
             <div className="border-b border-border">
               <button
                 type="button"
@@ -656,6 +662,7 @@ export function SiteHeader() {
                 </div>
               )}
             </div>
+            )}
             {topFolders.map(renderFolderGroup)}
             {visibleSortedLinks.map((l) => renderMobileRow(l))}
             {bottomFolders.map(renderFolderGroup)}

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Globe } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Globe, Eye, EyeOff } from "lucide-react";
 import { ICON_NAMES, getIcon, getIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import { getNameForCurrentIp } from "@/lib/user-locations.functions";
 import { getStoredWho } from "@/lib/push-client";
+import { useWebFavoritesMenu } from "@/hooks/use-web-favorites-menu";
 
 type Row = {
   id: string;
@@ -105,6 +106,8 @@ export function FavoritesManagerPanel() {
   const mine = rows.filter((r) => r.who === who);
   const felles = rows.filter((r) => r.who === "Alle");
 
+  const { enabled: menuEnabled, setEnabled: setMenuEnabled } = useWebFavoritesMenu();
+
   return (
     <section className="pt-4">
       <article className="panel rounded-lg p-4">
@@ -114,6 +117,18 @@ export function FavoritesManagerPanel() {
         <p className="text-sm text-muted-foreground mt-1">
           Snarveier som vises i menyen øverst. For deg ({who || "ukjent — logg inn"}) eller felles for alle.
         </p>
+
+        <label className="mt-3 flex items-center gap-2 text-sm cursor-pointer panel rounded p-3 border border-border/50">
+          <input
+            type="checkbox"
+            checked={menuEnabled}
+            onChange={(e) => setMenuEnabled(e.target.checked)}
+            className="accent-primary"
+          />
+          {menuEnabled ? <Eye size={14} className="text-primary" /> : <EyeOff size={14} className="text-muted-foreground" />}
+          <span>Vis «Favoritter»-snarvei i toppmenyen</span>
+        </label>
+
         {!who && (
           <p className="text-xs text-amber-500 mt-1">
             Vi finner ikke navnet ditt på denne IP-en, så «Bare meg» er deaktivert. Logg inn / sett navn først.
