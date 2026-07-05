@@ -61,13 +61,34 @@ export const Route = createFileRoute("/var")({
   }),
   staleTime: 3 * 60_000,
   preloadStaleTime: 3 * 60_000,
+  // Ikke la trege eksterne API-kall (Homey/Netatmo) blokkere navigasjonen til
+  // vær-siden. Vi kjører dem i parallell med en kort timeout og lar
+  // komponenten håndtere manglende/etterslepende data. Dette fikser tilfellene
+  // der siden "henger" ved åpning og man må lukke appen.
   loader: async () => {
-    const homey = await getHomeySnapshot();
-    const netatmo = await getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }).catch(
-      (e) => ({ ok: false as const, error: e?.message ?? "Netatmo-feil" })
-    );
+    const LOADER_TIMEOUT_MS = 1500;
+    const timeout = <T,>(p: Promise<T>, fallback: T) =>
+      Promise.race<T>([
+        p.catch(() => fallback),
+        new Promise<T>((resolve) => setTimeout(() => resolve(fallback), LOADER_TIMEOUT_MS)),
+      ]);
+    const [homey, netatmo] = await Promise.all([
+      timeout(getHomeySnapshot(), null as Awaited<ReturnType<typeof getHomeySnapshot>> | null),
+      timeout(
+        getNetatmoWeatherStation({ data: { stationMatch: "tollnes" } }),
+        { ok: false as const, error: "Laster…" } as Awaited<ReturnType<typeof getNetatmoWeatherStation>>,
+      ),
+    ]);
     return { homey, netatmo };
   },
+  pendingMs: 0,
+  pendingComponent: () => (
+    <PageShell>
+      <section className="container mx-auto px-4 py-16 text-center">
+        <p className="text-white/70">Laster vær…</p>
+      </section>
+    </PageShell>
+  ),
   component: WeatherPage,
   errorComponent: ({ error }) => (
     <PageShell>
