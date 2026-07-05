@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as YtelseRouteImport } from './routes/ytelse'
 import { Route as VarslerRouteImport } from './routes/varsler'
 import { Route as VarmeRouteImport } from './routes/varme'
+import { Route as VarkartRouteImport } from './routes/varkart'
 import { Route as VarfavoritterRouteImport } from './routes/varfavoritter'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
@@ -72,6 +73,11 @@ const VarslerRoute = VarslerRouteImport.update({
 const VarmeRoute = VarmeRouteImport.update({
   id: '/varme',
   path: '/varme',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VarkartRoute = VarkartRouteImport.update({
+  id: '/varkart',
+  path: '/varkart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VarfavoritterRoute = VarfavoritterRouteImport.update({
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varfavoritter': typeof VarfavoritterRoute
+  '/varkart': typeof VarkartRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
@@ -393,6 +400,7 @@ export interface FileRoutesByTo {
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varfavoritter': typeof VarfavoritterRoute
+  '/varkart': typeof VarkartRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varfavoritter': typeof VarfavoritterRoute
+  '/varkart': typeof VarkartRoute
   '/varme': typeof VarmeRoute
   '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
@@ -498,6 +507,7 @@ export interface FileRouteTypes {
     | '/vakttarnet'
     | '/var'
     | '/varfavoritter'
+    | '/varkart'
     | '/varme'
     | '/varsler'
     | '/ytelse'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/vakttarnet'
     | '/var'
     | '/varfavoritter'
+    | '/varkart'
     | '/varme'
     | '/varsler'
     | '/ytelse'
@@ -600,6 +611,7 @@ export interface FileRouteTypes {
     | '/vakttarnet'
     | '/var'
     | '/varfavoritter'
+    | '/varkart'
     | '/varme'
     | '/varsler'
     | '/ytelse'
@@ -652,6 +664,7 @@ export interface RootRouteChildren {
   VakttarnetRoute: typeof VakttarnetRoute
   VarRoute: typeof VarRoute
   VarfavoritterRoute: typeof VarfavoritterRoute
+  VarkartRoute: typeof VarkartRoute
   VarmeRoute: typeof VarmeRoute
   VarslerRoute: typeof VarslerRoute
   YtelseRoute: typeof YtelseRoute
@@ -698,6 +711,13 @@ declare module '@tanstack/react-router' {
       path: '/varme'
       fullPath: '/varme'
       preLoaderRoute: typeof VarmeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/varkart': {
+      id: '/varkart'
+      path: '/varkart'
+      fullPath: '/varkart'
+      preLoaderRoute: typeof VarkartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/varfavoritter': {
@@ -1052,6 +1072,7 @@ const rootRouteChildren: RootRouteChildren = {
   VakttarnetRoute: VakttarnetRoute,
   VarRoute: VarRoute,
   VarfavoritterRoute: VarfavoritterRoute,
+  VarkartRoute: VarkartRoute,
   VarmeRoute: VarmeRoute,
   VarslerRoute: VarslerRoute,
   YtelseRoute: YtelseRoute,
@@ -1083,12 +1104,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
