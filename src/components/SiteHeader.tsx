@@ -488,7 +488,9 @@ export function SiteHeader() {
         </div>
 
         <nav className="hidden flex-1 flex-wrap items-center justify-start gap-x-2 gap-y-2">
+          {webFavMenuEnabled && (
           <span className="inline-flex items-center gap-0.5 relative">
+
             <button
               type="button"
               onClick={() => setFavOpen((v) => !v)}
