@@ -420,6 +420,8 @@ type WeatherPageInnerProps = {
   allAlerts: MetAlert[];
   soundEnabled: boolean;
   setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  nightModeOverride: boolean;
+  setNightModeOverride: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function WeatherPageInner(props: WeatherPageInnerProps) {
