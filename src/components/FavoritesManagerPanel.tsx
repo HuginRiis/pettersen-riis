@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Globe } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, Save, X, Globe, Eye, EyeOff } from "lucide-react";
 import { ICON_NAMES, getIcon, getIconColor, faviconUrl, FAVICON_ICON } from "@/lib/web-favorite-icons";
 import { getNameForCurrentIp } from "@/lib/user-locations.functions";
 import { getStoredWho } from "@/lib/push-client";
+import { useWebFavoritesMenu } from "@/hooks/use-web-favorites-menu";
 
 type Row = {
   id: string;
