@@ -16,7 +16,6 @@ export type MenuPrefs = {
   favoriteZones: string[];
   useGlobalLightScenes: boolean;
   menuFolders: MenuFolder[];
-  webFavoritesEnabled: boolean;
 };
 
 const DEFAULTS: MenuPrefs = {
@@ -26,7 +25,6 @@ const DEFAULTS: MenuPrefs = {
   favoriteZones: [],
   useGlobalLightScenes: true,
   menuFolders: [],
-  webFavoritesEnabled: true,
 };
 
 function coerceFolders(value: unknown): MenuFolder[] {
