@@ -22,6 +22,7 @@ import { useLastGood } from "@/hooks/use-last-good";
 import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
+import { useWebFavoritesMenu } from "@/hooks/use-web-favorites-menu";
 import { fetchOpenMeteoPollen } from "@/lib/air-quality-fetch.functions";
 
 const BORGEN_COORD = { lat: 59.1789, lon: 9.5732 };
