@@ -606,6 +606,12 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             <GustCard hour={currentHour} />
           </div>
 
+          {/* GJENNOMSNITT TEMPERATUR + SIKT */}
+          <div className="grid grid-cols-2 gap-3">
+            <AvgTempCard hours={skienHours} />
+            <VisibilityCard hour={currentHour} />
+          </div>
+
           {/* LUFTFUKTIGHET + LUFTTRYKK */}
           <div className="grid grid-cols-2 gap-3">
             <HumidityCard hour={currentHour} />
@@ -3118,6 +3124,100 @@ function PressureCard({ hour }: { hour: Hour | null }) {
     </GlassCard>
   );
 }
+
+// Klimanormaler for Skien (grovt månedsgjennomsnitt, °C)
+const SKIEN_MONTHLY_NORMALS = [-3, -3, 1, 6, 11, 15, 17, 16, 12, 7, 2, -2];
+
+function AvgTempCard({ hours }: { hours: Hour[] | null }) {
+  if (!hours || hours.length === 0) {
+    return (
+      <GlassCard eyebrow="Snittemp. i dag" icon={<Thermometer size={14} />}>
+        <div className="text-3xl font-light tabular-nums">—</div>
+      </GlassCard>
+    );
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const todayHours = hours.filter((h) => h.time.slice(0, 10) === today);
+  const src = todayHours.length >= 4 ? todayHours : hours.slice(0, 24);
+  const avg = src.reduce((s, h) => s + (h.temp ?? 0), 0) / src.length;
+  const month = new Date().getMonth();
+  const normal = SKIEN_MONTHLY_NORMALS[month];
+  const delta = avg - normal;
+  const deltaAbs = Math.abs(delta);
+  const dir = delta >= 0.5 ? "over" : delta <= -0.5 ? "under" : "på";
+  const hint = dir === "på"
+    ? `Omtrent som normalen (${normal}°) for måneden.`
+    : `${deltaAbs.toFixed(1)}° ${dir} normalen (${normal}°) for måneden.`;
+  const fx = avg <= 2
+    ? <SnowFX intensity={0.5} />
+    : avg >= 18
+      ? <HeatwaveFX intensity={1} />
+      : delta >= 3
+        ? <HeatwaveFX intensity={0.6} />
+        : delta <= -3
+          ? <SnowFX intensity={0.3} />
+          : <HeatwaveFX intensity={-1} />;
+  return (
+    <GlassCard eyebrow="Snittemp. i dag" icon={<Thermometer size={14} />} fx={fx}>
+      <div className="text-3xl font-light tabular-nums">{avg.toFixed(1)}°</div>
+      <div className={`text-sm ${delta >= 0.5 ? "text-orange-300" : delta <= -0.5 ? "text-sky-300" : "text-white/85"}`}>
+        {delta >= 0.5 ? "+" : ""}{delta.toFixed(1)}° vs normalt
+      </div>
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
+    </GlassCard>
+  );
+}
+
+// Estimert sikt fra MET.no (locationforecast har ikke direkte sikt),
+// heuristikk: symbol/nedbør/fuktighet/skydekke.
+function VisibilityCard({ hour }: { hour: Hour | null }) {
+  if (!hour) {
+    return (
+      <GlassCard eyebrow="Sikt" icon={<Eye size={14} />}>
+        <div className="text-3xl font-light tabular-nums">—</div>
+      </GlassCard>
+    );
+  }
+  const sym = (hour.symbol ?? "").toLowerCase();
+  const precip = hour.precip ?? 0;
+  const rh = hour.humidity ?? 0;
+  const cloud = hour.cloud ?? 0;
+
+  let vis = 40; // km, klar dag
+  if (sym.includes("fog")) vis = 0.4;
+  else if (sym.includes("heavysnow") || precip >= 3) vis = 1.5;
+  else if (sym.includes("snow") || sym.includes("sleet")) vis = 4;
+  else if (sym.includes("heavyrain") || precip >= 2) vis = 3;
+  else if (precip >= 0.5) vis = 10;
+  else if (rh >= 97) vis = 2;
+  else if (rh >= 92) vis = 8;
+  else if (rh >= 85) vis = 18;
+  else if (cloud >= 90) vis = 25;
+
+  const label =
+    vis < 1 ? "Tett tåke" :
+    vis < 4 ? "Svært redusert sikt" :
+    vis < 10 ? "Redusert sikt" :
+    vis < 20 ? "Moderat sikt" :
+    vis < 35 ? "God sikt" : "Meget god sikt";
+
+  const fxIntensity = Math.max(0, Math.min(1, (40 - vis) / 40));
+  const fx = vis < 10
+    ? <DriftingClouds intensity={0.9} seed={17} rainy={precip >= 0.5} />
+    : <HumidityFX intensity={fxIntensity} />;
+
+  const display = vis < 1 ? `${(vis * 1000).toFixed(0)} m` : `${vis.toFixed(vis < 10 ? 1 : 0)} km`;
+
+  return (
+    <GlassCard eyebrow="Sikt" icon={<Eye size={14} />} fx={fx}>
+      <div className="text-3xl font-light tabular-nums">{display}</div>
+      <div className="text-sm text-white/85">{label}</div>
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">Estimert fra fuktighet, nedbør og skydekke.</div>
+    </GlassCard>
+  );
+}
+
+
 
 // ============================================================
 // Netatmo tiles
