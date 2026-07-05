@@ -47,6 +47,9 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/iphone-app", label: "iPhone App" },
+  { to: "/varfavoritter", label: "Værfavoritter" },
+  { to: "/nsm-sikkerhet", label: "NSM sikkerhet" },
+  { to: "/ssb-statistikk", label: "SSB statistikk" },
 ];
 
 const DEFAULT_LINK_STATE: MenuLinkState = { enabled: true, users: [] };
