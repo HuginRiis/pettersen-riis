@@ -922,6 +922,23 @@ function WeatherMenuButton({
             </button>
           </div>
 
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-white/70">Overstyr nattmodus</span>
+            <button
+              type="button"
+              onClick={() => setNightModeOverride((v) => !v)}
+              aria-pressed={nightModeOverride}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
+                nightModeOverride
+                  ? "bg-white text-slate-900"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              {nightModeOverride ? <Moon size={12} /> : <Sun size={12} />}
+              <span>{nightModeOverride ? "På" : "Av"}</span>
+            </button>
+          </div>
+
           <div className="h-px bg-white/10" />
 
           <TileColorToggle />
