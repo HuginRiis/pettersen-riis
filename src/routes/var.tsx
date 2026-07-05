@@ -374,6 +374,8 @@ function WeatherPage() {
             allAlerts={allAlerts}
             soundEnabled={soundEnabled}
             setSoundEnabled={setSoundEnabled}
+            nightModeOverride={nightModeOverride}
+            setNightModeOverride={setNightModeOverride}
           />
         </TileColorProvider>
       </TileOpacityProvider>
