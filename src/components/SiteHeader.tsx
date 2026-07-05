@@ -214,6 +214,7 @@ export function SiteHeader() {
 
   const { usage, bump } = useNavUsage(who);
   const { prefs: menuPrefs, toggleFavorite } = useMenuPrefs();
+  const { enabled: webFavMenuEnabled } = useWebFavoritesMenu();
   const badgeSettings = useHeaderBadgeSettings();
   const showB = (id: string) => isBadgeVisible(badgeSettings, id, who);
 
