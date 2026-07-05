@@ -275,6 +275,7 @@ function WeatherPage() {
 
   // Bakgrunnsgradient basert på sol opp/ned og skydekke / symbol
   const bgGradient = useMemo(() => {
+    if (nightModeOverride) return "from-[#0b1426] via-[#142340] to-[#1c2e4f]";
     const t = now.getTime();
     const sym = currentHour?.symbol ?? "";
     const isClearSymbol = sym.includes("clearsky") || sym.includes("fair");
@@ -290,7 +291,7 @@ function WeatherPage() {
     return cloudy
       ? "from-[#4a5a72] via-[#6b7b91] to-[#8a98ad]"
       : "from-[#3478c4] via-[#5a9bd4] to-[#9ec5e8]";
-  }, [now, currentHour, sun]);
+  }, [now, currentHour, sun, nightModeOverride]);
 
 
   const headline = useMemo(() => {
