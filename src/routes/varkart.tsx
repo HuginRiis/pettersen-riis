@@ -32,13 +32,13 @@ const OVERLAYS: { key: string; label: string; icon: string }[] = [
 
 function VarkartPage() {
   const router = useRouter();
-  const userLoc = useUserLocation();
+  const userLoc = useUserLocation("var");
   const [overlay, setOverlay] = useState<string>("rain");
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  const lat = userLoc.lat ?? 59.6;
-  const lon = userLoc.lon ?? 9.2;
+  const lat = userLoc.active?.lat ?? 59.2096;
+  const lon = userLoc.active?.lon ?? 9.609;
 
   const src = useMemo(() => {
     const params = new URLSearchParams({
