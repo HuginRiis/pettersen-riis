@@ -272,19 +272,25 @@ function WeatherPage() {
   const moon = useMemo(() => moonPhase(now), [now]);
   const allAlerts = alerts?.ok === true ? alerts.alerts : [];
 
-  // Bakgrunnsgradient basert på tid på døgnet og skydekke / symbol
+  // Bakgrunnsgradient basert på sol opp/ned og skydekke / symbol
   const bgGradient = useMemo(() => {
-    const h = now.getHours();
+    const t = now.getTime();
     const sym = currentHour?.symbol ?? "";
     const isClearSymbol = sym.includes("clearsky") || sym.includes("fair");
     const cloudy = !isClearSymbol && (currentHour?.cloud ?? 50) > 60;
-    if (h < 5 || h >= 22) return "from-[#0b1426] via-[#142340] to-[#1c2e4f]"; // natt
-    if (h < 8) return "from-[#3a4a6b] via-[#5d7a9e] to-[#a8b5c8]"; // morgen
-    if (h >= 19) return "from-[#1c2e4f] via-[#3a4a6b] to-[#6d4e3a]"; // kveld
+    const sr = sun.sunrise?.getTime();
+    const ss = sun.sunset?.getTime();
+    // Natt: før soloppgang eller etter solnedgang
+    if (sr && ss && (t < sr || t >= ss)) return "from-[#0b1426] via-[#142340] to-[#1c2e4f]";
+    // Morgen: første time etter soloppgang
+    if (sr && t < sr + 60 * 60 * 1000) return "from-[#3a4a6b] via-[#5d7a9e] to-[#a8b5c8]";
+    // Kveld: siste time før solnedgang
+    if (ss && t > ss - 60 * 60 * 1000) return "from-[#1c2e4f] via-[#3a4a6b] to-[#6d4e3a]";
     return cloudy
       ? "from-[#4a5a72] via-[#6b7b91] to-[#8a98ad]"
       : "from-[#3478c4] via-[#5a9bd4] to-[#9ec5e8]";
-  }, [now, currentHour]);
+  }, [now, currentHour, sun]);
+
 
   const headline = useMemo(() => {
     if (!skienHours) return null;
@@ -304,9 +310,14 @@ function WeatherPage() {
 
   // Glassplate-overlay: velg effekt fra symbol + dag/natt
   const isDay = useMemo(() => {
+    const t = now.getTime();
+    const sr = sun.sunrise?.getTime();
+    const ss = sun.sunset?.getTime();
+    if (sr && ss) return t >= sr && t < ss;
     const h = now.getHours();
     return h >= 6 && h < 20;
-  }, [now]);
+  }, [now, sun]);
+
   const glassKind = useMemo(() => {
     const base = glassKindFromSymbol(currentHour?.symbol ?? null, isDay);
     // Vis tordenvær-effekt (lyn/flash) så snart det er >2% sjanse for torden
