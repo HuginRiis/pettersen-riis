@@ -450,21 +450,33 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               >
                 {userLoc.active.label}
               </h1>
-              {userLoc.active.source === "gps" && (
-                <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-white/90 text-[10px] tracking-[0.2em] uppercase backdrop-blur-sm">
-                  <Navigation size={10} /> Min posisjon
+              {userLoc.active.source === "gps" ? (
+                <div
+                  className="inline-flex items-center justify-center gap-3"
+                  style={{ marginTop: `${8 - heroT * 6}px` }}
+                >
+                  <div
+                    className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
+                    style={{ fontSize: `${88 - heroT * 60}px` }}
+                  >
+                    {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+                  </div>
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-white/90 text-[10px] tracking-[0.2em] uppercase backdrop-blur-sm">
+                    <Navigation size={10} /> Min posisjon
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
+                  style={{
+                    fontSize: `${88 - heroT * 60}px`,
+                    marginTop: `${8 - heroT * 6}px`,
+                    display: "inline-block",
+                  }}
+                >
+                  {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
                 </div>
               )}
-              <div
-                className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
-                style={{
-                  fontSize: `${88 - heroT * 60}px`,
-                  marginTop: `${8 - heroT * 6}px`,
-                  display: "inline-block",
-                }}
-              >
-                {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
-              </div>
               <div
                 className="font-medium transition-all duration-200 overflow-hidden"
                 style={{
