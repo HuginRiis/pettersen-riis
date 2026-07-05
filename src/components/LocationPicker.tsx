@@ -346,28 +346,6 @@ export function LocationPicker({
               <span aria-hidden className="text-base leading-none">{locating ? "⏳" : "📍"}</span>
             </button>
           )}
-          {!hideActions && (
-            <button
-              type="button"
-              disabled={savingDefault || isAtDefault}
-              onClick={handleSetDefault}
-              className={`text-[10px] uppercase tracking-wider leading-tight px-2 py-1 rounded-md border transition-colors whitespace-normal text-center ${
-                isAtDefault
-                  ? transparent
-                    ? "border-white/15 text-white/40 cursor-not-allowed"
-                    : "border-border text-muted-foreground cursor-not-allowed opacity-60"
-                  : savedFlash
-                    ? transparent
-                      ? "border-white text-white bg-white/15"
-                      : "border-primary text-primary bg-primary/10"
-                    : transparent
-                      ? "border-white/40 text-white hover:bg-white/10"
-                      : "border-primary/60 text-primary hover:bg-primary/10"
-              }`}
-            >
-              {savingDefault ? "Lagrer…" : savedFlash ? "✓ Lagret" : (<><span className="block">Sett som</span><span className="block">standard</span></>)}
-            </button>
-          )}
         </div>
 
         {locateError && !hideActions && (
