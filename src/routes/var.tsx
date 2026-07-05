@@ -446,11 +446,12 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             >
               <h1
                 className="font-medium tracking-wide text-white/90 drop-shadow-md transition-all duration-200"
-                style={{ fontSize: `${18 - heroT * 4}px`, marginTop: `${4 - heroT * 4}px` }}
+                style={{ fontSize: `${18 - heroT * 4}px`, marginTop: `${4 - heroT * 4}px`, minHeight: "1.2em" }}
+                suppressHydrationWarning
               >
-                {userLoc.active.label}
+                {userLoc.ready ? userLoc.active.label : "\u00A0"}
               </h1>
-              {userLoc.active.source === "gps" ? (
+              {userLoc.ready && userLoc.active.source === "gps" ? (
                 <div
                   className="inline-flex items-center justify-center gap-3"
                   style={{ marginTop: `${8 - heroT * 6}px` }}
@@ -473,8 +474,9 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                     marginTop: `${8 - heroT * 6}px`,
                     display: "inline-block",
                   }}
+                  suppressHydrationWarning
                 >
-                  {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+                  {userLoc.ready && currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
                 </div>
               )}
               <div
