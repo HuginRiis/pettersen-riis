@@ -180,27 +180,6 @@ export function LocationPicker({
     });
   };
 
-  const handleSetDefault = async () => {
-    setSavingDefault(true);
-    try {
-      await saveDefault({
-        data: {
-          who,
-          page,
-          place_label: active.label,
-          lat: active.lat,
-          lon: active.lon,
-        },
-      });
-      setSavedFlash(true);
-      onDefaultSaved?.(active);
-      setTimeout(() => setSavedFlash(false), 2200);
-    } catch { /* ignore */ }
-    finally {
-      setSavingDefault(false);
-    }
-  };
-
   const handleLocate = () => {
     setLocateError(null);
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -234,8 +213,6 @@ export function LocationPicker({
     );
   };
 
-  const isAtDefault =
-    active.label.trim().toLowerCase() === defaultLabel.trim().toLowerCase();
 
   const rootClass = transparent
     ? "p-3 md:p-4"
