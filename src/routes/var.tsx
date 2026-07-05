@@ -661,6 +661,14 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           </p>
         </div>
         <LocationDots userLoc={userLoc} />
+        <Link
+          to="/varkart"
+          aria-label="Åpne værkart"
+          title="Værkart"
+          className="fixed bottom-6 left-6 z-50 w-12 h-12 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-lg flex items-center justify-center text-white/80 hover:text-white hover:bg-black/55 active:scale-95 transition-all"
+        >
+          <MapIcon size={20} />
+        </Link>
         <WeatherMenuButton
           soundEnabled={soundEnabled}
           setSoundEnabled={setSoundEnabled}
