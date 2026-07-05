@@ -6,7 +6,6 @@ import { getStoredWho } from "@/lib/push-client";
 import {
   reverseGeocode,
   searchPlaces,
-  setDefaultLocation,
   type PlaceHit,
   type WhoName,
   type LocationPage,
