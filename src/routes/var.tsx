@@ -159,6 +159,7 @@ function WeatherPage() {
   const [now, setNow] = useState<Date>(() => new Date());
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
   const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
+  const [nightModeOverride, setNightModeOverride] = usePerUserPersistedState<boolean>("var.nightMode.override", false);
 
   const LOCATIONS = useMemo(
     () => [
@@ -274,6 +275,7 @@ function WeatherPage() {
 
   // Bakgrunnsgradient basert på sol opp/ned og skydekke / symbol
   const bgGradient = useMemo(() => {
+    if (nightModeOverride) return "from-[#0b1426] via-[#142340] to-[#1c2e4f]";
     const t = now.getTime();
     const sym = currentHour?.symbol ?? "";
     const isClearSymbol = sym.includes("clearsky") || sym.includes("fair");
@@ -289,7 +291,7 @@ function WeatherPage() {
     return cloudy
       ? "from-[#4a5a72] via-[#6b7b91] to-[#8a98ad]"
       : "from-[#3478c4] via-[#5a9bd4] to-[#9ec5e8]";
-  }, [now, currentHour, sun]);
+  }, [now, currentHour, sun, nightModeOverride]);
 
 
   const headline = useMemo(() => {
@@ -310,13 +312,14 @@ function WeatherPage() {
 
   // Glassplate-overlay: velg effekt fra symbol + dag/natt
   const isDay = useMemo(() => {
+    if (nightModeOverride) return false;
     const t = now.getTime();
     const sr = sun.sunrise?.getTime();
     const ss = sun.sunset?.getTime();
     if (sr && ss) return t >= sr && t < ss;
     const h = now.getHours();
     return h >= 6 && h < 20;
-  }, [now, sun]);
+  }, [now, sun, nightModeOverride]);
 
   const glassKind = useMemo(() => {
     const base = glassKindFromSymbol(currentHour?.symbol ?? null, isDay);
@@ -371,6 +374,8 @@ function WeatherPage() {
             allAlerts={allAlerts}
             soundEnabled={soundEnabled}
             setSoundEnabled={setSoundEnabled}
+            nightModeOverride={nightModeOverride}
+            setNightModeOverride={setNightModeOverride}
           />
         </TileColorProvider>
       </TileOpacityProvider>
@@ -415,6 +420,8 @@ type WeatherPageInnerProps = {
   allAlerts: MetAlert[];
   soundEnabled: boolean;
   setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  nightModeOverride: boolean;
+  setNightModeOverride: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function WeatherPageInner(props: WeatherPageInnerProps) {
@@ -424,6 +431,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     tollnesRainToday, hyttaRainToday, tollnesWind, hyttaWind, tollnesPressure, hyttaPressure,
     tollnesTemp, hyttaTemp, hyttaHumidity, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
     rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
+    nightModeOverride, setNightModeOverride,
   } = props;
 
   const homeyOk = data?.ok === true;
@@ -653,7 +661,12 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           </p>
         </div>
         <LocationDots userLoc={userLoc} />
-        <WeatherMenuButton soundEnabled={soundEnabled} setSoundEnabled={setSoundEnabled} />
+        <WeatherMenuButton
+          soundEnabled={soundEnabled}
+          setSoundEnabled={setSoundEnabled}
+          nightModeOverride={nightModeOverride}
+          setNightModeOverride={setNightModeOverride}
+        />
 
       </div>
     </PageShell>
@@ -844,9 +857,13 @@ function LocationDots({
 function WeatherMenuButton({
   soundEnabled,
   setSoundEnabled,
+  nightModeOverride,
+  setNightModeOverride,
 }: {
   soundEnabled: boolean;
   setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  nightModeOverride: boolean;
+  setNightModeOverride: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -902,6 +919,23 @@ function WeatherMenuButton({
             >
               {soundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />}
               <span>{soundEnabled ? "På" : "Av"}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-white/70">Overstyr nattmodus</span>
+            <button
+              type="button"
+              onClick={() => setNightModeOverride((v) => !v)}
+              aria-pressed={nightModeOverride}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
+                nightModeOverride
+                  ? "bg-white text-slate-900"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              {nightModeOverride ? <Moon size={12} /> : <Sun size={12} />}
+              <span>{nightModeOverride ? "På" : "Av"}</span>
             </button>
           </div>
 
