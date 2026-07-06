@@ -99,6 +99,13 @@ export function GarminActivityDialog({
       }
     | null;
   const coords = (state.kind === "ok" ? state.data.coords : []) as [number, number][];
+  const series = (state.kind === "ok" ? state.data.series : null) as {
+    elevation: Array<number | null>;
+    speedKmh: Array<number | null>;
+    heartRate: Array<number | null>;
+    timestamps: Array<number | null>;
+  } | null;
+
 
   const name = row?.activity_name ?? fallbackName ?? "Økt";
   const type = row?.activity_type ?? fallbackType ?? "";
@@ -172,11 +179,38 @@ export function GarminActivityDialog({
               ) : null}
             </div>
 
+            {series && (series.elevation.some((v) => v != null) || series.speedKmh.some((v) => v != null) || series.heartRate.some((v) => v != null)) && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <SeriesChart
+                  label="Stigning"
+                  unit="m"
+                  color="#6aa9ff"
+                  values={series.elevation}
+                  format={(v) => `${Math.round(v)}m`}
+                />
+                <SeriesChart
+                  label="Fart"
+                  unit="km/t"
+                  color="#5ee08a"
+                  values={series.speedKmh}
+                  format={(v) => `${v.toFixed(1)}km/t`}
+                />
+                <SeriesChart
+                  label="Puls"
+                  unit="bpm"
+                  color="#e07a7a"
+                  values={series.heartRate}
+                  format={(v) => `${Math.round(v)}bpm`}
+                />
+              </div>
+            )}
+
             {coords.length === 0 && (
               <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground text-center">
                 Ingen GPS-punkter på denne økta (f.eks. innendørs / manuelt registrert).
               </p>
             )}
+
           </div>
         )}
       </DialogContent>
@@ -191,6 +225,87 @@ function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; 
         {icon}{label}
       </div>
       <div className="text-sm text-primary tabular-nums mt-1 truncate">{value}</div>
+    </div>
+  );
+}
+
+function SeriesChart({
+  label,
+  unit,
+  color,
+  values,
+  format,
+}: {
+  label: string;
+  unit: string;
+  color: string;
+  values: Array<number | null>;
+  format: (v: number) => string;
+}) {
+  const clean = values.filter((v): v is number => v != null && Number.isFinite(v));
+  if (clean.length < 2) {
+    return (
+      <div className="rounded-md border border-border/60 bg-background/40 p-3">
+        <div className="flex items-baseline justify-between">
+          <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{label}</div>
+          <div className="text-xs text-muted-foreground">—</div>
+        </div>
+        <div className="h-16 flex items-center justify-center text-[10px] text-muted-foreground">Ingen data</div>
+      </div>
+    );
+  }
+  const min = Math.min(...clean);
+  const max = Math.max(...clean);
+  const avg = clean.reduce((a, b) => a + b, 0) / clean.length;
+  const last = clean[clean.length - 1];
+  const w = 100;
+  const h = 40;
+  const span = max - min || 1;
+  const step = w / (values.length - 1);
+  let d = "";
+  let started = false;
+  values.forEach((v, i) => {
+    if (v == null || !Number.isFinite(v)) return;
+    const x = (i * step).toFixed(2);
+    const y = (h - ((v - min) / span) * h).toFixed(2);
+    d += started ? ` L${x},${y}` : `M${x},${y}`;
+    started = true;
+  });
+  const area = `${d} L${w},${h} L0,${h} Z`;
+  const gradId = `g-${label}`;
+  return (
+    <div className="rounded-md border border-border/60 bg-background/40 p-3">
+      <div className="flex items-baseline justify-between mb-1">
+        <div className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground">{label}</div>
+        <div className="text-xs tabular-nums" style={{ color }}>{format(max)}</div>
+      </div>
+      <div className="relative">
+        <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-16">
+          <defs>
+            <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <path d={area} fill={`url(#${gradId})`} />
+          <path d={d} fill="none" stroke={color} strokeWidth="0.9" strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+        <div className="text-[10px] text-muted-foreground text-right -mt-4 pr-1">nå {format(last)}</div>
+      </div>
+      <div className="grid grid-cols-3 gap-1 mt-2 text-center">
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Min</div>
+          <div className="text-xs tabular-nums" style={{ color }}>{format(min)}</div>
+        </div>
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Snitt</div>
+          <div className="text-xs tabular-nums" style={{ color }}>{format(avg)}</div>
+        </div>
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Maks</div>
+          <div className="text-xs tabular-nums" style={{ color }}>{format(max)}</div>
+        </div>
+      </div>
     </div>
   );
 }
