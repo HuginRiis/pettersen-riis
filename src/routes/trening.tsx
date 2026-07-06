@@ -1116,7 +1116,7 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
                       {globalIdx}
                     </span>
                   </div>
-                  <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-primary/90 text-[9px] uppercase tracking-[0.15em] text-primary-foreground font-medium">
+                  <div className="absolute top-2 right-2 z-10 px-3 py-1 rounded-full bg-primary text-[10px] uppercase tracking-[0.15em] text-primary-foreground font-semibold shadow-md border border-primary-foreground/20">
                     Detaljer
                   </div>
 
