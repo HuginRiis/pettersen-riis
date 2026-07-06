@@ -6,7 +6,8 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
 import { getActivityStreams, getStravaStatus } from "@/lib/strava.functions";
-import { getGarminOverview, syncGarminActivitiesForYear } from "@/lib/garmin.functions";
+import { getGarminOverview, syncGarminActivitiesForYear, getGarminActivityDetail } from "@/lib/garmin.functions";
+import { RouteMap } from "@/components/RouteMap";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -1124,8 +1125,8 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
                       <ActivityMap encoded={a.polyline} />
                     </div>
                   ) : (
-                    <div className="aspect-[16/9] bg-muted/40 flex items-center justify-center">
-                      <span className="text-3xl opacity-30">{activityIcon(a.type)}</span>
+                    <div className="aspect-[16/9] bg-muted">
+                      <CardRouteMap activityId={a.id} owner={owner} fallbackIcon={activityIcon(a.type)} />
                     </div>
                   )}
 
@@ -1323,6 +1324,54 @@ function ActivityStreams({ activityId, owner }: { activityId: number; owner: Own
     </div>
   );
 }
+
+function CardRouteMap({
+  activityId,
+  owner,
+  fallbackIcon,
+}: {
+  activityId: number;
+  owner: Owner;
+  fallbackIcon: string;
+}) {
+  const fetchDetail = useServerFn(getGarminActivityDetail);
+  const [state, setState] = useState<
+    | { kind: "loading" }
+    | { kind: "ok"; coords: [number, number][] }
+    | { kind: "empty" }
+  >({ kind: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    setState({ kind: "loading" });
+    fetchDetail({ data: { activityId, owner } })
+      .then((res) => {
+        if (cancelled) return;
+        const coords = (res?.coords ?? []) as [number, number][];
+        setState(coords.length > 0 ? { kind: "ok", coords } : { kind: "empty" });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ kind: "empty" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId, owner, fetchDetail]);
+
+  if (state.kind === "loading") {
+    return <div className="w-full h-full bg-muted/40 animate-pulse" />;
+  }
+  if (state.kind === "empty") {
+    return (
+      <div className="w-full h-full bg-muted/40 flex items-center justify-center">
+        <span className="text-3xl opacity-30">{fallbackIcon}</span>
+      </div>
+    );
+  }
+  return <RouteMap coords={state.coords} />;
+}
+
+
 
 function StreamStats({
   data,
