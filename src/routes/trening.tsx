@@ -1116,7 +1116,7 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
                       {globalIdx}
                     </span>
                   </div>
-                  <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-primary/90 text-[9px] uppercase tracking-[0.15em] text-primary-foreground font-medium">
+                  <div className="absolute top-2 right-2 z-10 px-3 py-1 rounded-full bg-primary text-[10px] uppercase tracking-[0.15em] text-primary-foreground font-semibold shadow-md border border-primary-foreground/20">
                     Detaljer
                   </div>
 
@@ -1248,7 +1248,7 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 }
 
 function ActivityStreams({ activityId, owner }: { activityId: number; owner: Owner }) {
-  const fetchStreams = useServerFn(getActivityStreams);
+  const fetchDetail = useServerFn(getGarminActivityDetail);
   const [state, setState] = useState<
     | { kind: "idle" }
     | { kind: "loading" }
@@ -1264,19 +1264,25 @@ function ActivityStreams({ activityId, owner }: { activityId: number; owner: Own
   useEffect(() => {
     let cancelled = false;
     setState({ kind: "loading" });
-    fetchStreams({ data: { activityId, owner } })
-      .then((res) => {
+    fetchDetail({ data: { activityId, owner } })
+      .then((res: any) => {
         if (cancelled) return;
-        if (res.ok) {
-          setState({
-            kind: "ok",
-            altitude: res.altitude,
-            heartrate: res.heartrate,
-            speed: res.speed,
-          });
-        } else {
+        const s = res?.series;
+        if (!s) {
           setState({ kind: "error" });
+          return;
         }
+        const clean = (arr: Array<number | null> | undefined) => {
+          if (!arr) return null;
+          const filtered = arr.filter((v): v is number => v != null && Number.isFinite(v));
+          return filtered.length >= 2 ? filtered : null;
+        };
+        setState({
+          kind: "ok",
+          altitude: clean(s.elevation),
+          heartrate: clean(s.heartRate),
+          speed: clean(s.speedKmh),
+        });
       })
       .catch(() => {
         if (!cancelled) setState({ kind: "error" });
@@ -1284,7 +1290,7 @@ function ActivityStreams({ activityId, owner }: { activityId: number; owner: Own
     return () => {
       cancelled = true;
     };
-  }, [activityId, owner, fetchStreams]);
+  }, [activityId, owner, fetchDetail]);
 
   if (state.kind === "loading" || state.kind === "idle") {
     return <div className="h-12 rounded bg-muted/30 animate-pulse" />;
