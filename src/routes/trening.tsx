@@ -1236,11 +1236,13 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-primary/15 bg-background/40 px-1.5 py-1">
-      <div className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground leading-tight">
+    <div className="rounded-md border border-primary/25 bg-background/50 px-3 py-2">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground leading-tight">
         {label}
       </div>
-      <div className="text-xs text-primary leading-tight mt-0.5 truncate">{value}</div>
+      <div className="text-lg text-primary text-medieval leading-tight mt-1 truncate tabular-nums">
+        {value}
+      </div>
     </div>
   );
 }
