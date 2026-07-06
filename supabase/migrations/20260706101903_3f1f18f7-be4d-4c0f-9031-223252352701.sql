@@ -1,0 +1,1 @@
+UPDATE public.notification_settings SET value = jsonb_set(value, '{/iphone-app}', '{"enabled": true, "users": []}'::jsonb), updated_at = now() WHERE key = 'menu_visibility';
