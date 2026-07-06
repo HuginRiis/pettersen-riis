@@ -366,13 +366,22 @@ type ActivityDetails = {
     polyline?: Array<{ lat: number; lon: number; altitude?: number; time?: number }>;
   };
   summaryDTO?: Record<string, unknown>;
-  metricDescriptors?: unknown;
+  metricDescriptors?: Array<{ metricsIndex: number; key: string }>;
+  activityDetailMetrics?: Array<{ metrics: Array<number | null> }>;
+};
+
+export type GarminActivitySeries = {
+  elevation: Array<number | null>;
+  speedKmh: Array<number | null>;
+  heartRate: Array<number | null>;
+  timestamps: Array<number | null>;
 };
 
 export async function fetchActivityDetail(owner: GarminOwner, activityId: number): Promise<{
   coords: [number, number][];
   raw: ActivityDetails | null;
   summary: Record<string, unknown> | null;
+  series: GarminActivitySeries;
 }> {
   const detail = await garminGetMaybe<ActivityDetails>(
     owner,
@@ -382,8 +391,31 @@ export async function fetchActivityDetail(owner: GarminOwner, activityId: number
   const coords: [number, number][] = poly
     .filter((p) => typeof p.lat === "number" && typeof p.lon === "number")
     .map((p) => [p.lat, p.lon]);
-  return { coords, raw: detail ?? null, summary: (detail?.summaryDTO as Record<string, unknown>) ?? null };
+
+  const series: GarminActivitySeries = { elevation: [], speedKmh: [], heartRate: [], timestamps: [] };
+  const descs = detail?.metricDescriptors ?? [];
+  const metrics = detail?.activityDetailMetrics ?? [];
+  if (descs.length && metrics.length) {
+    const idx = (key: string) => descs.find((d) => d.key === key)?.metricsIndex ?? -1;
+    const iElev = idx("directElevation");
+    const iSpeed = idx("directSpeed");
+    const iHr = idx("directHeartRate");
+    const iTs = idx("directTimestamp");
+    // Sample down to ~200 points for graphs
+    const step = Math.max(1, Math.floor(metrics.length / 200));
+    for (let i = 0; i < metrics.length; i += step) {
+      const m = metrics[i]?.metrics ?? [];
+      series.elevation.push(iElev >= 0 ? (m[iElev] as number | null) ?? null : null);
+      const sp = iSpeed >= 0 ? (m[iSpeed] as number | null) : null;
+      series.speedKmh.push(sp == null ? null : sp * 3.6);
+      series.heartRate.push(iHr >= 0 ? (m[iHr] as number | null) ?? null : null);
+      series.timestamps.push(iTs >= 0 ? (m[iTs] as number | null) ?? null : null);
+    }
+  }
+
+  return { coords, raw: detail ?? null, summary: (detail?.summaryDTO as Record<string, unknown>) ?? null, series };
 }
+
 
 type SleepDto = {
   dailySleepDTO?: {
