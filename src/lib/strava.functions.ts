@@ -22,6 +22,15 @@ const __loadStravaConn = createIsomorphicFn()
       Promise.resolve({} as unknown as typeof import("@/lib/strava-connection.server")),
   );
 
+const __loadGarminDash = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/garmin-training-dashboard.server")> =>
+    import("@/lib/garmin-training-dashboard.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/lib/garmin-training-dashboard.server")> =>
+      Promise.resolve({} as unknown as typeof import("@/lib/garmin-training-dashboard.server")),
+  );
+
 
 const STRAVA_API = "https://www.strava.com/api/v3";
 
