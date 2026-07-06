@@ -99,6 +99,13 @@ export function GarminActivityDialog({
       }
     | null;
   const coords = (state.kind === "ok" ? state.data.coords : []) as [number, number][];
+  const series = (state.kind === "ok" ? state.data.series : null) as {
+    elevation: Array<number | null>;
+    speedKmh: Array<number | null>;
+    heartRate: Array<number | null>;
+    timestamps: Array<number | null>;
+  } | null;
+
 
   const name = row?.activity_name ?? fallbackName ?? "Økt";
   const type = row?.activity_type ?? fallbackType ?? "";
