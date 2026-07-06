@@ -6,11 +6,13 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
 import { getActivityStreams, getStravaStatus } from "@/lib/strava.functions";
-import { getGarminOverview } from "@/lib/garmin.functions";
+import { getGarminOverview, syncGarminActivitiesForYear } from "@/lib/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Crown, Flame, Swords } from "lucide-react";
+import { Crown, Flame, Swords, Loader2, Calendar } from "lucide-react";
+import { GarminActivityDialog } from "@/components/GarminActivityDialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/trening")({
   head: () => ({
