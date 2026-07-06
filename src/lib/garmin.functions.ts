@@ -348,18 +348,36 @@ export const getGarminActivityDetail = createServerFn({ method: "GET" })
 
     // Kilde 2: live-detaljer med GPS-punkter (henter kun ved behov).
     let coords: [number, number][] = [];
-    let liveSummary: Record<string, unknown> | null = null;
+    let liveSummary: {
+      distance?: number;
+      duration?: number;
+      movingDuration?: number;
+      elevationGain?: number;
+      elevationLoss?: number;
+      averageSpeed?: number;
+      maxSpeed?: number;
+      averageHR?: number;
+      maxHR?: number;
+      calories?: number;
+      startLatitude?: number;
+      startLongitude?: number;
+      minElevation?: number;
+      maxElevation?: number;
+      averagePower?: number;
+      maxPower?: number;
+    } | null = null;
     try {
       const mod = await __loadGarminSync();
       const d = await mod.fetchActivityDetail(owner, data.activityId);
       coords = d.coords;
-      liveSummary = d.summary;
+      liveSummary = (d.summary as typeof liveSummary) ?? null;
     } catch (e) {
       console.error("[garmin] activity detail failed", e);
     }
 
     return { ok: true as const, row, coords, liveSummary };
   });
+
 
 export const syncGarminActivitiesForYear = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
