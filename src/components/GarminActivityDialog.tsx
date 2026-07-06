@@ -179,11 +179,38 @@ export function GarminActivityDialog({
               ) : null}
             </div>
 
+            {series && (series.elevation.some((v) => v != null) || series.speedKmh.some((v) => v != null) || series.heartRate.some((v) => v != null)) && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <SeriesChart
+                  label="Stigning"
+                  unit="m"
+                  color="#6aa9ff"
+                  values={series.elevation}
+                  format={(v) => `${Math.round(v)}m`}
+                />
+                <SeriesChart
+                  label="Fart"
+                  unit="km/t"
+                  color="#5ee08a"
+                  values={series.speedKmh}
+                  format={(v) => `${v.toFixed(1)}km/t`}
+                />
+                <SeriesChart
+                  label="Puls"
+                  unit="bpm"
+                  color="#e07a7a"
+                  values={series.heartRate}
+                  format={(v) => `${Math.round(v)}bpm`}
+                />
+              </div>
+            )}
+
             {coords.length === 0 && (
               <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground text-center">
                 Ingen GPS-punkter på denne økta (f.eks. innendørs / manuelt registrert).
               </p>
             )}
+
           </div>
         )}
       </DialogContent>
