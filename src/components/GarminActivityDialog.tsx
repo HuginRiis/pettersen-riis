@@ -81,8 +81,16 @@ export function GarminActivityDialog({
   }, [open, activityId, owner, fetchDetail]);
 
   const row = state.kind === "ok" ? state.data.row : null;
-  const live = state.kind === "ok" ? state.data.liveSummary : null;
-  const coords = state.kind === "ok" ? state.data.coords : [];
+  const live = (state.kind === "ok" ? state.data.liveSummary : null) as
+    | {
+        distance?: number; duration?: number; elevationGain?: number; elevationLoss?: number;
+        averageSpeed?: number; maxSpeed?: number; averageHR?: number; maxHR?: number;
+        calories?: number; minElevation?: number; maxElevation?: number;
+        averagePower?: number; maxPower?: number;
+        startLatitude?: number; startLongitude?: number;
+      }
+    | null;
+  const coords = (state.kind === "ok" ? state.data.coords : []) as [number, number][];
 
   const name = row?.activity_name ?? fallbackName ?? "Økt";
   const type = row?.activity_type ?? fallbackType ?? "";
@@ -101,6 +109,7 @@ export function GarminActivityDialog({
   const elevLoss = live?.elevationLoss ?? null;
   const avgPower = live?.averagePower ?? null;
   const maxPower = live?.maxPower ?? null;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
