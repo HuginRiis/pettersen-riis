@@ -296,16 +296,39 @@ function WeatherPage() {
 
   const headline = useMemo(() => {
     if (!skienHours) return null;
-    // Finn neste time med signifikant nedbør
-    const nextRain = skienHours.slice(1, 24).find((h) => h.precip >= 0.2 || h.precipProbability >= 50);
-    if (nextRain) {
-      const t = new Date(nextRain.time);
-      const hh = t.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
-      return `Regnvær ventes rundt kl. ${hh}.`;
-    }
-    if ((currentHour?.cloud ?? 0) < 25) return "Klar himmel resten av dagen.";
-    return null;
-  }, [skienHours, currentHour]);
+    const startOfTomorrow = new Date(now);
+    startOfTomorrow.setHours(24, 0, 0, 0);
+    const startOfDayAfter = new Date(startOfTomorrow);
+    startOfDayAfter.setHours(24, 0, 0, 0);
+
+    const todayHours = skienHours.filter((h) => {
+      const t = new Date(h.time).getTime();
+      return t >= now.getTime() && t < startOfTomorrow.getTime();
+    });
+    const tomorrowHours = skienHours.filter((h) => {
+      const t = new Date(h.time).getTime();
+      return t >= startOfTomorrow.getTime() && t < startOfDayAfter.getTime();
+    });
+
+    const summarize = (hours: typeof skienHours, label: "I dag" | "I morgen"): string | null => {
+      if (!hours || hours.length === 0) return null;
+      const rain = hours.find((h) => h.precip >= 0.2 || h.precipProbability >= 50);
+      if (rain) {
+        const t = new Date(rain.time);
+        const hh = t.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+        const total = hours.reduce((s, h) => s + (h.precip || 0), 0);
+        const totalStr = total >= 0.5 ? ` (ca. ${total.toFixed(1)} mm totalt)` : "";
+        return `${label}: nedbør fra kl. ${hh}${totalStr}.`;
+      }
+      const avgCloud = hours.reduce((s, h) => s + (h.cloud ?? 0), 0) / hours.length;
+      if (avgCloud < 25) return `${label}: klart og oppholdsvær.`;
+      if (avgCloud < 60) return `${label}: delvis skyet, oppholdsvær.`;
+      return `${label}: skyet, men oppholdsvær.`;
+    };
+
+    const parts = [summarize(todayHours, "I dag"), summarize(tomorrowHours, "I morgen")].filter(Boolean);
+    return parts.length ? parts.join(" ") : null;
+  }, [skienHours, now]);
 
   const todayDay = skienDays?.[0];
   const condition = currentHour ? conditionFromSymbol(currentHour.symbol) : "—";
