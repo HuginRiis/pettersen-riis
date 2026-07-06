@@ -1369,6 +1369,9 @@ function CardRouteMap({
     );
   }
   return <RouteMap coords={state.coords} />;
+}
+
+
 
 function StreamStats({
   data,
