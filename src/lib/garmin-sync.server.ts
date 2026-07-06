@@ -301,32 +301,88 @@ type ActivityRow = {
   averageSpeed?: number;
 };
 
+async function upsertActivity(owner: GarminOwner, a: ActivityRow): Promise<void> {
+  if (!a.activityId || !a.startTimeLocal) return;
+  await supabaseAdmin
+    .from("garmin_activities")
+    .upsert([{
+      owner,
+      garmin_activity_id: a.activityId,
+      activity_type: a.activityType?.typeKey ?? null,
+      activity_name: a.activityName ?? null,
+      start_time_local: new Date(a.startTimeLocal.replace(" ", "T")).toISOString(),
+      duration_seconds: a.duration ?? null,
+      distance_meters: a.distance ?? null,
+      calories: a.calories ? Math.round(a.calories) : null,
+      average_hr: a.averageHR ? Math.round(a.averageHR) : null,
+      max_hr: a.maxHR ? Math.round(a.maxHR) : null,
+      elevation_gain: a.elevationGain ?? null,
+      average_speed: a.averageSpeed ?? null,
+      raw: a as any,
+      updated_at: new Date().toISOString(),
+    }], { onConflict: "owner,garmin_activity_id" });
+}
+
 export async function syncActivities(owner: GarminOwner, limit = 50): Promise<number> {
   const list = await garminGet<ActivityRow[]>(owner, `/activitylist-service/activities/search/activities?limit=${limit}&start=0`);
   let count = 0;
   for (const a of list ?? []) {
-    if (!a.activityId || !a.startTimeLocal) continue;
-    await supabaseAdmin
-      .from("garmin_activities")
-      .upsert([{
-        owner,
-        garmin_activity_id: a.activityId,
-        activity_type: a.activityType?.typeKey ?? null,
-        activity_name: a.activityName ?? null,
-        start_time_local: new Date(a.startTimeLocal.replace(" ", "T")).toISOString(),
-        duration_seconds: a.duration ?? null,
-        distance_meters: a.distance ?? null,
-        calories: a.calories ? Math.round(a.calories) : null,
-        average_hr: a.averageHR ? Math.round(a.averageHR) : null,
-        max_hr: a.maxHR ? Math.round(a.maxHR) : null,
-        elevation_gain: a.elevationGain ?? null,
-        average_speed: a.averageSpeed ?? null,
-        raw: a as any,
-        updated_at: new Date().toISOString(),
-      }], { onConflict: "owner,garmin_activity_id" });
+    await upsertActivity(owner, a);
     count++;
   }
   return count;
+}
+
+/**
+ * Henter alle aktiviteter for et gitt kalenderår (paginert 100 av gangen).
+ */
+export async function syncActivitiesForYear(owner: GarminOwner, year: number): Promise<number> {
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
+  const pageSize = 100;
+  let start = 0;
+  let total = 0;
+  for (let page = 0; page < 60; page++) {
+    const list = await garminGet<ActivityRow[]>(
+      owner,
+      `/activitylist-service/activities/search/activities?limit=${pageSize}&start=${start}&startDate=${startDate}&endDate=${endDate}`,
+    );
+    if (!list || list.length === 0) break;
+    for (const a of list) {
+      await upsertActivity(owner, a);
+      total++;
+    }
+    if (list.length < pageSize) break;
+    start += pageSize;
+  }
+  return total;
+}
+
+type ActivityDetails = {
+  activityId?: number;
+  geoPolylineDTO?: {
+    startPoint?: { lat: number; lon: number };
+    endPoint?: { lat: number; lon: number };
+    polyline?: Array<{ lat: number; lon: number; altitude?: number; time?: number }>;
+  };
+  summaryDTO?: Record<string, unknown>;
+  metricDescriptors?: unknown;
+};
+
+export async function fetchActivityDetail(owner: GarminOwner, activityId: number): Promise<{
+  coords: [number, number][];
+  raw: ActivityDetails | null;
+  summary: Record<string, unknown> | null;
+}> {
+  const detail = await garminGetMaybe<ActivityDetails>(
+    owner,
+    `/activity-service/activity/${activityId}/details?maxPolylineSize=4000&maxChartSize=1000`,
+  );
+  const poly = detail?.geoPolylineDTO?.polyline ?? [];
+  const coords: [number, number][] = poly
+    .filter((p) => typeof p.lat === "number" && typeof p.lon === "number")
+    .map((p) => [p.lat, p.lon]);
+  return { coords, raw: detail ?? null, summary: (detail?.summaryDTO as Record<string, unknown>) ?? null };
 }
 
 type SleepDto = {

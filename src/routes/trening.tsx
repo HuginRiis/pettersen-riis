@@ -6,11 +6,13 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { ActivityMap } from "@/components/ActivityMap";
 import { GarminHouses } from "@/components/GarminHouses";
 import { getActivityStreams, getStravaStatus } from "@/lib/strava.functions";
-import { getGarminOverview } from "@/lib/garmin.functions";
+import { getGarminOverview, syncGarminActivitiesForYear } from "@/lib/garmin.functions";
 import treningImg from "@/assets/got-trening.jpg";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Crown, Flame, Swords } from "lucide-react";
+import { Crown, Flame, Swords, Loader2, Calendar } from "lucide-react";
+import { GarminActivityDialog } from "@/components/GarminActivityDialog";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/trening")({
   head: () => ({
@@ -1055,24 +1057,57 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
   const INITIAL = 3;
   const [expanded, setExpanded] = useState(false);
   const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<{ id: number; name: string; type: string } | null>(null);
   const totalPages = expanded ? Math.max(1, Math.ceil(activities.length / PAGE_SIZE)) : 1;
   const start = expanded ? page * PAGE_SIZE : 0;
   const slice = expanded ? activities.slice(start, start + PAGE_SIZE) : activities.slice(0, INITIAL);
 
+  const syncYear = useServerFn(syncGarminActivitiesForYear);
+  const [syncing, setSyncing] = useState<number | null>(null);
+  async function handleYearSync(year: number) {
+    if (syncing) return;
+    setSyncing(year);
+    try {
+      const res = await syncYear({ data: { owner, year } });
+      toast.success(`Synket ${res.count} aktiviteter for ${year}. Last siden på nytt for å se dem.`);
+    } catch (e) {
+      toast.error(`Kunne ikke synke ${year}: ${(e as Error).message}`);
+    } finally {
+      setSyncing(null);
+    }
+  }
+  const currentYear = new Date().getFullYear();
+
   return (
     <>
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mr-1 flex items-center gap-1">
+          <Calendar size={11} /> Hent år
+        </span>
+        {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
+          <button
+            key={y}
+            onClick={() => handleYearSync(y)}
+            disabled={syncing !== null}
+            className="px-3 py-1 rounded border border-primary/30 text-[11px] uppercase tracking-[0.15em] text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {syncing === y ? <Loader2 size={11} className="animate-spin" /> : null}
+            {y}
+          </button>
+        ))}
+      </div>
+
       <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {slice.map((a, idx) => {
           const globalIdx = start + idx + 1;
           const isRun = a.type.toLowerCase().includes("run");
           return (
             <li key={a.id}>
-              <a
-                href={`https://www.strava.com/activities/${a.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block h-full"
-                title="Åpne i Strava"
+              <button
+                type="button"
+                onClick={() => setSelected({ id: a.id, name: a.name, type: a.type })}
+                className="block h-full w-full text-left"
+                title="Vis detaljer og kart"
               >
                 <article className="panel rounded-lg overflow-hidden glow-on-hover relative h-full flex flex-col transition-transform hover:-translate-y-0.5">
                   <div className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-primary/40 flex items-center justify-center">
@@ -1080,11 +1115,8 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
                       {globalIdx}
                     </span>
                   </div>
-                  <div
-                    className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-[#FC4C02]/90 text-[9px] uppercase tracking-[0.15em] text-white font-medium"
-                    title="Åpne i Strava"
-                  >
-                    Strava ↗
+                  <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-primary/90 text-[9px] uppercase tracking-[0.15em] text-primary-foreground font-medium">
+                    Detaljer
                   </div>
 
                   {a.polyline ? (
@@ -1127,11 +1159,23 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
                     </div>
                   </div>
                 </article>
-              </a>
+              </button>
             </li>
           );
         })}
       </ol>
+
+      {selected && (
+        <GarminActivityDialog
+          activityId={selected.id}
+          owner={owner}
+          open={!!selected}
+          onOpenChange={(o) => { if (!o) setSelected(null); }}
+          fallbackName={selected.name}
+          fallbackType={selected.type}
+        />
+      )}
+
 
       {!expanded && activities.length > INITIAL && (
         <div className="mt-6 flex justify-center">
