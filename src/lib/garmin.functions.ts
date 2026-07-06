@@ -328,5 +328,53 @@ export const ensureGarminDeviceHero = createServerFn({ method: "POST" })
     return { url };
   });
 
+
+const activityIdSchema = z.object({
+  activityId: z.number().int().positive(),
+  owner: z.enum(["arne", "rebekka"]).default("arne"),
+});
+
+export const getGarminActivityDetail = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => activityIdSchema.parse(d ?? {}))
+  .handler(async ({ data }) => {
+    const owner = data.owner as GarminOwner;
+    // Kilde 1: raw fra vår DB (allerede lagret ved sync).
+    const { data: row } = await supabaseAdmin
+      .from("garmin_activities")
+      .select("garmin_activity_id, activity_type, activity_name, start_time_local, duration_seconds, distance_meters, calories, average_hr, max_hr, elevation_gain, average_speed, raw")
+      .eq("owner", owner)
+      .eq("garmin_activity_id", data.activityId)
+      .maybeSingle();
+
+    // Kilde 2: live-detaljer med GPS-punkter (henter kun ved behov).
+    let coords: [number, number][] = [];
+    let liveSummary: Record<string, unknown> | null = null;
+    try {
+      const mod = await __loadGarminSync();
+      const d = await mod.fetchActivityDetail(owner, data.activityId);
+      coords = d.coords;
+      liveSummary = d.summary;
+    } catch (e) {
+      console.error("[garmin] activity detail failed", e);
+    }
+
+    return { ok: true as const, row, coords, liveSummary };
+  });
+
+export const syncGarminActivitiesForYear = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => {
+    const x = (d ?? {}) as { owner?: string; year?: number };
+    const owner = (x.owner === "rebekka" ? "rebekka" : "arne") as GarminOwner;
+    const year = typeof x.year === "number" ? x.year : new Date().getFullYear();
+    if (year < 2010 || year > 2100) throw new Error("Ugyldig år");
+    return { owner, year };
+  })
+  .handler(async ({ data }) => {
+    const mod = await __loadGarminSync();
+    const count = await mod.syncActivitiesForYear(data.owner, data.year);
+    return { ok: true as const, count, year: data.year };
+  });
+
 export { GARMIN_OWNERS };
 export type { GarminOwner };
+
