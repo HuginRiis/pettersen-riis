@@ -80,7 +80,15 @@ export function GarminActivityDialog({
     return () => { cancelled = true; };
   }, [open, activityId, owner, fetchDetail]);
 
-  const row = state.kind === "ok" ? state.data.row : null;
+  const row = (state.kind === "ok" ? state.data.row : null) as
+    | {
+        activity_name: string | null; activity_type: string | null;
+        start_time_local: string;
+        duration_seconds: number | null; distance_meters: number | null;
+        calories: number | null; average_hr: number | null; max_hr: number | null;
+        elevation_gain: number | null; average_speed: number | null;
+      }
+    | null;
   const live = (state.kind === "ok" ? state.data.liveSummary : null) as
     | {
         distance?: number; duration?: number; elevationGain?: number; elevationLoss?: number;
