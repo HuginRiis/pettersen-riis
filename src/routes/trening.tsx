@@ -1325,6 +1325,51 @@ function ActivityStreams({ activityId, owner }: { activityId: number; owner: Own
   );
 }
 
+function CardRouteMap({
+  activityId,
+  owner,
+  fallbackIcon,
+}: {
+  activityId: number;
+  owner: Owner;
+  fallbackIcon: string;
+}) {
+  const fetchDetail = useServerFn(getGarminActivityDetail);
+  const [state, setState] = useState<
+    | { kind: "loading" }
+    | { kind: "ok"; coords: [number, number][] }
+    | { kind: "empty" }
+  >({ kind: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    setState({ kind: "loading" });
+    fetchDetail({ data: { activityId, owner } })
+      .then((res) => {
+        if (cancelled) return;
+        const coords = (res?.coords ?? []) as [number, number][];
+        setState(coords.length > 0 ? { kind: "ok", coords } : { kind: "empty" });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ kind: "empty" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId, owner, fetchDetail]);
+
+  if (state.kind === "loading") {
+    return <div className="w-full h-full bg-muted/40 animate-pulse" />;
+  }
+  if (state.kind === "empty") {
+    return (
+      <div className="w-full h-full bg-muted/40 flex items-center justify-center">
+        <span className="text-3xl opacity-30">{fallbackIcon}</span>
+      </div>
+    );
+  }
+  return <RouteMap coords={state.coords} />;
+
 function StreamStats({
   data,
   unit,
