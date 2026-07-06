@@ -1125,8 +1125,8 @@ function ActivitiesPaginated({ activities, owner }: { activities: DashOk["activi
                       <ActivityMap encoded={a.polyline} />
                     </div>
                   ) : (
-                    <div className="aspect-[16/9] bg-muted/40 flex items-center justify-center">
-                      <span className="text-3xl opacity-30">{activityIcon(a.type)}</span>
+                    <div className="aspect-[16/9] bg-muted">
+                      <CardRouteMap activityId={a.id} owner={owner} fallbackIcon={activityIcon(a.type)} />
                     </div>
                   )}
 
