@@ -44,6 +44,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("today");
   const [refreshTick, setRefreshTick] = useState(0);
+  const fetchForecast = useServerFn(getMetForecastComplete);
 
   // Tving fersk data ved åpning + når fanen kommer tilbake i forgrunn
   useEffect(() => {
