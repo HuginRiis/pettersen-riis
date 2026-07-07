@@ -87,8 +87,10 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
 
   const symbol = active?.symbol ?? null;
   const isNight = isNightNow(symbol);
-  const baseMood = symbolMood(symbol);
-  const mood = (active?.thunderProb ?? 0) > 10 ? "thunder" : baseMood;
+  // Bruk kun MET sitt symbol for å avgjøre modus. `probability_of_thunder`
+  // kan være lav (5–15 %) uten at MET faktisk varsler torden – vi eskalerte
+  // tidligere til "thunder" på >10 % og fikk falske lynanimasjoner.
+  const mood = symbolMood(symbol);
 
 
   // Gjennomsnittlig vind for valgt periode → styrer skyfart
