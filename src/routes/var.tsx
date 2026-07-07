@@ -208,7 +208,7 @@ function WeatherPage() {
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const json = await res.json();
         if (cancelled) return;
-        const { days, hours } = parseForecast(json);
+        const { days, hours } = parseForecast(json, { showThunderProbability });
         setState((s) => ({ ...s, [loc.key]: { days, hours, error: null, loading: false } }));
       } catch (e) {
         if (cancelled) return;
