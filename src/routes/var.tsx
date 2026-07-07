@@ -42,6 +42,8 @@ import {
   VolumeX,
   Search as SearchIcon,
   ChevronRight,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type TileTone } from "@/components/weather/TileTone";
