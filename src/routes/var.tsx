@@ -447,6 +447,8 @@ type WeatherPageInnerProps = {
   setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   nightModeOverride: boolean;
   setNightModeOverride: React.Dispatch<React.SetStateAction<boolean>>;
+  showThunderProbability: boolean;
+  setShowThunderProbability: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function WeatherPageInner(props: WeatherPageInnerProps) {
