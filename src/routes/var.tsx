@@ -985,6 +985,13 @@ function WeatherMenuButton({
             </button>
           </div>
 
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-white/70">Vis torden-symbol</span>
+            <ThunderSymbolToggle />
+          </div>
+
+
+
           <div className="h-px bg-white/10" />
 
           <TileColorToggle />
