@@ -713,6 +713,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           setSoundEnabled={setSoundEnabled}
           nightModeOverride={nightModeOverride}
           setNightModeOverride={setNightModeOverride}
+          showThunderProbability={showThunderProbability}
+          setShowThunderProbability={setShowThunderProbability}
         />
 
       </div>
