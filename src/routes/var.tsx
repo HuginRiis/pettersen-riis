@@ -3299,9 +3299,14 @@ function VisibilityCard({ hour }: { hour: Hour | null }) {
     vis < 35 ? "God sikt" : "Meget god sikt";
 
   const fxIntensity = Math.max(0, Math.min(1, (40 - vis) / 40));
-  const fx = vis < 10
-    ? <DriftingClouds intensity={0.9} seed={17} rainy={precip >= 0.5} />
-    : <HumidityFX intensity={fxIntensity} />;
+  const fx = (
+    <>
+      {vis < 10
+        ? <DriftingClouds intensity={0.9} seed={17} rainy={precip >= 0.5} />
+        : <HumidityFX intensity={fxIntensity} />}
+      <VisibilityBeamFX vis={vis} />
+    </>
+  );
 
   const display = vis < 1 ? `${(vis * 1000).toFixed(0)} m` : `${vis.toFixed(vis < 10 ? 1 : 0)} km`;
 
@@ -3311,6 +3316,92 @@ function VisibilityCard({ hour }: { hour: Hour | null }) {
       <div className="text-sm text-white/85">{label}</div>
       <div className="text-[12px] text-white/75 mt-2 leading-snug">Estimert fra fuktighet, nedbør og skydekke.</div>
     </GlassCard>
+  );
+}
+
+/**
+ * Kulere sikt-animasjon: en roterende fyrlykt-kjegle som sveiper gjennom disen,
+ * partikler som glir innover (som å kjøre inn i tåke), og en pulserende
+ * distanse-vignette. Tettere dis → kortere kjegle og saktere sveip.
+ */
+function VisibilityBeamFX({ vis }: { vis: number }) {
+  const clarity = Math.max(0, Math.min(1, (vis - 0.5) / 40));
+  const beamReach = 30 + clarity * 55; // %
+  const sweepDur = (14 - clarity * 6).toFixed(1); // s
+  const beamOpacity = 0.18 + clarity * 0.35;
+  const particles = Array.from({ length: 14 }, (_, i) => ({
+    top: (i * 37 + 11) % 100,
+    delay: -((i * 0.9) % 7).toFixed(2),
+    dur: (5 + ((i * 1.7) % 4)).toFixed(1),
+    size: 1 + ((i * 3) % 3),
+  }));
+  return (
+    <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div
+        className="absolute"
+        style={{
+          left: "50%",
+          top: "60%",
+          width: `${beamReach}%`,
+          height: `${beamReach * 1.6}%`,
+          transformOrigin: "0% 50%",
+          background:
+            "conic-gradient(from -14deg at 0% 50%, transparent 0deg, rgba(180,220,255,0.55) 14deg, rgba(255,255,255,0.0) 22deg, transparent 360deg)",
+          filter: "blur(6px)",
+          opacity: beamOpacity,
+          animation: `sikt-sweep ${sweepDur}s ease-in-out infinite`,
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          left: "calc(50% - 4px)",
+          top: "calc(60% - 4px)",
+          width: 8,
+          height: 8,
+          background: "radial-gradient(circle, rgba(200,230,255,0.9), rgba(200,230,255,0) 70%)",
+          filter: "blur(1px)",
+        }}
+      />
+      {particles.map((p, i) => (
+        <span
+          key={i}
+          className="absolute rounded-full bg-white/70"
+          style={{
+            top: `${p.top}%`,
+            left: "-6%",
+            width: p.size,
+            height: p.size,
+            filter: "blur(0.5px)",
+            opacity: 0.35 + clarity * 0.35,
+            animation: `sikt-drift ${p.dur}s linear infinite`,
+            animationDelay: `${p.delay}s`,
+          }}
+        />
+      ))}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse at 50% 60%, rgba(255,255,255,0.08), transparent 55%)",
+          animation: "sikt-pulse 6s ease-in-out infinite",
+        }}
+      />
+      <style>{`
+        @keyframes sikt-sweep {
+          0%,100% { transform: rotate(-55deg); }
+          50%     { transform: rotate(55deg); }
+        }
+        @keyframes sikt-drift {
+          0%   { transform: translateX(0) scale(1);   opacity: 0; }
+          15%  { opacity: 1; }
+          100% { transform: translateX(112vw) scale(1.6); opacity: 0; }
+        }
+        @keyframes sikt-pulse {
+          0%,100% { opacity: .6; }
+          50%     { opacity: 1; }
+        }
+      `}</style>
+    </div>
   );
 }
 
