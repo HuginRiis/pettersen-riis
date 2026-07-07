@@ -913,11 +913,15 @@ function WeatherMenuButton({
   setSoundEnabled,
   nightModeOverride,
   setNightModeOverride,
+  showThunderProbability,
+  setShowThunderProbability,
 }: {
   soundEnabled: boolean;
   setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   nightModeOverride: boolean;
   setNightModeOverride: React.Dispatch<React.SetStateAction<boolean>>;
+  showThunderProbability: boolean;
+  setShowThunderProbability: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
