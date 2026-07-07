@@ -399,6 +399,8 @@ function WeatherPage() {
             setSoundEnabled={setSoundEnabled}
             nightModeOverride={nightModeOverride}
             setNightModeOverride={setNightModeOverride}
+            showThunderProbability={showThunderProbability}
+            setShowThunderProbability={setShowThunderProbability}
           />
         </TileColorProvider>
       </TileOpacityProvider>
