@@ -1,4 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getMetForecastComplete } from "@/lib/met-forecast.functions";
+
+/** Kutt ned lange labels til bare stedsnavnet (før første komma). */
+function shortLabel(label: string): string {
+  return String(label ?? "").split(",")[0].trim() || label;
+}
 
 type Hour = {
   time: string;
