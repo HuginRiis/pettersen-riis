@@ -162,6 +162,7 @@ function WeatherPage() {
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
   const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
   const [nightModeOverride, setNightModeOverride] = usePerUserPersistedState<boolean>("var.nightMode.override", false);
+  const [showThunderProbability, setShowThunderProbability] = usePerUserPersistedState<boolean>("var.thunder.showProbability", false);
 
   const LOCATIONS = useMemo(
     () => [
@@ -207,7 +208,7 @@ function WeatherPage() {
         if (!res.ok) throw new Error("Kunne ikke hente værmelding");
         const json = await res.json();
         if (cancelled) return;
-        const { days, hours } = parseForecast(json);
+        const { days, hours } = parseForecast(json, { showThunderProbability });
         setState((s) => ({ ...s, [loc.key]: { days, hours, error: null, loading: false } }));
       } catch (e) {
         if (cancelled) return;
@@ -230,7 +231,7 @@ function WeatherPage() {
       cancelled = true;
       clearInterval(c);
     };
-  }, [fetchAlerts, LOCATIONS, refreshTick]);
+  }, [fetchAlerts, LOCATIONS, refreshTick, showThunderProbability]);
 
   const homeyOk = data?.ok === true;
   const devices = homeyOk ? data.devices : [];
@@ -398,6 +399,8 @@ function WeatherPage() {
             setSoundEnabled={setSoundEnabled}
             nightModeOverride={nightModeOverride}
             setNightModeOverride={setNightModeOverride}
+            showThunderProbability={showThunderProbability}
+            setShowThunderProbability={setShowThunderProbability}
           />
         </TileColorProvider>
       </TileOpacityProvider>
@@ -444,6 +447,8 @@ type WeatherPageInnerProps = {
   setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   nightModeOverride: boolean;
   setNightModeOverride: React.Dispatch<React.SetStateAction<boolean>>;
+  showThunderProbability: boolean;
+  setShowThunderProbability: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 function WeatherPageInner(props: WeatherPageInnerProps) {
@@ -454,6 +459,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     tollnesTemp, hyttaTemp, hyttaHumidity, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
     rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
     nightModeOverride, setNightModeOverride,
+    showThunderProbability, setShowThunderProbability,
   } = props;
 
   const isDay = useMemo(() => {
@@ -712,6 +718,8 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           setSoundEnabled={setSoundEnabled}
           nightModeOverride={nightModeOverride}
           setNightModeOverride={setNightModeOverride}
+          showThunderProbability={showThunderProbability}
+          setShowThunderProbability={setShowThunderProbability}
         />
 
       </div>
@@ -905,11 +913,15 @@ function WeatherMenuButton({
   setSoundEnabled,
   nightModeOverride,
   setNightModeOverride,
+  showThunderProbability,
+  setShowThunderProbability,
 }: {
   soundEnabled: boolean;
   setSoundEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   nightModeOverride: boolean;
   setNightModeOverride: React.Dispatch<React.SetStateAction<boolean>>;
+  showThunderProbability: boolean;
+  setShowThunderProbability: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -982,6 +994,23 @@ function WeatherMenuButton({
             >
               {nightModeOverride ? <Moon size={12} /> : <Sun size={12} />}
               <span>{nightModeOverride ? "På" : "Av"}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-white/70 pr-2 leading-tight">Vis torden-% uten MET-symbol</span>
+            <button
+              type="button"
+              onClick={() => setShowThunderProbability((v) => !v)}
+              aria-pressed={showThunderProbability}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium transition-all shrink-0 ${
+                showThunderProbability
+                  ? "bg-white text-slate-900"
+                  : "bg-white/10 text-white/80 hover:bg-white/20"
+              }`}
+            >
+              <Zap size={12} />
+              <span>{showThunderProbability ? "På" : "Av"}</span>
             </button>
           </div>
 
@@ -3704,7 +3733,7 @@ function readDailyRain(d: DeviceLike | null | undefined): number | null {
   return null;
 }
 
-function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
+function parseForecast(data: any, opts: { showThunderProbability?: boolean } = {}): { days: ForecastDay[]; hours: Hour[] } {
   const series = data?.properties?.timeseries ?? [];
   const dayMap = new Map<string, ForecastDay>();
   const hours: Hour[] = [];
@@ -3740,7 +3769,7 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
       pressure: inst.air_pressure_at_sea_level ?? 0,
       humidity: inst.relative_humidity ?? 0,
       cloud: inst.cloud_area_fraction ?? 0,
-      thunder: hasThunderSymbol ? (thunderProbability ?? 60) : 0,
+      thunder: hasThunderSymbol ? (thunderProbability ?? 60) : (opts.showThunderProbability ? (thunderProbability ?? 0) : 0),
       symbol,
     });
     const existing = dayMap.get(date);
