@@ -1424,6 +1424,29 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   );
 }
 
+// Shared preference: vis torden-symbol (⚡ / bolts) på lyn-visninger
+function useShowThunderSymbol() {
+  return usePerUserPersistedState<boolean>("var.showThunderSymbol", true);
+}
+
+function ThunderSymbolToggle() {
+  const [on, setOn] = useShowThunderSymbol();
+  return (
+    <button
+      type="button"
+      onClick={() => setOn((v) => !v)}
+      aria-pressed={on}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
+        on ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
+      }`}
+    >
+      <Zap size={12} />
+      <span>{on ? "På" : "Av"}</span>
+    </button>
+  );
+}
+
+
 function LynPanel({ hours }: { hours: Hour[] }) {
   const maxT = Math.max(5, ...hours.map((h) => h.thunder));
   const peakIdx = hours.reduce(
