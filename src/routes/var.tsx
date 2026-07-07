@@ -3236,8 +3236,29 @@ function AvgTempCard({ hours }: { hours: Hour[] | null }) {
   return (
     <GlassCard eyebrow="Snittemp. i dag" icon={<Thermometer size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{avg.toFixed(1)}°</div>
-      <div className={`text-sm ${delta >= 0.5 ? "text-orange-300" : delta <= -0.5 ? "text-sky-300" : "text-white/85"}`}>
-        {delta >= 0.5 ? "+" : ""}{delta.toFixed(1)}° vs normalt
+      <div className={`text-sm flex items-center gap-1.5 ${delta >= 0.5 ? "text-orange-300" : delta <= -0.5 ? "text-sky-300" : "text-white/85"}`}>
+        {delta >= 0.5 ? (
+          <span
+            className="inline-flex flex-col items-center leading-none text-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.6)]"
+            style={{ animation: "avgTempArrowUp 1.4s ease-in-out infinite" }}
+            aria-hidden
+          >
+            <ArrowUp size={16} strokeWidth={2.6} />
+          </span>
+        ) : delta <= -0.5 ? (
+          <span
+            className="inline-flex flex-col items-center leading-none text-sky-400 drop-shadow-[0_0_6px_rgba(56,189,248,0.6)]"
+            style={{ animation: "avgTempArrowDown 1.4s ease-in-out infinite" }}
+            aria-hidden
+          >
+            <ArrowDown size={16} strokeWidth={2.6} />
+          </span>
+        ) : null}
+        <span>{delta >= 0.5 ? "+" : ""}{delta.toFixed(1)}° vs normalt</span>
+        <style>{`
+          @keyframes avgTempArrowUp { 0%,100% { transform: translateY(2px); opacity: .75 } 50% { transform: translateY(-3px); opacity: 1 } }
+          @keyframes avgTempArrowDown { 0%,100% { transform: translateY(-2px); opacity: .75 } 50% { transform: translateY(3px); opacity: 1 } }
+        `}</style>
       </div>
       <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
     </GlassCard>
