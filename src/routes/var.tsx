@@ -1489,7 +1489,7 @@ function LynPanel({ hours }: { hours: Hour[] }) {
                     }`}
                     style={{ height: `${pct}%` }}
                   />
-                  {hot && (
+                  {hot && showThunderSymbol && (
                     <Zap size={10} className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200" />
                   )}
                 </div>
