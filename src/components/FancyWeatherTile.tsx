@@ -1,4 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getMetForecastComplete } from "@/lib/met-forecast.functions";
+
+/** Kutt ned lange labels til bare stedsnavnet (før første komma). */
+function shortLabel(label: string): string {
+  return String(label ?? "").split(",")[0].trim() || label;
+}
 
 type Hour = {
   time: string;
@@ -37,6 +44,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabKey>("today");
   const [refreshTick, setRefreshTick] = useState(0);
+  const fetchForecast = useServerFn(getMetForecastComplete);
 
   // Tving fersk data ved åpning + når fanen kommer tilbake i forgrunn
   useEffect(() => {
@@ -61,12 +69,8 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
-          { headers: { Accept: "application/json" }, cache: "no-store" },
-        );
-        if (!res.ok) throw new Error("Kunne ikke hente værmelding");
-        const data = await res.json();
+        setError(null);
+        const data = await fetchForecast({ data: { lat, lon } });
         if (cancelled) return;
         setDays(parse(data));
       } catch (e) {
@@ -77,7 +81,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [lat, lon, refreshTick]);
+  }, [lat, lon, refreshTick, fetchForecast]);
 
   const active = useMemo(() => pickActive(days ?? [], tab), [days, tab]);
 
@@ -133,7 +137,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
       <div className="fancy-wx__content">
         <div className="fancy-wx__top">
           <div>
-            <div className="fancy-wx__place">{label}</div>
+            <div className="fancy-wx__place">{shortLabel(label)}</div>
           </div>
           <div className="fancy-wx__tabs">
             {(
