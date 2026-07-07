@@ -985,13 +985,6 @@ function WeatherMenuButton({
             </button>
           </div>
 
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs text-white/70">Vis torden-symbol</span>
-            <ThunderSymbolToggle />
-          </div>
-
-
-
           <div className="h-px bg-white/10" />
 
           <TileColorToggle />
@@ -1099,13 +1092,11 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const maxThunder = Math.max(0, ...nextHours.map((h) => h.thunder));
   const avgCloud = nextHours.reduce((s, h) => s + (h.cloud ?? 0), 0) / Math.max(1, nextHours.length);
 
-  const [showThunderSymbol] = useShowThunderSymbol();
   const fx =
     panel === "nedbor" ? <RainFX intensity={rainIntensity} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
     panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} /> :
     panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
-    !showThunderSymbol ? null :
     maxThunder < 10 ? null :
     <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
 
@@ -1426,31 +1417,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
   );
 }
 
-// Shared preference: vis torden-symbol (⚡ / bolts) på lyn-visninger
-function useShowThunderSymbol() {
-  return usePerUserPersistedState<boolean>("var.showThunderSymbol", true);
-}
-
-function ThunderSymbolToggle() {
-  const [on, setOn] = useShowThunderSymbol();
-  return (
-    <button
-      type="button"
-      onClick={() => setOn((v) => !v)}
-      aria-pressed={on}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
-        on ? "bg-white text-slate-900" : "bg-white/10 text-white/80 hover:bg-white/20"
-      }`}
-    >
-      <Zap size={12} />
-      <span>{on ? "På" : "Av"}</span>
-    </button>
-  );
-}
-
-
 function LynPanel({ hours }: { hours: Hour[] }) {
-  const [showThunderSymbol] = useShowThunderSymbol();
   const maxT = Math.max(5, ...hours.map((h) => h.thunder));
   const peakIdx = hours.reduce(
     (best, h, i, arr) => (h.thunder > arr[best].thunder ? i : best),
@@ -1489,7 +1456,7 @@ function LynPanel({ hours }: { hours: Hour[] }) {
                     }`}
                     style={{ height: `${pct}%` }}
                   />
-                  {hot && showThunderSymbol && (
+                  {hot && (
                     <Zap size={10} className="absolute top-1 left-1/2 -translate-x-1/2 text-yellow-200" />
                   )}
                 </div>
@@ -2117,7 +2084,6 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
 
 
 function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
-  const [showThunderSymbol] = useShowThunderSymbol();
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const buckets = Array.from({ length: 12 }, (_, b) => {
     const startHour = b * 2;
@@ -2142,7 +2108,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
     <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
       <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
-        {showThunderSymbol && Array.from({ length: boltCount }, (_, i) => {
+        {Array.from({ length: boltCount }, (_, i) => {
           const top = 2 + i * 8;
           const left = 4 + i * 10;
           const dur = 1.4 + i * 0.5;
@@ -2203,7 +2169,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
       </div>
       <div className="text-[13px] tabular-nums text-right">
         {avgThunder >= 5 ? (
-          <span className="text-amber-300">{showThunderSymbol ? "⚡ " : ""}{Math.round(avgThunder)} %</span>
+          <span className="text-amber-300">⚡ {Math.round(avgThunder)} %</span>
         ) : (
           <span className="text-white/40">{Math.round(avgThunder)} %</span>
         )}
