@@ -137,7 +137,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
       <div className="fancy-wx__content">
         <div className="fancy-wx__top">
           <div>
-            <div className="fancy-wx__place">{label}</div>
+            <div className="fancy-wx__place">{shortLabel(label)}</div>
           </div>
           <div className="fancy-wx__tabs">
             {(
