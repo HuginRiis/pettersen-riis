@@ -69,12 +69,8 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(
-          `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
-          { headers: { Accept: "application/json" }, cache: "no-store" },
-        );
-        if (!res.ok) throw new Error("Kunne ikke hente værmelding");
-        const data = await res.json();
+        setError(null);
+        const data = await fetchForecast({ data: { lat, lon } });
         if (cancelled) return;
         setDays(parse(data));
       } catch (e) {
@@ -85,7 +81,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [lat, lon, refreshTick]);
+  }, [lat, lon, refreshTick, fetchForecast]);
 
   const active = useMemo(() => pickActive(days ?? [], tab), [days, tab]);
 
