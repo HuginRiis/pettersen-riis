@@ -459,6 +459,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     tollnesTemp, hyttaTemp, hyttaHumidity, skienHours, skienDays, hyttaHours, hyttaDays, moon, sun,
     rangeHours, setRangeHours, allAlerts, soundEnabled, setSoundEnabled,
     nightModeOverride, setNightModeOverride,
+    showThunderProbability, setShowThunderProbability,
   } = props;
 
   const isDay = useMemo(() => {
