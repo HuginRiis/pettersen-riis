@@ -231,7 +231,7 @@ function WeatherPage() {
       cancelled = true;
       clearInterval(c);
     };
-  }, [fetchAlerts, LOCATIONS, refreshTick]);
+  }, [fetchAlerts, LOCATIONS, refreshTick, showThunderProbability]);
 
   const homeyOk = data?.ok === true;
   const devices = homeyOk ? data.devices : [];
