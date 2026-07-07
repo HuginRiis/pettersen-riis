@@ -1450,6 +1450,7 @@ function ThunderSymbolToggle() {
 
 
 function LynPanel({ hours }: { hours: Hour[] }) {
+  const [showThunderSymbol] = useShowThunderSymbol();
   const maxT = Math.max(5, ...hours.map((h) => h.thunder));
   const peakIdx = hours.reduce(
     (best, h, i, arr) => (h.thunder > arr[best].thunder ? i : best),
