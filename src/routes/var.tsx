@@ -2203,7 +2203,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
       </div>
       <div className="text-[13px] tabular-nums text-right">
         {avgThunder >= 5 ? (
-          <span className="text-amber-300">⚡ {Math.round(avgThunder)} %</span>
+          <span className="text-amber-300">{showThunderSymbol ? "⚡ " : ""}{Math.round(avgThunder)} %</span>
         ) : (
           <span className="text-white/40">{Math.round(avgThunder)} %</span>
         )}
