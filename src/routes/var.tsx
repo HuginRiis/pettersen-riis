@@ -345,10 +345,7 @@ function WeatherPage() {
   }, [now, sun, nightModeOverride]);
 
   const glassKind = useMemo(() => {
-    const base = glassKindFromSymbol(currentHour?.symbol ?? null, isDay);
-    // Vis tordenvær-effekt (lyn/flash) så snart det er >2% sjanse for torden
-    if ((currentHour?.thunder ?? 0) > 2) return "thunder";
-    return base;
+    return glassKindFromSymbol(currentHour?.symbol ?? null, isDay);
   }, [currentHour, isDay]);
   const glassIntensity = useMemo(() => {
     const mm = currentHour?.precip ?? 0;
@@ -3615,6 +3612,12 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
     // Bruk max som "har det regn?"-indikator slik Yr gjør, så lett nedbør ikke skjules.
     const precip = Math.max(meanPrecip, maxPrecip);
     const precipProbability = d1.probability_of_precipitation ?? d6.probability_of_precipitation ?? 0;
+    const thunderProbability =
+      next1?.details?.probability_of_thunder ??
+      next6?.details?.probability_of_thunder ??
+      null;
+    const hasThunderSymbol = Boolean(symbol?.includes("thunder"));
+
     hours.push({
       time, temp, precip, precipMin: minPrecip, precipMax: maxPrecip, precipProbability,
       wind: inst.wind_speed ?? 0,
@@ -3623,10 +3626,7 @@ function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
       pressure: inst.air_pressure_at_sea_level ?? 0,
       humidity: inst.relative_humidity ?? 0,
       cloud: inst.cloud_area_fraction ?? 0,
-      thunder:
-        next1?.details?.probability_of_thunder ??
-        next6?.details?.probability_of_thunder ??
-        (symbol && symbol.includes("thunder") ? 60 : 0),
+      thunder: hasThunderSymbol ? (thunderProbability ?? 60) : 0,
       symbol,
     });
     const existing = dayMap.get(date);
