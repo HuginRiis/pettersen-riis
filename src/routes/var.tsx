@@ -162,6 +162,7 @@ function WeatherPage() {
   const [rangeHours, setRangeHours] = useState<24 | 72 | 168>(24);
   const [soundEnabled, setSoundEnabled] = usePerUserPersistedState<boolean>("var.tile.sound.enabled", false);
   const [nightModeOverride, setNightModeOverride] = usePerUserPersistedState<boolean>("var.nightMode.override", false);
+  const [showThunderProbability, setShowThunderProbability] = usePerUserPersistedState<boolean>("var.thunder.showProbability", false);
 
   const LOCATIONS = useMemo(
     () => [
