@@ -3705,7 +3705,7 @@ function readDailyRain(d: DeviceLike | null | undefined): number | null {
   return null;
 }
 
-function parseForecast(data: any): { days: ForecastDay[]; hours: Hour[] } {
+function parseForecast(data: any, opts: { showThunderProbability?: boolean } = {}): { days: ForecastDay[]; hours: Hour[] } {
   const series = data?.properties?.timeseries ?? [];
   const dayMap = new Map<string, ForecastDay>();
   const hours: Hour[] = [];
