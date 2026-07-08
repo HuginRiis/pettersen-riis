@@ -946,6 +946,37 @@ main .container {
   50%      { transform: scale(1.06); filter: brightness(1.08); }
 }
 
+/* Clear-day: slow sky color shimmer */
+@keyframes wx-sky-shimmer {
+  0%   { background-position: 0% 50%; opacity: 0.55; }
+  50%  { background-position: 100% 50%; opacity: 0.85; }
+  100% { background-position: 0% 50%; opacity: 0.55; }
+}
+.animate-wx-sky-shimmer { animation: wx-sky-shimmer 18s ease-in-out infinite; }
+
+/* Clear-day: slow rotating sun rays */
+@keyframes wx-sun-rays {
+  0%   { transform: rotate(0deg); opacity: 0.55; }
+  50%  { opacity: 0.85; }
+  100% { transform: rotate(360deg); opacity: 0.55; }
+}
+.animate-wx-sun-rays { animation: wx-sun-rays 60s linear infinite; }
+
+/* Lens flare — subtle drift + breathing */
+@keyframes wx-flare-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.75; }
+  50%      { transform: translate(-6px, 4px) scale(1.04); opacity: 1; }
+}
+.animate-wx-flare-drift { animation: wx-flare-drift 9s ease-in-out infinite; }
+
+/* Anamorphic streak breathing */
+@keyframes wx-flare-streak {
+  0%, 100% { opacity: 0.35; transform: rotate(28deg) scaleX(1); }
+  50%      { opacity: 0.85; transform: rotate(28deg) scaleX(1.08); }
+}
+.animate-wx-flare-streak { animation: wx-flare-streak 6s ease-in-out infinite; transform-origin: right center; }
+
+
 /* ============= Tile splash FX (top edge of search tile) ============= */
 @keyframes wx-splash-drop {
   0%   { transform: translate3d(0, -60px, 0) scale(0.9); opacity: 0; }
