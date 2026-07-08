@@ -1001,9 +1001,36 @@ export function GlassPaneFX({
           />
         ))}
 
-      {/* CLEAR DAY: bright sun disc + glow + shine sweep */}
+      {/* CLEAR DAY: bright sun disc + glow + shine sweep + lens flare */}
       {isClearDay && (
         <>
+          {/* Slow sky shimmer (subtle color drift across clear blue) */}
+          <div
+            className="absolute inset-0 animate-wx-sky-shimmer"
+            style={{
+              background:
+                "linear-gradient(120deg, rgba(255,240,200,0) 0%, rgba(255,235,180,0.12) 40%, rgba(180,220,255,0.14) 60%, rgba(255,240,200,0) 100%)",
+              backgroundSize: "220% 220%",
+              mixBlendMode: "screen",
+            }}
+          />
+          {/* Rotating sun rays behind the disc */}
+          <div
+            className="absolute -top-24 -right-20 animate-wx-sun-rays"
+            style={{
+              width: 320,
+              height: 320,
+              background:
+                "conic-gradient(from 0deg, rgba(255,220,140,0) 0deg, rgba(255,220,140,0.28) 8deg, rgba(255,220,140,0) 16deg, rgba(255,220,140,0) 40deg, rgba(255,220,140,0.22) 48deg, rgba(255,220,140,0) 56deg, rgba(255,220,140,0) 90deg, rgba(255,220,140,0.28) 98deg, rgba(255,220,140,0) 106deg, rgba(255,220,140,0) 140deg, rgba(255,220,140,0.22) 148deg, rgba(255,220,140,0) 156deg, rgba(255,220,140,0) 190deg, rgba(255,220,140,0.28) 198deg, rgba(255,220,140,0) 206deg, rgba(255,220,140,0) 240deg, rgba(255,220,140,0.22) 248deg, rgba(255,220,140,0) 256deg, rgba(255,220,140,0) 290deg, rgba(255,220,140,0.28) 298deg, rgba(255,220,140,0) 306deg, rgba(255,220,140,0) 340deg, rgba(255,220,140,0.22) 348deg, rgba(255,220,140,0) 356deg)",
+              borderRadius: "50%",
+              maskImage:
+                "radial-gradient(circle, transparent 22%, black 30%, black 70%, transparent 90%)",
+              WebkitMaskImage:
+                "radial-gradient(circle, transparent 22%, black 30%, black 70%, transparent 90%)",
+              filter: "blur(2px)",
+              opacity: 0.7,
+            }}
+          />
           {/* Sun disc */}
           <div
             className="absolute -top-12 -right-8 rounded-full animate-wx-glass-sun"
@@ -1027,6 +1054,93 @@ export function GlassPaneFX({
               filter: "blur(12px)",
             }}
           />
+          {/* LENS FLARE — artifacts along diagonal from sun (top-right) → bottom-left */}
+          <div className="absolute inset-0 pointer-events-none animate-wx-flare-drift">
+            {/* Bright core halo right on the sun */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: "-4%", right: "-4%",
+                width: 180, height: 180,
+                background:
+                  "radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,240,200,0.25) 35%, transparent 70%)",
+                filter: "blur(6px)",
+                mixBlendMode: "screen",
+              }}
+            />
+            {/* Ghost 1 — golden ring */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: "22%", right: "22%",
+                width: 42, height: 42,
+                background:
+                  "radial-gradient(circle, rgba(255,215,120,0) 40%, rgba(255,215,120,0.55) 55%, rgba(255,215,120,0) 70%)",
+                mixBlendMode: "screen",
+                filter: "blur(1px)",
+              }}
+            />
+            {/* Ghost 2 — soft magenta */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: "38%", right: "38%",
+                width: 60, height: 60,
+                background:
+                  "radial-gradient(circle, rgba(255,140,190,0.45) 0%, rgba(255,140,190,0) 70%)",
+                mixBlendMode: "screen",
+                filter: "blur(2px)",
+              }}
+            />
+            {/* Ghost 3 — cyan bokeh */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: "52%", right: "52%",
+                width: 28, height: 28,
+                background:
+                  "radial-gradient(circle, rgba(140,220,255,0.6) 0%, rgba(140,220,255,0) 70%)",
+                mixBlendMode: "screen",
+              }}
+            />
+            {/* Ghost 4 — big teal disc */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                top: "64%", right: "62%",
+                width: 96, height: 96,
+                background:
+                  "radial-gradient(circle, rgba(120,200,220,0.28) 0%, rgba(120,200,220,0) 70%)",
+                mixBlendMode: "screen",
+                filter: "blur(3px)",
+              }}
+            />
+            {/* Ghost 5 — small hot spot near bottom-left */}
+            <div
+              className="absolute rounded-full"
+              style={{
+                bottom: "12%", left: "12%",
+                width: 18, height: 18,
+                background:
+                  "radial-gradient(circle, rgba(255,240,200,0.85) 0%, rgba(255,240,200,0) 70%)",
+                mixBlendMode: "screen",
+              }}
+            />
+            {/* Anamorphic streak through the sun */}
+            <div
+              className="absolute animate-wx-flare-streak"
+              style={{
+                top: "6%", right: "-10%",
+                width: "160%", height: 2,
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(180,220,255,0.55) 40%, rgba(255,255,255,0.85) 50%, rgba(180,220,255,0.55) 60%, transparent 100%)",
+                transform: "rotate(28deg)",
+                transformOrigin: "right center",
+                filter: "blur(1.2px)",
+                mixBlendMode: "screen",
+              }}
+            />
+          </div>
           <div
             className="absolute top-0 bottom-0 w-[35%] animate-wx-shine"
             style={{
