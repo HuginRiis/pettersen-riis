@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import moonRealAsset from "@/assets/moon-real.png.asset.json";
 
 /**
  * Alle FX-komponenter bruker Math.random() ved rendering, noe som gir
@@ -1085,16 +1086,36 @@ export function GlassPaneFX({
       {/* NIGHT: stars + moon glow */}
       {isNight && (
         <>
+          {/* Glød bak månen */}
           <div
-            className="absolute top-12 left-12 rounded-full"
+            className="absolute rounded-full pointer-events-none"
             style={{
-              width: 120,
-              height: 120,
+              top: 24,
+              left: 24,
+              width: 200,
+              height: 200,
               background:
-                "radial-gradient(circle, rgba(230,235,255,0.35) 0%, rgba(200,210,255,0.10) 45%, transparent 70%)",
-              filter: "blur(6px)",
+                "radial-gradient(circle, rgba(230,235,255,0.45) 0%, rgba(200,210,255,0.15) 45%, transparent 70%)",
+              filter: "blur(10px)",
             }}
           />
+          {/* Ekte måne (samme bilde som månefase-flisen) */}
+          <div
+            className="absolute rounded-full pointer-events-none animate-wx-moon-float"
+            style={{
+              top: 46,
+              left: 46,
+              width: 156,
+              height: 156,
+              backgroundImage: `url(${moonRealAsset.url})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              boxShadow:
+                "0 0 50px 14px rgba(220,225,245,0.28), 0 0 110px 40px rgba(180,200,240,0.16), inset -10px -12px 26px rgba(0,0,0,0.5)",
+              filter: "drop-shadow(0 6px 16px rgba(0,0,0,0.55))",
+            }}
+          />
+
           {stars.map((s, i) => (
             <span
               key={`st${i}`}
