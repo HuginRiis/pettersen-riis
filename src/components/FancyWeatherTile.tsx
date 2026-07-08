@@ -114,7 +114,11 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
         {/* lag — kjøres alltid, CSS skjuler etter mood */}
         <div className="fancy-wx__sky" />
         <div className="fancy-wx__sun" />
-        <div className="fancy-wx__moon" />
+        <div
+          className="fancy-wx__moon"
+          style={{ backgroundImage: `url(${moonRealAsset.url})` }}
+        />
+
         <div className="fancy-wx__stars" />
         <div className="fancy-wx__cloud fancy-wx__cloud--a" />
         <div className="fancy-wx__cloud fancy-wx__cloud--b" />
