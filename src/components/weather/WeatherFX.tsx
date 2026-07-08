@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import moonRealAsset from "@/assets/moon-real.png.asset.json";
 
 /**
  * Alle FX-komponenter bruker Math.random() ved rendering, noe som gir
