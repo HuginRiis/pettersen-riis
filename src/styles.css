@@ -885,6 +885,11 @@ main .container {
 .animate-wx-leaf      { animation: wx-leaf-fall ease-in infinite; }
 .animate-wx-sparkle   { animation: wx-sparkle ease-in-out infinite; }
 .animate-wx-steam     { animation: wx-steam-rise ease-out infinite; }
+@keyframes wx-moon-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); filter: brightness(1) drop-shadow(0 6px 16px rgba(0,0,0,0.55)); }
+  50%      { transform: translateY(-6px) rotate(0.5deg); filter: brightness(1.06) drop-shadow(0 10px 22px rgba(0,0,0,0.6)); }
+}
+.animate-wx-moon-float { animation: wx-moon-float 12s ease-in-out infinite; }
 
 
 /* ============= Glass pane overlay (whole weather page) ============= */
