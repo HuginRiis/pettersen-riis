@@ -1122,13 +1122,24 @@ main .container {
 
 /* Måne + stjerner */
 .fancy-wx__moon {
-  position: absolute; top: 30px; right: 36px;
-  width: 70px; height: 70px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fdfbe6 0%, #e8e3c2 60%, #bcb59a 100%);
-  box-shadow: 0 0 40px 8px rgba(240, 235, 200, 0.35);
+  position: absolute; top: 22px; right: 26px;
+  width: 108px; height: 108px; border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow:
+    0 0 40px 10px rgba(220, 225, 245, 0.28),
+    0 0 90px 30px rgba(180, 200, 240, 0.16),
+    inset -8px -10px 22px rgba(0, 0, 0, 0.45);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
   opacity: 0;
+  animation: fancyWxMoonFloat 12s ease-in-out infinite;
 }
 .fancy-wx--night .fancy-wx__moon { opacity: 1; }
+@keyframes fancyWxMoonFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); filter: brightness(1) drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+  50%      { transform: translateY(-4px) rotate(0.5deg); filter: brightness(1.06) drop-shadow(0 6px 16px rgba(0,0,0,0.55)); }
+}
 .fancy-wx__stars {
   position: absolute; inset: 0; opacity: 0; pointer-events: none;
   background-image:
