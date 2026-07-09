@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { getMetForecastComplete } from "@/lib/met-forecast.functions";
+
 
 export type UvHour = { time: string; uv: number };
 
@@ -32,30 +35,28 @@ export function useUvSun(lat: number, lon: number): UvSunData {
     error: null,
   });
 
+  const fetchForecast = useServerFn(getMetForecastComplete);
+
   useEffect(() => {
     let cancelled = false;
     const key = `${lat.toFixed(3)}|${lon.toFixed(3)}`;
-    const cached = cache.get(key);
-    if (cached && Date.now() - cached.ts < TTL) {
-      setState({ ...cached.data, loading: false, error: null });
-      return;
-    }
-    (async () => {
+
+    const load = async (force = false) => {
+      const cached = cache.get(key);
+      if (!force && cached && Date.now() - cached.ts < TTL) {
+        if (!cancelled) setState({ ...cached.data, loading: false, error: null });
+        return;
+      }
       try {
-        setState((s) => ({ ...s, loading: true, error: null }));
+        if (!cached) setState((s) => ({ ...s, loading: true, error: null }));
         const today = new Date().toISOString().slice(0, 10);
-        const [forecastRes, sunRes] = await Promise.all([
-          fetch(
-            `https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${lat}&lon=${lon}`,
-            { headers: { Accept: "application/json" } },
-          ),
+        const [fc, sunRes] = await Promise.all([
+          fetchForecast({ data: { lat, lon } }),
           fetch(
             `https://api.met.no/weatherapi/sunrise/3.0/sun?lat=${lat}&lon=${lon}&date=${today}&offset=+01:00`,
             { headers: { Accept: "application/json" } },
           ),
         ]);
-        if (!forecastRes.ok) throw new Error("Kunne ikke hente UV");
-        const fc = await forecastRes.json();
         const series: any[] = fc?.properties?.timeseries ?? [];
         const hours: UvHour[] = [];
         const todayKey = new Date().toISOString().slice(0, 10);
@@ -70,7 +71,6 @@ export function useUvSun(lat: number, lon: number): UvSunData {
             uvMaxTimeToday = e.time;
           }
         }
-        // Closest hour to "now" for current UV
         const now = Date.now();
         let uvNow: number | null = null;
         let bestDiff = Infinity;
@@ -108,11 +108,31 @@ export function useUvSun(lat: number, lon: number): UvSunData {
             error: e instanceof Error ? e.message : "Ukjent feil",
           }));
       }
-    })();
+    };
+
+    load();
+    // Oppdater hver time – ved timeskifte for å matche MET sin UV-time
+    const scheduleNext = () => {
+      const now = new Date();
+      const msToNextHour =
+        (60 - now.getMinutes()) * 60_000 - now.getSeconds() * 1000 - now.getMilliseconds() + 1000;
+      return window.setTimeout(() => {
+        if (cancelled) return;
+        load(true);
+        intervalId = window.setInterval(() => {
+          if (!cancelled) load(true);
+        }, 60 * 60 * 1000);
+      }, msToNextHour);
+    };
+    let intervalId: number | undefined;
+    const timeoutId = scheduleNext();
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
+      if (intervalId) window.clearInterval(intervalId);
     };
-  }, [lat, lon]);
+  }, [lat, lon, fetchForecast]);
+
 
   return state;
 }
