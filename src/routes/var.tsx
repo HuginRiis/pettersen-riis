@@ -3139,17 +3139,78 @@ function CloudCard({ hour }: { hour: Hour | null }) {
   );
 }
 
+// Klimanormaler for Skien — månedlig gjennomsnittlig døgnnedbør (mm/dag),
+// grovt anslag basert på månedsnormaler ~55–105 mm delt på antall dager.
+const SKIEN_MONTHLY_PRECIP_NORMAL_MM_PER_DAY = [1.8, 1.6, 1.8, 1.5, 1.9, 2.7, 2.8, 2.9, 3.0, 3.4, 3.0, 2.4];
+// Klimanormaler for Skien — typisk vindkast (m/s) per måned, innlandet.
+const SKIEN_MONTHLY_GUST_NORMAL_MS = [7, 7, 6.5, 6, 5.5, 5, 5, 5, 5.5, 6.5, 7, 7];
+
+function NormalDelta({
+  delta,
+  unit,
+  normal,
+  upIsBad = true,
+}: {
+  delta: number;
+  unit: string;
+  normal: number;
+  upIsBad?: boolean;
+}) {
+  const threshold = unit === "°" ? 0.5 : unit === "mm" ? 0.5 : 1;
+  const above = delta >= threshold;
+  const below = delta <= -threshold;
+  const upColor = upIsBad ? "text-orange-300" : "text-emerald-300";
+  const downColor = upIsBad ? "text-sky-300" : "text-rose-300";
+  const arrowUpColor = upIsBad ? "text-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.6)]" : "text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.6)]";
+  const arrowDownColor = upIsBad ? "text-sky-400 drop-shadow-[0_0_6px_rgba(56,189,248,0.6)]" : "text-rose-400 drop-shadow-[0_0_6px_rgba(251,113,133,0.6)]";
+  return (
+    <div className={`text-sm flex items-center gap-1.5 ${above ? upColor : below ? downColor : "text-white/85"}`}>
+      {above ? (
+        <span
+          className={`inline-flex flex-col items-center leading-none ${arrowUpColor}`}
+          style={{ animation: "normalDeltaArrowUp 1.4s ease-in-out infinite" }}
+          aria-hidden
+        >
+          <ArrowUp size={16} strokeWidth={2.6} />
+        </span>
+      ) : below ? (
+        <span
+          className={`inline-flex flex-col items-center leading-none ${arrowDownColor}`}
+          style={{ animation: "normalDeltaArrowDown 1.4s ease-in-out infinite" }}
+          aria-hidden
+        >
+          <ArrowDown size={16} strokeWidth={2.6} />
+        </span>
+      ) : null}
+      <span className="tabular-nums">
+        {delta >= threshold ? "+" : ""}
+        {delta.toFixed(1)}
+        {unit} vs normalt ({normal.toFixed(unit === "mm" ? 1 : 1)}
+        {unit})
+      </span>
+      <style>{`
+        @keyframes normalDeltaArrowUp { 0%,100% { transform: translateY(2px); opacity: .75 } 50% { transform: translateY(-3px); opacity: 1 } }
+        @keyframes normalDeltaArrowDown { 0%,100% { transform: translateY(-2px); opacity: .75 } 50% { transform: translateY(3px); opacity: 1 } }
+      `}</style>
+    </div>
+  );
+}
+
 function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: ForecastDay[] | null }) {
   const mm = day?.precip ?? 0;
   const nextRainDay = days?.slice(1, 7).find((d) => d.precip >= 0.2);
   const hint = nextRainDay
     ? `${nextRainDay.precip.toFixed(1)} mm ventes ${weekdayShort(nextRainDay.date)}.`
     : "Tørt de neste dagene.";
+  const month = new Date().getMonth();
+  const normal = SKIEN_MONTHLY_PRECIP_NORMAL_MM_PER_DAY[month];
+  const delta = mm - normal;
   return (
     <GlassCard eyebrow="Nedbør" icon={<CloudRain size={14} />} fx={<RainFX intensity={Math.min(1, mm / 8)} />}>
       <div className="relative">
         <div className="text-3xl font-light tabular-nums">{mm.toFixed(mm < 10 ? 1 : 0)} mm</div>
         <div className="text-sm text-white/85">I dag</div>
+        <NormalDelta delta={delta} unit="mm" normal={normal} upIsBad />
         <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
       </div>
     </GlassCard>
@@ -3159,10 +3220,14 @@ function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: Fo
 function GustCard({ hour }: { hour: Hour | null }) {
   const w = hour?.wind ?? 0;
   const g = hour?.windGust ?? w;
+  const month = new Date().getMonth();
+  const normal = SKIEN_MONTHLY_GUST_NORMAL_MS[month];
+  const delta = g - normal;
   return (
     <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />} fx={<GustFX intensity={Math.min(1, g / 15)} />}>
       <div className="text-3xl font-light tabular-nums">{g.toFixed(1)}</div>
       <div className="text-sm text-white/85">m/s</div>
+      <NormalDelta delta={delta} unit=" m/s" normal={normal} upIsBad />
       <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {w.toFixed(1)} m/s.</div>
     </GlassCard>
   );
