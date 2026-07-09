@@ -550,25 +550,25 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             </header>
           </div>
 
-          {/* Sticky sammendragsbar som glir ned når hero scroller ut */}
+          {/* Sticky sammendragsbar som glir ned når hero scroller ut — følger flis-farge/tone/gjennomsiktighet */}
           <div
             className={`fixed top-[56px] left-0 right-0 z-40 px-4 transition-all duration-300 ease-out ${
               showSummary ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
             }`}
           >
             <div className="max-w-3xl mx-auto">
-              <div className="backdrop-blur-md bg-black/90 border border-white/10 border-t-0 shadow-lg py-2.5 px-4 rounded-b-xl">
+              <div className={`${tileToneClasses(tone)} tile-bg-${tone} backdrop-blur-xl border border-t-0 shadow-lg py-2.5 px-4 rounded-b-xl`}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="text-sm font-medium text-white/90 truncate" suppressHydrationWarning>
+                    <div className="text-sm font-medium truncate" suppressHydrationWarning>
                       {userLoc.ready ? userLoc.active.label : "—"}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-2xl font-thin tabular-nums text-white" suppressHydrationWarning>
+                    <div className="text-2xl font-thin tabular-nums" suppressHydrationWarning>
                       {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
                     </div>
-                    <div className="text-sm text-white/90 font-medium">{condition}</div>
+                    <div className="text-sm font-medium">{condition}</div>
                   </div>
                 </div>
               </div>
