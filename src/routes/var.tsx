@@ -3144,6 +3144,8 @@ function CloudCard({ hour }: { hour: Hour | null }) {
 const SKIEN_MONTHLY_PRECIP_NORMAL_MM_PER_DAY = [1.8, 1.6, 1.8, 1.5, 1.9, 2.7, 2.8, 2.9, 3.0, 3.4, 3.0, 2.4];
 // Klimanormaler for Skien — typisk vindkast (m/s) per måned, innlandet.
 const SKIEN_MONTHLY_GUST_NORMAL_MS = [7, 7, 6.5, 6, 5.5, 5, 5, 5, 5.5, 6.5, 7, 7];
+// Klimanormaler for Skien — typisk middelvind (m/s) per måned, innlandet.
+const SKIEN_MONTHLY_WIND_NORMAL_MS = [4.5, 4.5, 4.2, 3.8, 3.5, 3.2, 3.0, 3.1, 3.5, 4.2, 4.5, 4.5];
 
 function NormalDelta({
   delta,
