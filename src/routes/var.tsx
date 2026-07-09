@@ -557,7 +557,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             }`}
           >
             <div className="max-w-3xl mx-auto">
-              <div className="backdrop-blur-xl bg-black/55 border border-white/10 border-t-0 shadow-lg py-2.5 px-4 rounded-b-xl">
+              <div className="backdrop-blur-xl bg-black/70 border border-white/10 border-t-0 shadow-lg py-2.5 px-4 rounded-b-xl">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="text-sm font-medium text-white/90 truncate" suppressHydrationWarning>
