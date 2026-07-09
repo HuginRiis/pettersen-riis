@@ -3076,9 +3076,15 @@ function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
   const hint = feelsLikeReason(hour, isDay);
   const cold = feels <= 5;
   const fx = cold ? <SnowFX intensity={0.5} /> : feels >= 18 ? <HeatwaveFX intensity={1} /> : <HeatwaveFX intensity={-1} />;
+  const month = new Date().getMonth();
+  const normal = SKIEN_MONTHLY_FEELS_NORMAL_C[month];
+  const delta = feels - normal;
   return (
     <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />} fx={fx}>
       <div className="text-3xl font-light tabular-nums">{hour ? `${feels}°` : "—"}</div>
+      <div className="mt-2">
+        <NormalDelta delta={delta} unit="°" normal={normal} upIsBad={false} />
+      </div>
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{hint}</div>
     </GlassCard>
   );
