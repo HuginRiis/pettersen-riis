@@ -3150,6 +3150,8 @@ const SKIEN_MONTHLY_PRECIP_NORMAL_MM_PER_DAY = [1.8, 1.6, 1.8, 1.5, 1.9, 2.7, 2.
 const SKIEN_MONTHLY_GUST_NORMAL_MS = [7, 7, 6.5, 6, 5.5, 5, 5, 5, 5.5, 6.5, 7, 7];
 // Klimanormaler for Skien — typisk middelvind (m/s) per måned, innlandet.
 const SKIEN_MONTHLY_WIND_NORMAL_MS = [4.5, 4.5, 4.2, 3.8, 3.5, 3.2, 3.0, 3.1, 3.5, 4.2, 4.5, 4.5];
+// Klimanormaler for Skien — typisk månedlig gjennomsnittstemperatur / følt temperatur (°C).
+const SKIEN_MONTHLY_FEELS_NORMAL_C = [-2.5, -2.0, 1.0, 6.0, 11.5, 15.5, 17.0, 16.0, 12.0, 7.0, 2.0, -1.5];
 
 function NormalDelta({
   delta,
