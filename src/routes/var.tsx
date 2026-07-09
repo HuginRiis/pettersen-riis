@@ -3170,7 +3170,7 @@ function NormalDelta({
   normal: number;
   upIsBad?: boolean;
 }) {
-  const threshold = unit === "°" ? 0.5 : unit === "mm" ? 0.5 : 1;
+  const threshold = unit === "°" ? 0.5 : 0.5;
   const above = delta >= threshold;
   const below = delta <= -threshold;
   const upColor = upIsBad ? "text-orange-300" : "text-emerald-300";
