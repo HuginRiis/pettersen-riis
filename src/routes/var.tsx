@@ -2338,6 +2338,9 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
   const dir = hour?.windDir ?? 0;
   const speed = hour?.wind ?? 0;
   const gust = hour?.windGust ?? speed;
+  const month = new Date().getMonth();
+  const normal = SKIEN_MONTHLY_WIND_NORMAL_MS[month];
+  const delta = speed - normal;
   return (
     <GlassCard eyebrow="Vind" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, speed / 12)} />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
@@ -2345,6 +2348,7 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
           <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
           <Row label="Vindkast" value={`${gust.toFixed(1)} m/s`} />
           <Row label="Retning" value={`${Math.round(dir)}° ${dirCardinal(dir)}`} />
+          <NormalDelta delta={delta} unit=" m/s" normal={normal} upIsBad />
         </div>
         <div className="relative w-28 h-28">
           <svg viewBox="0 0 100 100" className="w-full h-full">
