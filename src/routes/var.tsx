@@ -478,19 +478,24 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { tone } = useTileTone();
 
 
-  // Scroll-drevet "shrink" på hero-header (sticky under toppmenyen)
-  const [heroT, setHeroT] = useState(0); // 0 = full, 1 = kollapset
+  // Scroll-drevet inn/ut-fading på sammendragsboksen (replaces hero shrink)
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [showSummary, setShowSummary] = useState(false);
   useEffect(() => {
-    const SHRINK_PX = 120;
     const onScroll = () => {
-      const y = window.scrollY || 0;
-      setHeroT(Math.max(0, Math.min(1, y / SHRINK_PX)));
+      const hero = heroRef.current;
+      if (!hero) {
+        setShowSummary(false);
+        return;
+      }
+      const rect = hero.getBoundingClientRect();
+      // Vis når hero er scrollet forbi toppmenyen (56px + liten margin)
+      setShowSummary(rect.bottom < 80);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const collapsed = heroT > 0.5;
 
 
   return (
@@ -507,37 +512,18 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
 
-          {/* HERO — sticky under toppmenyen, krymper når man scroller */}
-          <div
-            className={`sticky top-[56px] z-30 -mx-4 px-4 transition-all duration-200 ${
-              collapsed
-                ? "backdrop-blur-xl bg-black/20 border-b border-white/10 shadow-lg"
-                : ""
-            }`}
-          >
-            <header
-              className="text-center transition-all duration-200 ease-out"
-              style={{
-                paddingTop: `${16 - heroT * 12}px`,
-                paddingBottom: `${8 - heroT * 4}px`,
-              }}
-            >
+          {/* HERO — normal i flyten, krymper ikke lenger */}
+          <div ref={heroRef} className="relative z-10 -mx-4 px-4">
+            <header className="text-center pt-4 pb-2">
               <h1
-                className="font-medium tracking-wide text-white/90 drop-shadow-md transition-all duration-200"
-                style={{ fontSize: `${18 - heroT * 4}px`, marginTop: `${4 - heroT * 4}px`, minHeight: "1.2em" }}
+                className="font-medium tracking-wide text-white/90 drop-shadow-md text-lg mt-1 min-h-[1.2em]"
                 suppressHydrationWarning
               >
                 {userLoc.ready ? userLoc.active.label : "\u00A0"}
               </h1>
               {userLoc.ready && userLoc.active.source === "gps" ? (
-                <div
-                  className="inline-flex items-center justify-center gap-3"
-                  style={{ marginTop: `${8 - heroT * 6}px` }}
-                >
-                  <div
-                    className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
-                    style={{ fontSize: `${88 - heroT * 60}px` }}
-                  >
+                <div className="inline-flex items-center justify-center gap-3 mt-2">
+                  <div className="leading-none font-thin drop-shadow-lg tabular-nums text-[88px]">
                     {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
                   </div>
                   <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-white/90 text-[10px] tracking-[0.2em] uppercase backdrop-blur-sm">
@@ -546,47 +532,47 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                 </div>
               ) : (
                 <div
-                  className="leading-none font-thin drop-shadow-lg tabular-nums transition-all duration-200"
-                  style={{
-                    fontSize: `${88 - heroT * 60}px`,
-                    marginTop: `${8 - heroT * 6}px`,
-                    display: "inline-block",
-                  }}
+                  className="leading-none font-thin drop-shadow-lg tabular-nums text-[88px] mt-2 inline-block"
                   suppressHydrationWarning
                 >
                   {userLoc.ready && currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
                 </div>
               )}
-              <div
-                className="font-medium transition-all duration-200 overflow-hidden"
-                style={{
-                  fontSize: `${20 - heroT * 6}px`,
-                  marginTop: `${8 - heroT * 6}px`,
-                  display: collapsed ? "inline-block" : "block",
-                  marginLeft: collapsed ? 8 : 0,
-                  opacity: heroT > 0 ? 0 : 1,
-                  maxHeight: heroT > 0 ? 0 : `${24}px`,
-                }}
-              >
-                {condition}
-              </div>
+              <div className="font-medium text-xl mt-2 block">{condition}</div>
               {todayDay && (
-                <div
-                  className="text-base font-medium mt-1 tabular-nums transition-all duration-200 overflow-hidden"
-                  style={{ opacity: heroT > 0 ? 0 : 1, maxHeight: heroT > 0 ? 0 : "24px" }}
-                >
+                <div className="text-base font-medium mt-1 tabular-nums">
                   H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
                 </div>
               )}
               {headline && (
-                <div
-                  className="text-sm text-white/90 mt-3 transition-all duration-200 overflow-hidden"
-                  style={{ opacity: heroT > 0 ? 0 : 1, maxHeight: heroT > 0 ? 0 : "40px" }}
-                >
-                  {headline}
-                </div>
+                <div className="text-sm text-white/90 mt-3">{headline}</div>
               )}
             </header>
+          </div>
+
+          {/* Sticky sammendragsbar som glir ned når hero scroller ut */}
+          <div
+            className={`fixed top-[56px] left-0 right-0 z-40 px-4 transition-all duration-300 ease-out ${
+              showSummary ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+            }`}
+          >
+            <div className="max-w-3xl mx-auto">
+              <div className="backdrop-blur-md bg-black/90 border border-white/10 border-t-0 shadow-lg py-2.5 px-4 rounded-b-xl">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="text-sm font-medium text-white/90 truncate" suppressHydrationWarning>
+                      {userLoc.ready ? userLoc.active.label : "—"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-2xl font-thin tabular-nums text-white" suppressHydrationWarning>
+                      {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+                    </div>
+                    <div className="text-sm text-white/90 font-medium">{condition}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
 
