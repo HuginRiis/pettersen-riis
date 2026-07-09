@@ -2338,6 +2338,9 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
   const dir = hour?.windDir ?? 0;
   const speed = hour?.wind ?? 0;
   const gust = hour?.windGust ?? speed;
+  const month = new Date().getMonth();
+  const normal = SKIEN_MONTHLY_WIND_NORMAL_MS[month];
+  const delta = speed - normal;
   return (
     <GlassCard eyebrow="Vind" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, speed / 12)} />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
@@ -2345,6 +2348,7 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
           <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
           <Row label="Vindkast" value={`${gust.toFixed(1)} m/s`} />
           <Row label="Retning" value={`${Math.round(dir)}° ${dirCardinal(dir)}`} />
+          <NormalDelta delta={delta} unit=" m/s" normal={normal} upIsBad />
         </div>
         <div className="relative w-28 h-28">
           <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -3144,6 +3148,8 @@ function CloudCard({ hour }: { hour: Hour | null }) {
 const SKIEN_MONTHLY_PRECIP_NORMAL_MM_PER_DAY = [1.8, 1.6, 1.8, 1.5, 1.9, 2.7, 2.8, 2.9, 3.0, 3.4, 3.0, 2.4];
 // Klimanormaler for Skien — typisk vindkast (m/s) per måned, innlandet.
 const SKIEN_MONTHLY_GUST_NORMAL_MS = [7, 7, 6.5, 6, 5.5, 5, 5, 5, 5.5, 6.5, 7, 7];
+// Klimanormaler for Skien — typisk middelvind (m/s) per måned, innlandet.
+const SKIEN_MONTHLY_WIND_NORMAL_MS = [4.5, 4.5, 4.2, 3.8, 3.5, 3.2, 3.0, 3.1, 3.5, 4.2, 4.5, 4.5];
 
 function NormalDelta({
   delta,
