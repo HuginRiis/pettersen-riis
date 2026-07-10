@@ -1795,6 +1795,24 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
         records.longestWalk ? formatKm(records.longestWalk.distance) : "—",
       )}
       {card(
+        "Raskeste gåtur",
+        "🚶‍♂️",
+        records.fastestWalk,
+        records.fastestWalk?.avgSpeed ? formatSpeedKmh(records.fastestWalk.avgSpeed) : "—",
+      )}
+      {card(
+        "Lengste fjelltur",
+        "🥾",
+        records.longestHike,
+        records.longestHike ? formatKm(records.longestHike.distance) : "—",
+      )}
+      {card(
+        "Raskeste fjelltur",
+        "⛰️",
+        records.fastestHike,
+        records.fastestHike?.avgSpeed ? formatSpeedKmh(records.fastestHike.avgSpeed) : "—",
+      )}
+      {card(
         "Mest kudos",
         "👏",
         records.mostKudos,
