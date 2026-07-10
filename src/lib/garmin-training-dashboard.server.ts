@@ -372,6 +372,9 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
       longestRun: slim(records.longestRun),
       longestRide: slim(records.longestRide),
       fastestRide: slim(records.fastestRide),
+      fastestWalk: slim(records.fastestWalk),
+      fastestHike: slim(records.fastestHike),
+      longestHike: slim(records.longestHike),
     },
     walkRecent: {
       count: walkTotals.count,
