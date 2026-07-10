@@ -3756,8 +3756,15 @@ function UvCompact({ loc }: { loc: (typeof LOCS)[LocId] }) {
     });
   };
 
-  const baseClear = uvLive.uvClear ?? uv.uvNow ?? 0;
-  const baseWith = uvLive.uv ?? (cloudPct != null ? baseClear * (1 - 0.75 * (cloudPct / 100)) : baseClear);
+  // Open-Meteo kan returnere 0 for uv_index_clear_sky (feil-cache eller null time),
+  // så vi faller tilbake til MET.no sitt tall når Open-Meteo er 0/null.
+  const baseClear =
+    (uvLive.uvClear != null && uvLive.uvClear > 0 ? uvLive.uvClear : null) ??
+    uv.uvNow ??
+    (uvLive.uvClear ?? 0);
+  const baseWith =
+    (uvLive.uv != null && uvLive.uv > 0 ? uvLive.uv : null) ??
+    (cloudPct != null ? baseClear * (1 - 0.75 * (cloudPct / 100)) : baseClear);
   const v = withClouds ? baseWith : baseClear;
   const max = uv.uvMaxToday ?? 0;
   const pct = Math.min(100, (v / 11) * 100);
