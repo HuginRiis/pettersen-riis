@@ -264,6 +264,7 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
   const walkActivities = activities.filter((a) => bucketSport(a.activity_type) === "walk");
   const runActivities = activities.filter((a) => bucketSport(a.activity_type) === "run");
   const rideActivities = activities.filter((a) => bucketSport(a.activity_type) === "ride");
+  const hikeActivities = activities.filter((a) => bucketSport(a.activity_type) === "hike");
 
   const bestByNum = (list: GAct[], key: keyof GAct): GAct | null =>
     list.reduce<GAct | null>(
