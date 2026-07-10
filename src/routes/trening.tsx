@@ -100,8 +100,7 @@ type DashOk = {
     longestRide: SlimAct | null;
     fastestRide: SlimAct | null;
     fastestWalk: SlimAct | null;
-    fastestHike: SlimAct | null;
-    longestHike: SlimAct | null;
+
   };
   walkRecent: {
     count: number;
@@ -213,15 +212,14 @@ function sportLabel(s: string) {
     case "swim":
       return "Svømming";
     case "hike":
-      return "Fjelltur";
-    case "walk":
-      return "Gåtur";
+      return "Fottur/fjelltur";
     case "ski":
       return "Ski";
     default:
       return "Annet";
   }
 }
+
 function sportColor(s: string) {
   switch (s) {
     case "run":
@@ -1023,31 +1021,32 @@ function DashboardView({ dash, owner }: { dash: DashOk; owner: Owner }) {
       <SubHeader text="Bragder & rekorder" />
       <RecordsGrid records={dash.records} />
 
-      {/* Gåing — siste 100 dåder (Strava AthleteStats har ikke walk-totaler) */}
+      {/* Fottur/fjelltur — siste 100 dåder */}
       {dash.walkRecent.count > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Stat
-            label="🚶 Gåturer"
+            label="🥾 Fotturer/fjellturer"
             value={String(dash.walkRecent.count)}
             hint="siste 100 dåder"
           />
           <Stat
-            label="🚶 Distanse gått"
+            label="🥾 Distanse fottur/fjelltur"
             value={formatKm(dash.walkRecent.distance)}
             hint="siste 100 dåder"
           />
           <Stat
-            label="🚶 Tid på beina"
+            label="🥾 Tid på beina"
             value={formatDuration(dash.walkRecent.movingTime)}
             hint="siste 100 dåder"
           />
           <Stat
-            label="🚶 Stigning"
+            label="🥾 Stigning"
             value={`${Math.round(dash.walkRecent.elevation)} m`}
             hint="siste 100 dåder"
           />
         </div>
       )}
+
 
       {/* Aktiviteter */}
       <SubHeader text="De siste dåder" />
@@ -1642,20 +1641,21 @@ function TotalsGrid({
     block("Løping", totals.recentRun),
     block("Sykling", totals.recentRide),
     block("Svømming", totals.recentSwim),
-    block("Gåing", totals.recentWalk),
+    block("Fottur/fjelltur", totals.recentWalk),
   ].filter(Boolean);
   const ytdCards = [
     block("Løping", totals.ytdRun),
     block("Sykling", totals.ytdRide),
     block("Svømming", totals.ytdSwim),
-    block("Gåing", totals.ytdWalk),
+    block("Fottur/fjelltur", totals.ytdWalk),
   ].filter(Boolean);
   const allCards = [
     block("Løping totalt", totals.allRun),
     block("Sykling totalt", totals.allRide),
     block("Svømming totalt", totals.allSwim),
-    block("Gåing totalt", totals.allWalk),
+    block("Fottur/fjelltur totalt", totals.allWalk),
   ].filter(Boolean);
+
 
   return (
     <div className="space-y-6 mb-6">
@@ -1789,29 +1789,18 @@ function RecordsGrid({ records }: { records: DashOk["records"] }) {
         records.fastestRide?.avgSpeed ? formatSpeedKmh(records.fastestRide.avgSpeed) : "—",
       )}
       {card(
-        "Lengste gåtur",
-        "🚶",
+        "Lengste fottur/fjelltur",
+        "🥾",
         records.longestWalk,
         records.longestWalk ? formatKm(records.longestWalk.distance) : "—",
       )}
       {card(
-        "Raskeste gåtur",
+        "Raskeste fottur/fjelltur",
         "🚶‍♂️",
         records.fastestWalk,
         records.fastestWalk?.avgSpeed ? formatSpeedKmh(records.fastestWalk.avgSpeed) : "—",
       )}
-      {card(
-        "Lengste fjelltur",
-        "🥾",
-        records.longestHike,
-        records.longestHike ? formatKm(records.longestHike.distance) : "—",
-      )}
-      {card(
-        "Raskeste fjelltur",
-        "⛰️",
-        records.fastestHike,
-        records.fastestHike?.avgSpeed ? formatSpeedKmh(records.fastestHike.avgSpeed) : "—",
-      )}
+
       {card(
         "Mest kudos",
         "👏",
