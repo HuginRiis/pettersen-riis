@@ -6,18 +6,18 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { GarminOwner } from "@/lib/garmin-shared";
 
-type SportBucket = "run" | "ride" | "swim" | "hike" | "ski" | "walk" | "other";
+type SportBucket = "run" | "ride" | "swim" | "hike" | "ski" | "other";
 
 function bucketSport(type: string | null | undefined): SportBucket {
   const t = (type ?? "").toLowerCase();
   if (t.includes("run")) return "run";
   if (t.includes("cycl") || t.includes("ride") || t.includes("bike")) return "ride";
   if (t.includes("swim")) return "swim";
-  if (t.includes("hike")) return "hike";
-  if (t.includes("walk")) return "walk";
+  if (t.includes("hike") || t.includes("walk")) return "hike";
   if (t.includes("ski") || t.includes("snow")) return "ski";
   return "other";
 }
+
 
 type GAct = {
   garmin_activity_id: number;
@@ -261,10 +261,11 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
     .map(([sport, v]) => ({ sport, ...v }))
     .sort((a, b) => b.distance - a.distance);
 
-  const walkActivities = activities.filter((a) => bucketSport(a.activity_type) === "walk");
+  const walkHikeActivities = activities.filter((a) => bucketSport(a.activity_type) === "hike");
+
   const runActivities = activities.filter((a) => bucketSport(a.activity_type) === "run");
   const rideActivities = activities.filter((a) => bucketSport(a.activity_type) === "ride");
-  const hikeActivities = activities.filter((a) => bucketSport(a.activity_type) === "hike");
+
 
   const bestByNum = (list: GAct[], key: keyof GAct): GAct | null =>
     list.reduce<GAct | null>(
@@ -288,13 +289,12 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
     avgSpeed: bestByNum(activities, "average_speed"),
     mostKudos: null as GAct | null,
     mostAchievements: null as GAct | null,
-    longestWalk: bestByNum(walkActivities, "distance_meters"),
+    longestWalk: bestByNum(walkHikeActivities, "distance_meters"),
     longestRun: bestByNum(runActivities, "distance_meters"),
     longestRide: bestByNum(rideActivities, "distance_meters"),
     fastestRide: bestByNum(rideActivities, "average_speed"),
-    fastestWalk: bestByNum(walkActivities, "average_speed"),
-    fastestHike: bestByNum(hikeActivities, "average_speed"),
-    longestHike: bestByNum(hikeActivities, "distance_meters"),
+    fastestWalk: bestByNum(walkHikeActivities, "average_speed"),
+
   };
 
   const sumBlock = (acts: GAct[]): TotalBlock =>
@@ -309,7 +309,7 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
       { count: 0, distance: 0, moving_time: 0, elevation_gain: 0 },
     );
 
-  const walkTotals = sumBlock(walkActivities);
+  const walkHikeTotals = sumBlock(walkHikeActivities);
 
   // Siste 4 uker
   const fourWeeksAgo = new Date(now);
@@ -318,8 +318,9 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
   const recentRunLocal = sumBlock(inLast4Weeks.filter((a) => bucketSport(a.activity_type) === "run"));
   const recentRideLocal = sumBlock(inLast4Weeks.filter((a) => bucketSport(a.activity_type) === "ride"));
   const recentSwimLocal = sumBlock(inLast4Weeks.filter((a) => bucketSport(a.activity_type) === "swim"));
-  const recentWalkLocal = sumBlock(inLast4Weeks.filter((a) => bucketSport(a.activity_type) === "walk"));
-  const recentHikeLocal = sumBlock(inLast4Weeks.filter((a) => bucketSport(a.activity_type) === "hike"));
+  const recentWalkHikeLocal = sumBlock(inLast4Weeks.filter((a) => bucketSport(a.activity_type) === "hike"));
+
+
 
   // YTD og "alltid"
   const yearStart = new Date(now.getFullYear(), 0, 1);
@@ -327,11 +328,13 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
   const ytdRun = sumBlock(ytdActs.filter((a) => bucketSport(a.activity_type) === "run"));
   const ytdRide = sumBlock(ytdActs.filter((a) => bucketSport(a.activity_type) === "ride"));
   const ytdSwim = sumBlock(ytdActs.filter((a) => bucketSport(a.activity_type) === "swim"));
-  const ytdWalk = sumBlock(ytdActs.filter((a) => bucketSport(a.activity_type) === "walk"));
+  const ytdWalkHike = sumBlock(ytdActs.filter((a) => bucketSport(a.activity_type) === "hike"));
+
   const allRun = sumBlock(runActivities);
   const allRide = sumBlock(rideActivities);
   const allSwim = sumBlock(activities.filter((a) => bucketSport(a.activity_type) === "swim"));
-  const allWalk = sumBlock(walkActivities);
+  const allWalkHike = sumBlock(walkHikeActivities);
+
 
   const biggestRide = rideActivities.reduce(
     (m, a) => Math.max(m, num(a.distance_meters)),
@@ -373,32 +376,30 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
       longestRide: slim(records.longestRide),
       fastestRide: slim(records.fastestRide),
       fastestWalk: slim(records.fastestWalk),
-      fastestHike: slim(records.fastestHike),
-      longestHike: slim(records.longestHike),
     },
     walkRecent: {
-      count: walkTotals.count,
-      distance: walkTotals.distance,
-      movingTime: walkTotals.moving_time,
-      elevation: walkTotals.elevation_gain,
+      count: walkHikeTotals.count,
+      distance: walkHikeTotals.distance,
+      movingTime: walkHikeTotals.moving_time,
+      elevation: walkHikeTotals.elevation_gain,
     },
     totals: {
       recentRun: recentRunLocal,
       recentRide: recentRideLocal,
       recentSwim: recentSwimLocal,
-      recentWalk: recentWalkLocal,
-      recentHike: recentHikeLocal,
+      recentWalk: recentWalkHikeLocal,
       ytdRun: ytdRun.count > 0 ? ytdRun : null,
       ytdRide: ytdRide.count > 0 ? ytdRide : null,
       ytdSwim: ytdSwim.count > 0 ? ytdSwim : null,
-      ytdWalk: ytdWalk.count > 0 ? ytdWalk : null,
+      ytdWalk: ytdWalkHike.count > 0 ? ytdWalkHike : null,
       allRun: allRun.count > 0 ? allRun : null,
       allRide: allRide.count > 0 ? allRide : null,
       allSwim: allSwim.count > 0 ? allSwim : null,
-      allWalk: allWalk.count > 0 ? allWalk : null,
+      allWalk: allWalkHike.count > 0 ? allWalkHike : null,
       biggestRide: biggestRide > 0 ? biggestRide : null,
       biggestClimb: biggestClimb > 0 ? biggestClimb : null,
     },
     activities: activities.slice(0, 30).map((a) => slim(a)!),
   };
 }
+
