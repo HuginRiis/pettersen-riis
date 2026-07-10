@@ -264,6 +264,7 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
   const walkActivities = activities.filter((a) => bucketSport(a.activity_type) === "walk");
   const runActivities = activities.filter((a) => bucketSport(a.activity_type) === "run");
   const rideActivities = activities.filter((a) => bucketSport(a.activity_type) === "ride");
+  const hikeActivities = activities.filter((a) => bucketSport(a.activity_type) === "hike");
 
   const bestByNum = (list: GAct[], key: keyof GAct): GAct | null =>
     list.reduce<GAct | null>(
@@ -291,6 +292,9 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
     longestRun: bestByNum(runActivities, "distance_meters"),
     longestRide: bestByNum(rideActivities, "distance_meters"),
     fastestRide: bestByNum(rideActivities, "average_speed"),
+    fastestWalk: bestByNum(walkActivities, "average_speed"),
+    fastestHike: bestByNum(hikeActivities, "average_speed"),
+    longestHike: bestByNum(hikeActivities, "distance_meters"),
   };
 
   const sumBlock = (acts: GAct[]): TotalBlock =>
@@ -368,6 +372,9 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
       longestRun: slim(records.longestRun),
       longestRide: slim(records.longestRide),
       fastestRide: slim(records.fastestRide),
+      fastestWalk: slim(records.fastestWalk),
+      fastestHike: slim(records.fastestHike),
+      longestHike: slim(records.longestHike),
     },
     walkRecent: {
       count: walkTotals.count,
