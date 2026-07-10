@@ -99,6 +99,9 @@ type DashOk = {
     longestRun: SlimAct | null;
     longestRide: SlimAct | null;
     fastestRide: SlimAct | null;
+    fastestWalk: SlimAct | null;
+    fastestHike: SlimAct | null;
+    longestHike: SlimAct | null;
   };
   walkRecent: {
     count: number;
