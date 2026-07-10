@@ -292,6 +292,9 @@ export async function runGarminTrainingDashboard(owner: GarminOwner) {
     longestRun: bestByNum(runActivities, "distance_meters"),
     longestRide: bestByNum(rideActivities, "distance_meters"),
     fastestRide: bestByNum(rideActivities, "average_speed"),
+    fastestWalk: bestByNum(walkActivities, "average_speed"),
+    fastestHike: bestByNum(hikeActivities, "average_speed"),
+    longestHike: bestByNum(hikeActivities, "distance_meters"),
   };
 
   const sumBlock = (acts: GAct[]): TotalBlock =>
