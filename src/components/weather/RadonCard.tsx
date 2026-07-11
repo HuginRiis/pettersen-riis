@@ -54,37 +54,20 @@ function radonLevel(v: number | null | undefined): {
   };
 }
 
-// Glidende fargeovergang grønn → gul → oransje → rød basert på Bq/m³
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * Math.max(0, Math.min(1, t));
 }
-function lerpHex(c1: string, c2: string, t: number) {
-  const p = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-  const [r1, g1, b1] = p(c1);
-  const [r2, g2, b2] = p(c2);
-  const r = Math.round(lerp(r1, r2, t));
-  const g = Math.round(lerp(g1, g2, t));
-  const b = Math.round(lerp(b1, b2, t));
-  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-}
+
+// Diskrete fargegrensér etter Helsedirektoratet / WHO: grønn < 100, gul < 200, oransje < 300, rød ≥ 300
 function radonColor(v: number | null | undefined): string {
   if (v == null || !Number.isFinite(v)) return "#a3a3a3";
-  const stops: { x: number; c: string }[] = [
-    { x: 0, c: "#34d399" },
-    { x: 100, c: "#fbbf24" },
-    { x: 200, c: "#fb923c" },
-    { x: 300, c: "#f87171" },
-  ];
-  if (v <= stops[0].x) return stops[0].c;
-  if (v >= stops[stops.length - 1].x) return stops[stops.length - 1].c;
-  for (let i = 1; i < stops.length; i++) {
-    if (v <= stops[i].x) {
-      const t = (v - stops[i - 1].x) / (stops[i].x - stops[i - 1].x);
-      return lerpHex(stops[i - 1].c, stops[i].c, t);
-    }
-  }
-  return stops[stops.length - 1].c;
+  if (v < 100) return "#34d399";
+  if (v < 200) return "#fbbf24";
+  if (v < 300) return "#fb923c";
+  return "#f87171";
 }
+
+
 
 function RadonAtomFX({ color, value }: { color: string; value: number | null | undefined }) {
   // Fartsskala: ~1 Bq/m³ → veldig sakte, ~300 → veldig fort. Eksponentiell for tydelig forskjell.
