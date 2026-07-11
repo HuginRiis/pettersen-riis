@@ -54,6 +54,10 @@ function radonLevel(v: number | null | undefined): {
   };
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * Math.max(0, Math.min(1, t));
+}
+
 // Diskrete fargegrensér etter Helsedirektoratet / WHO: grønn < 100, gul < 200, oransje < 300, rød ≥ 300
 function radonColor(v: number | null | undefined): string {
   if (v == null || !Number.isFinite(v)) return "#a3a3a3";
@@ -62,6 +66,7 @@ function radonColor(v: number | null | undefined): string {
   if (v < 300) return "#fb923c";
   return "#f87171";
 }
+
 
 
 function RadonAtomFX({ color, value }: { color: string; value: number | null | undefined }) {
