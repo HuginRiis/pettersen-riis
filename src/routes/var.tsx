@@ -3071,11 +3071,14 @@ function UvIosChart({ hours, nowProgress, uvNow }: { hours: { time: string; uv: 
 function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
   const t = hour?.temp ?? 0;
   const w = hour?.wind ?? 0;
-  // Basis-følelse (skygge): vindavkjøling ved kulde
-  const base = w > 1.5 && t < 15 ? t - w * 0.5 : t;
+  const hum = hour?.humidity ?? 0;
+  // Basis-følelse (skygge): kombinerer vindavkjøling ved kulde og fuktighetsvarme ved varme
+  const windChill = t <= 10 && w > 1.5 ? -Math.min(5, w * 0.5) : 0;
+  const humidex = t >= 18 && hum >= 50 ? ((hum - 50) / 50) * Math.min(4, (t - 18) * 0.4) : 0;
+  const base = t + windChill + humidex;
   // Solbonus ved dagslys: kraftigere når det allerede er varmt
   const sunBoost = isDay ? Math.min(8, 2 + Math.max(0, t - 5) * 0.35) : 0;
-  // Overskyet: ingen solbidrag, ofte litt kjøligere enn i skygge en solskinnsdag
+  // Overskyet/skyet: ingen solbidrag, ofte litt kjøligere enn i skygge en solskinnsdag
   const overcast = base - (isDay ? 0.5 : 0);
   const sun = Math.round(base + sunBoost);
   const shade = Math.round(base);
@@ -3091,15 +3094,15 @@ function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
       {hour ? (
         <div className="grid grid-cols-3 gap-1 text-center">
           <div>
-            <div className="text-[10px] text-white/70 leading-none">☀️ Sol</div>
+            <div className="text-[10px] text-white/70 leading-none whitespace-nowrap">☀️ Sol</div>
             <div className="text-xl font-light tabular-nums mt-1">{sun}°</div>
           </div>
           <div>
-            <div className="text-[10px] text-white/70 leading-none">🌳 Skygge</div>
+            <div className="text-[10px] text-white/70 leading-none whitespace-nowrap">🌳 Skygge</div>
             <div className="text-xl font-light tabular-nums mt-1">{shade}°</div>
           </div>
           <div>
-            <div className="text-[10px] text-white/70 leading-none">☁️ Overskyet</div>
+            <div className="text-[10px] text-white/70 leading-none whitespace-nowrap">☁️ Skyet</div>
             <div className="text-xl font-light tabular-nums mt-1">{cloudy}°</div>
           </div>
         </div>
