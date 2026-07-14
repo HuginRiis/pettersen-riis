@@ -3262,80 +3262,77 @@ function StromCombinedTile() {
   );
 }
 
-// ----- Radon (Stua) -----
-function RadonStuaTile() {
+// ----- Radon (Stue + Kjeller) -----
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * Math.max(0, Math.min(1, t));
+}
+
+function RadonTile() {
   const fetchRadon = useServerFn(getRadonStatus);
   const [devs, setDevs] = useState<RadonDevice[] | null>(null);
   useEffect(() => {
     let c = false;
     const load = () => {
-      fetchRadon().then((r: any) => { if (!c && r?.ok) setDevs(r.devices); }).catch(() => {});
+      fetchRadon()
+        .then((r: any) => { if (!c && r?.ok) setDevs(r.devices); })
+        .catch(() => {});
     };
     load();
     const id = setInterval(load, 5 * 60_000);
     return () => { c = true; clearInterval(id); };
   }, [fetchRadon]);
 
-  const stua = useMemo(
-    () => devs?.find((d) => /rade?on\s*måler/i.test(d.name)) ?? devs?.find((d) => /stua/i.test(d.zone ?? "")) ?? null,
-    [devs],
-  );
-  const v = stua?.current ?? null;
-  // Glidende fargeovergang grønn → gul → oransje → rød (0/100/200/300 Bq/m³)
-  const lerpN = (a: number, b: number, t: number) => a + (b - a) * Math.max(0, Math.min(1, t));
-  const lerpHex = (c1: string, c2: string, t: number) => {
-    const p = (h: string) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
-    const [r1, g1, b1] = p(c1); const [r2, g2, b2] = p(c2);
-    const r = Math.round(lerpN(r1, r2, t)); const g = Math.round(lerpN(g1, g2, t)); const b = Math.round(lerpN(b1, b2, t));
-    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-  };
-  const radonSmoothColor = (val: number | null): string => {
+  const shown = useMemo(() => {
+    if (!devs || devs.length === 0) return [];
+    const stue = devs.find((d) => /stue|stua|spisestue/i.test(d.zone ?? d.name ?? ""));
+    const kjeller = devs.find((d) => /kjeller/i.test(d.zone ?? d.name ?? ""));
+    if (stue || kjeller) return [stue, kjeller].filter((d): d is RadonDevice => d != null);
+    return devs.slice(0, 2);
+  }, [devs]);
+
+  function radonColor(val: number | null): string {
     if (val == null || !Number.isFinite(val)) return "#a3a3a3";
-    const stops: { x: number; c: string }[] = [
-      { x: 0, c: "#34d399" }, { x: 100, c: "#fbbf24" }, { x: 200, c: "#fb923c" }, { x: 300, c: "#f87171" },
-    ];
-    if (val <= 0) return stops[0].c;
-    if (val >= 300) return stops[3].c;
-    for (let i = 1; i < stops.length; i++) {
-      if (val <= stops[i].x) return lerpHex(stops[i - 1].c, stops[i].c, (val - stops[i - 1].x) / (stops[i].x - stops[i - 1].x));
-    }
-    return stops[3].c;
-  };
-  const label =
-    v == null ? "—"
-    : v < 100 ? "Bra"
-    : v < 200 ? "Forhøyet"
-    : v < 300 ? "Høyt"
-    : "Tiltak";
-  const lvl = { color: radonSmoothColor(v), label };
-  const vClamp = v == null || !Number.isFinite(v) ? 1 : Math.max(1, Math.min(300, v));
-  const speedT = Math.pow((vClamp - 1) / 299, 0.7); // 0..1, 0 = sakte, 1 = fort
-  const orbitDur = lerpN(10, 0.4, speedT);
-  const floatDur = lerpN(8, 1.1, speedT);
-  const pulseDur = lerpN(3.8, 0.9, speedT);
-  const dots = 8 + Math.round(speedT * 24);
+    if (val < 100) return "#34d399";
+    if (val < 200) return "#fbbf24";
+    if (val < 300) return "#fb923c";
+    return "#f87171";
+  }
+  function radonLabel(val: number | null): string {
+    if (val == null || !Number.isFinite(val)) return "—";
+    if (val < 100) return "Bra";
+    if (val < 200) return "Forhøyet";
+    if (val < 300) return "Høyt";
+    return "Tiltak";
+  }
 
-  return (
-    <Tile title="Radon · Stua" icon={<Atom size={14} />} accent="text-emerald-300">
-      <div className="relative flex items-center gap-3 h-full overflow-hidden">
-        <style>{`
-          @keyframes radonOrbitA { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(360deg) translateX(var(--r)) rotate(-360deg)} }
-          @keyframes radonOrbitB { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(-360deg) translateX(var(--r)) rotate(360deg)} }
-          @keyframes radonFloat { 0%{transform:translateY(0) scale(.9);opacity:.2} 50%{opacity:.65} 100%{transform:translateY(-60px) scale(1.1);opacity:0} }
-          @keyframes radonPulse { 0%,100%{opacity:.18;transform:scale(1)} 50%{opacity:.42;transform:scale(1.08)} }
-        `}</style>
+  function RadonMiniRow({ dev }: { dev: RadonDevice }) {
+    const v = dev.current;
+    const color = radonColor(v);
+    const label = radonLabel(v);
+    const vClamp = v == null || !Number.isFinite(v) ? 1 : Math.max(1, Math.min(300, v));
+    const t = Math.pow((vClamp - 1) / 299, 0.7);
+    const orbitDur = lerp(10, 0.4, t);
+    const floatDur = lerp(8, 1.1, t);
+    const pulseDur = lerp(3.8, 0.9, t);
+    const dots = 6 + Math.round(t * 14);
 
-        {/* Atom-animasjon venstre */}
-        <div className="relative shrink-0" style={{ width: 100, height: 100 }}>
+    return (
+      <div className="flex items-center gap-3 min-h-0">
+        <div className="relative shrink-0" style={{ width: 56, height: 56 }}>
+          <style>{`
+            @keyframes radonOrbitA { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(360deg) translateX(var(--r)) rotate(-360deg)} }
+            @keyframes radonOrbitB { from{transform:rotate(0) translateX(var(--r)) rotate(0)} to{transform:rotate(-360deg) translateX(var(--r)) rotate(360deg)} }
+            @keyframes radonFloat { 0%{transform:translateY(0) scale(.9);opacity:.2} 50%{opacity:.65} 100%{transform:translateY(-44px) scale(1.1);opacity:0} }
+            @keyframes radonPulse { 0%,100%{opacity:.18;transform:scale(1)} 50%{opacity:.42;transform:scale(1.08)} }
+          `}</style>
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: `radial-gradient(circle, ${lvl.color}66 0%, transparent 70%)`,
+              background: `radial-gradient(circle, ${color}66 0%, transparent 70%)`,
               animation: `radonPulse ${pulseDur.toFixed(2)}s ease-in-out infinite`,
             }}
           />
-
-          <div className="absolute" style={{ left: 18, top: 18, width: 64, height: 64 }}>
+          <div className="absolute" style={{ left: 8, top: 8, width: 40, height: 40 }}>
             {[0, 60, 120].map((deg, i) => (
               <div
                 key={i}
@@ -3343,7 +3340,7 @@ function RadonStuaTile() {
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50%",
-                  border: `1.5px solid ${lvl.color}66`,
+                  border: `1.5px solid ${color}66`,
                   transform: `rotate(${deg}deg) scaleY(.42)`,
                 }}
               />
@@ -3365,28 +3362,26 @@ function RadonStuaTile() {
                       position: "absolute",
                       left: "50%",
                       top: "50%",
-                      width: 6,
-                      height: 14,
-                      marginLeft: -3,
-                      marginTop: -7,
+                      width: 5,
+                      height: 11,
+                      marginLeft: -2.5,
+                      marginTop: -5.5,
                       borderRadius: "50%",
-                      background: lvl.color,
-                      boxShadow: `0 0 8px ${lvl.color}`,
-                      ["--r" as any]: "32px",
+                      background: color,
+                      boxShadow: `0 0 6px ${color}`,
+                      ["--r" as any]: "20px",
                       animation: `${i % 2 === 0 ? "radonOrbitA" : "radonOrbitB"} ${(orbitDur * (1 + i * 0.15)).toFixed(2)}s linear infinite`,
                     }}
                   />
                 </div>
               );
             })}
-
           </div>
-          {/* Stigende gass-partikler */}
           {Array.from({ length: dots }).map((_, i) => {
             const left = 10 + ((i * 17) % 80);
             const delay = (i * 0.6) % 4;
             const dur = floatDur * (0.85 + ((i * 0.11) % 0.4));
-            const size = 3 + (i % 2);
+            const size = 2 + (i % 2);
             return (
               <div
                 key={`g${i}`}
@@ -3397,7 +3392,7 @@ function RadonStuaTile() {
                   width: size,
                   height: size,
                   borderRadius: "50%",
-                  background: lvl.color,
+                  background: color,
                   filter: "blur(.5px)",
                   opacity: 0.4,
                   animation: `radonFloat ${dur.toFixed(2)}s ease-in ${delay}s infinite`,
@@ -3406,22 +3401,30 @@ function RadonStuaTile() {
             );
           })}
         </div>
-
-        {/* Tall + status */}
-        <div className="flex-1 min-w-0 relative z-10">
-          <div className="text-[10px] uppercase tracking-widest text-white/40">Nå</div>
-          <div className="text-2xl font-semibold text-white tabular-nums leading-tight">
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] uppercase tracking-widest text-white/40 truncate">
+            {dev.zone ?? dev.name}
+          </div>
+          <div className="text-xl font-semibold text-white tabular-nums leading-tight">
             {v != null ? Math.round(v) : "—"}
             <span className="text-xs text-white/50 ml-1">Bq/m³</span>
           </div>
-          <div className="text-xs mt-1" style={{ color: lvl.color }}>{lvl.label}</div>
-          {stua?.avg30 != null && (
-            <>
-              <div className="text-[10px] uppercase tracking-widest text-white/40 mt-2">Snitt 30 d</div>
-              <div className="text-sm text-white tabular-nums">{Math.round(stua.avg30)} Bq/m³</div>
-            </>
-          )}
+          <div className="text-xs" style={{ color }}>{label}</div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <Tile title="Radon" icon={<Atom size={14} />} accent="text-emerald-300">
+      <div className="h-full flex flex-col justify-between">
+        {devs == null ? (
+          <div className="h-full flex items-center justify-center text-xs text-white/50">Henter radon …</div>
+        ) : shown.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-xs text-white/50">Ingen radon-målere</div>
+        ) : (
+          shown.map((dev) => <RadonMiniRow key={dev.deviceId} dev={dev} />)
+        )}
       </div>
     </Tile>
   );
@@ -5060,7 +5063,7 @@ export function SmartDashbord() {
                 <VocStuaTile />
               </div>
               <div className="col-span-4">
-                <RadonStuaTile />
+                <RadonTile />
               </div>
 
               {/* Rad 3: Kalender + Dører + Leader + Robots */}
@@ -5099,7 +5102,7 @@ export function SmartDashbord() {
                 <StromCombinedTile />
               </div>
               <div className="col-span-2">
-                <RadonStuaTile />
+                <RadonTile />
               </div>
 
 
