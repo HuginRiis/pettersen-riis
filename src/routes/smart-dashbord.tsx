@@ -5063,7 +5063,7 @@ export function SmartDashbord() {
                 <VocStuaTile />
               </div>
               <div className="col-span-4">
-                <RadonStuaTile />
+                <RadonTile />
               </div>
 
               {/* Rad 3: Kalender + Dører + Leader + Robots */}
