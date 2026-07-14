@@ -5102,7 +5102,7 @@ export function SmartDashbord() {
                 <StromCombinedTile />
               </div>
               <div className="col-span-2">
-                <RadonStuaTile />
+                <RadonTile />
               </div>
 
 
