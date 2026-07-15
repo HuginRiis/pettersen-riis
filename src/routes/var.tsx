@@ -3218,16 +3218,6 @@ function SkydekkeSceneFX({
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Himmel-gradient som mørkner ved regn */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(180deg,
-            hsl(210 70% ${58 - rainMix * 20}%) 0%,
-            hsl(205 55% ${68 - rainMix * 22}%) 60%,
-            hsl(200 40% ${78 - rainMix * 24}%) 100%)`,
-        }}
-      />
       {/* Sol som titter frem når det ikke er tett dekke */}
       <div
         className="absolute"
