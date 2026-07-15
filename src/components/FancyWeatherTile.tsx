@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getMetForecastComplete } from "@/lib/met-forecast.functions";
+import { WeatherCanvasBackdrop } from "@/components/weather/WeatherCanvasBackdrop";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 
 /** Kutt ned lange labels til bare stedsnavnet (før første komma). */
