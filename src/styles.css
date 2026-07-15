@@ -1151,7 +1151,9 @@ main .container {
   animation: fancyWxSunPulse 6s ease-in-out infinite;
 }
 .fancy-wx--day.fancy-wx--clear .fancy-wx__sun,
-.fancy-wx--day.fancy-wx--fair  .fancy-wx__sun { opacity: 1; }
+.fancy-wx--day.fancy-wx--fair  .fancy-wx__sun,
+.fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sun { opacity: 1; }
+.fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sun { opacity: 0.92; filter: brightness(0.98); }
 @keyframes fancyWxSunPulse {
   0%,100% { transform: scale(1); filter: brightness(1); }
   50%     { transform: scale(1.05); filter: brightness(1.08); }
