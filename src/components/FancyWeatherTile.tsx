@@ -393,7 +393,7 @@ function symbolText(s: string | null): string {
 
 function symbolMood(
   s: string | null,
-): "clear" | "fair" | "cloudy" | "rain" | "snow" | "sleet" | "thunder" | "fog" {
+): "clear" | "fair" | "partlycloudy" | "cloudy" | "rain" | "snow" | "sleet" | "thunder" | "fog" {
   if (!s) return "fair";
   if (s.includes("thunder")) return "thunder";
   if (s.includes("snow")) return "snow";
@@ -401,6 +401,7 @@ function symbolMood(
   if (s.includes("rain")) return "rain";
   if (s.includes("fog")) return "fog";
   if (s.includes("clearsky")) return "clear";
+  if (s.includes("partlycloudy")) return "partlycloudy";
   if (s.includes("fair")) return "fair";
   return "cloudy";
 }
