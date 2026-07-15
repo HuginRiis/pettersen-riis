@@ -221,19 +221,19 @@ export function CloudCoverFX({ intensity = 0.5, rainIntensity = 0, className = "
         // ved tett dekke presses skyene utover hele flisen
         const fullCover = i > 0.8;
         const baseTop = fullCover
-          ? layer === 0 ? -8 : layer === 1 ? 18 : 48
+          ? layer === 0 ? -14 : layer === 1 ? 14 : 44
           : layer === 0 ? 4 : layer === 1 ? 18 : 38;
         return {
-          top: baseTop + Math.random() * (fullCover ? 38 : 28),
-          left: Math.random() * 130 - 15,
-          width: (fullCover ? 180 : 140) + Math.random() * (fullCover ? 300 : 220) + layer * 70,
-          height: (fullCover ? 90 : 60) + Math.random() * (fullCover ? 110 : 80) + layer * 30,
+          top: baseTop + Math.random() * (fullCover ? 48 : 28),
+          left: Math.random() * 140 - 20,
+          width: (fullCover ? 240 : 140) + Math.random() * (fullCover ? 380 : 220) + layer * 90,
+          height: (fullCover ? 130 : 60) + Math.random() * (fullCover ? 160 : 80) + layer * 50,
           dur: 50 + Math.random() * 70 - layer * 8,
           delay: -Math.random() * 80,
-          blur: (fullCover ? 10 : 14) + layer * 6 + Math.random() * 8,
+          blur: (fullCover ? 8 : 14) + layer * 6 + Math.random() * 8,
           // mørkere skyer jo høyere intensitet, regn og jo lenger fram
           darkness: Math.min(0.95, 0.12 + i * (0.5 + layer * 0.12) + rain * 0.35 + Math.random() * 0.1),
-          op: Math.min(0.95, 0.45 + i * 0.45 + layer * 0.05 + rain * 0.15),
+          op: Math.min(1, 0.45 + i * 0.45 + layer * 0.05 + rain * 0.15),
         };
       }),
     [count, i, rain],
