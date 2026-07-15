@@ -1132,6 +1132,7 @@ main .container {
 }
 .fancy-wx--day.fancy-wx--clear .fancy-wx__sky { background: linear-gradient(180deg, #1e7fff 0%, #5fb7ff 50%, #ffd49a 100%); }
 .fancy-wx--day.fancy-wx--fair  .fancy-wx__sky { background: linear-gradient(180deg, #3a8ef0 0%, #7ec2ff 60%, #d6ecff 100%); }
+.fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sky { background: linear-gradient(180deg, #4a95dd 0%, #85b6dd 55%, #c4d4e2 100%); }
 .fancy-wx--day.fancy-wx--cloudy .fancy-wx__sky { background: linear-gradient(180deg, #4e6478 0%, #7a8c9e 60%, #aab9c7 100%); }
 .fancy-wx--rain .fancy-wx__sky    { background: linear-gradient(180deg, #2b3a4a 0%, #43586c 45%, #6b8296 100%); }
 .fancy-wx--sleet .fancy-wx__sky   { background: linear-gradient(180deg, #2a3a48 0%, #54697a 60%, #8198a8 100%); }
@@ -1150,7 +1151,9 @@ main .container {
   animation: fancyWxSunPulse 6s ease-in-out infinite;
 }
 .fancy-wx--day.fancy-wx--clear .fancy-wx__sun,
-.fancy-wx--day.fancy-wx--fair  .fancy-wx__sun { opacity: 1; }
+.fancy-wx--day.fancy-wx--fair  .fancy-wx__sun,
+.fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sun { opacity: 1; }
+.fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sun { opacity: 0.92; filter: brightness(0.98); }
 @keyframes fancyWxSunPulse {
   0%,100% { transform: scale(1); filter: brightness(1); }
   50%     { transform: scale(1.05); filter: brightness(1.08); }
@@ -1204,12 +1207,16 @@ main .container {
   opacity: 0.9;
   border-radius: 50%;
 }
-.fancy-wx__cloud--a { top: 14%; left: -30%; width: 320px; height: 130px; animation: fancyWxDrift calc(42s / var(--wx-wind)) linear infinite; }
-.fancy-wx__cloud--b { top: -4%; left: -50%; width: 420px; height: 170px; opacity: 0.75; animation: fancyWxDrift calc(60s / var(--wx-wind)) linear infinite; animation-delay: -18s; }
-.fancy-wx__cloud--c { top: 40%; left: -35%; width: 280px; height: 110px; opacity: 0.65; animation: fancyWxDrift calc(50s / var(--wx-wind)) linear infinite; animation-delay: -8s; }
+.fancy-wx__cloud--a { top: 14%; left: -30%; width: 320px; height: 130px; animation: fancyWxDrift calc(42s / var(--wx-wind)) linear infinite, fancyWxBob 9s ease-in-out infinite; }
+.fancy-wx__cloud--b { top: -4%; left: -50%; width: 420px; height: 170px; opacity: 0.75; animation: fancyWxDrift calc(60s / var(--wx-wind)) linear infinite, fancyWxBob 11s ease-in-out infinite; animation-delay: -18s, -3s; }
+.fancy-wx__cloud--c { top: 40%; left: -35%; width: 280px; height: 110px; opacity: 0.65; animation: fancyWxDrift calc(50s / var(--wx-wind)) linear infinite, fancyWxBob 8s ease-in-out infinite; animation-delay: -8s, -5s; }
 @keyframes fancyWxDrift {
   0%   { transform: translateX(0); }
   100% { transform: translateX(200%); }
+}
+@keyframes fancyWxBob {
+  0%,100% { margin-top: 0; }
+  50%     { margin-top: 6px; }
 }
 /* Mørkere skyer i regn/torden */
 .fancy-wx--rain .fancy-wx__cloud,
@@ -1223,6 +1230,10 @@ main .container {
 .fancy-wx--clear .fancy-wx__cloud--a { opacity: 0.45; }
 .fancy-wx--clear .fancy-wx__cloud--b,
 .fancy-wx--clear .fancy-wx__cloud--c { opacity: 0; }
+/* Delvis skyet: solen skinner mellom lette, spredte skyer */
+.fancy-wx--partlycloudy .fancy-wx__cloud--a { opacity: 0.72; }
+.fancy-wx--partlycloudy .fancy-wx__cloud--b { opacity: 0.55; }
+.fancy-wx--partlycloudy .fancy-wx__cloud--c { opacity: 0.5; }
 
 /* Regn */
 .fancy-wx__rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
