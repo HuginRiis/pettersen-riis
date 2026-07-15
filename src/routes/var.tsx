@@ -3161,15 +3161,174 @@ function isClearSymbol(symbol: string | null): boolean {
   return !!symbol && (symbol.includes("clearsky") || symbol.includes("fair"));
 }
 
+function SkydekkeSceneFX({
+  cloud,
+  wind,
+  rainIntensity,
+  rainProb,
+}: {
+  cloud: number;
+  wind: number;
+  rainIntensity: number;
+  rainProb: number;
+}) {
+  // 0..1 dekning
+  const cov = Math.max(0, Math.min(1, cloud / 100));
+  // Vind → farts-multiplikator (1 = normal, opp mot 4x ved storm)
+  const windMult = Math.min(4, Math.max(0.6, 1 + wind / 6));
+  const baseDur = 26; // sekunder tvers over ved windMult=1
+  // Antall skyer skalerer med dekning
+  const cloudCount = Math.round(2 + cov * 6); // 2..8
+  // Sol synlig når dekning < ~85 %. Blir mer skjult jo mer skyer.
+  const sunOpacity = cov < 0.15 ? 1 : cov < 0.85 ? 1 - (cov - 0.15) * 0.9 : 0;
+  // Skyfarge blir mørkere jo mer regn
+  const rainMix = Math.max(rainIntensity, rainProb / 100);
+  const cloudTop = `hsl(210 15% ${Math.round(96 - rainMix * 40)}%)`;
+  const cloudBot = `hsl(215 18% ${Math.round(78 - rainMix * 42)}%)`;
+  const cloudShadow = `hsl(220 25% ${Math.round(55 - rainMix * 30)}%)`;
+
+  const clouds = useMemo(() => {
+    const arr: { top: number; scale: number; delay: number; dur: number; opacity: number; z: number }[] = [];
+    for (let i = 0; i < cloudCount; i++) {
+      // deterministisk pseudo-random via i og cov
+      const r = (n: number) => {
+        const x = Math.sin((i + 1) * 12.9898 + n * 78.233 + cov * 43.7) * 43758.5453;
+        return x - Math.floor(x);
+      };
+      const top = 8 + r(1) * 72; // %
+      const scale = 0.75 + r(2) * 0.9;
+      const delay = -(r(3) * baseDur);
+      const dur = (baseDur + r(4) * 14) / windMult;
+      const opacity = 0.75 + r(5) * 0.25;
+      arr.push({ top, scale, delay, dur, opacity, z: Math.round(r(6) * 10) });
+    }
+    return arr.sort((a, b) => a.scale - b.scale);
+  }, [cloudCount, cov, windMult]);
+
+  const rainDropCount = rainMix > 0.1 ? Math.round(20 + rainMix * 70) : 0;
+  const rainDrops = useMemo(() => {
+    return Array.from({ length: rainDropCount }).map((_, i) => {
+      const left = (i / Math.max(1, rainDropCount)) * 100 + ((i * 37) % 5);
+      const delay = ((i * 53) % 100) / 100;
+      const dur = 0.55 + ((i * 17) % 40) / 100;
+      const len = 10 + ((i * 23) % 14);
+      return { left, delay, dur, len };
+    });
+  }, [rainDropCount]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Himmel-gradient som mørkner ved regn */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(180deg,
+            hsl(210 70% ${58 - rainMix * 20}%) 0%,
+            hsl(205 55% ${68 - rainMix * 22}%) 60%,
+            hsl(200 40% ${78 - rainMix * 24}%) 100%)`,
+        }}
+      />
+      {/* Sol som titter frem når det ikke er tett dekke */}
+      <div
+        className="absolute"
+        style={{
+          top: "14%",
+          right: "16%",
+          width: 78,
+          height: 78,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle at 35% 35%, #fff6b0 0%, #ffd76a 45%, rgba(255,204,102,0) 72%)",
+          filter: `blur(0.5px) drop-shadow(0 0 18px rgba(255,214,120,${0.55 * sunOpacity}))`,
+          opacity: sunOpacity,
+          transition: "opacity 800ms ease",
+          animation: "skyDekkeSunPulse 6s ease-in-out infinite",
+        }}
+      />
+      {/* Regn */}
+      {rainDrops.length > 0 && (
+        <div className="absolute inset-0" style={{ opacity: Math.min(1, 0.5 + rainMix * 0.6) }}>
+          {rainDrops.map((d, i) => (
+            <span
+              key={i}
+              className="absolute"
+              style={{
+                left: `${d.left}%`,
+                top: "-12px",
+                width: 1.2,
+                height: d.len,
+                background: "linear-gradient(180deg, rgba(210,230,255,0) 0%, rgba(210,230,255,0.85) 100%)",
+                animation: `skyDekkeRain ${d.dur}s linear ${d.delay}s infinite`,
+                borderRadius: 2,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      {/* Skyer */}
+      {clouds.map((c, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            top: `${c.top}%`,
+            left: "-30%",
+            transform: `scale(${c.scale})`,
+            opacity: c.opacity,
+            animation: `skyDekkeDrift ${c.dur}s linear ${c.delay}s infinite`,
+            zIndex: c.z,
+            filter: `drop-shadow(0 6px 10px rgba(15,25,45,${0.18 + rainMix * 0.35}))`,
+          }}
+        >
+          <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden>
+            <defs>
+              <linearGradient id={`sd-cg-${i}-${Math.round(rainMix * 100)}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={cloudTop} />
+                <stop offset="100%" stopColor={cloudBot} />
+              </linearGradient>
+            </defs>
+            <g fill={`url(#sd-cg-${i}-${Math.round(rainMix * 100)})`}>
+              <ellipse cx="30" cy="38" rx="22" ry="14" />
+              <ellipse cx="55" cy="30" rx="26" ry="18" />
+              <ellipse cx="82" cy="36" rx="24" ry="15" />
+              <ellipse cx="65" cy="42" rx="34" ry="10" />
+            </g>
+            <ellipse cx="60" cy="52" rx="42" ry="4" fill={cloudShadow} opacity={0.35 + rainMix * 0.4} />
+          </svg>
+        </div>
+      ))}
+      <style>{`
+        @keyframes skyDekkeDrift {
+          0% { transform: translateX(0) scale(var(--s,1)); }
+          100% { transform: translateX(160%) scale(var(--s,1)); }
+        }
+        @keyframes skyDekkeRain {
+          0% { transform: translateY(-10px); opacity: 0; }
+          10% { opacity: 1; }
+          100% { transform: translateY(220px); opacity: 0; }
+        }
+        @keyframes skyDekkeSunPulse {
+          0%,100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function CloudCard({ hour }: { hour: Hour | null }) {
   const c = Math.round(hour?.cloud ?? 0);
-  const rainy = (hour?.precipProbability ?? 0) >= 20 || (hour?.precip ?? 0) >= 0.2;
+  const rainProb = hour?.precipProbability ?? 0;
+  const rainMm = hour?.precip ?? 0;
+  const rainIntensity = Math.min(1, rainMm / 4);
+  const wind = hour?.wind ?? 0;
   const label = c < 25 ? "Klar himmel" : c < 60 ? "Delvis skyet" : c < 85 ? "Skyet" : "Overskyet";
-  const fx = c < 25
-    ? <SunFX intensity={0.8} />
-    : <DriftingClouds intensity={Math.min(1, c / 100)} seed={c + 7} rainy={rainy} />;
   return (
-    <GlassCard eyebrow="Skydekke" icon={<Cloud size={14} />} fx={fx}>
+    <GlassCard
+      eyebrow="Skydekke"
+      icon={<Cloud size={14} />}
+      fx={<SkydekkeSceneFX cloud={c} wind={wind} rainIntensity={rainIntensity} rainProb={rainProb} />}
+    >
       <div className="text-3xl font-light tabular-nums">{hour ? `${c} %` : "—"}</div>
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{label}</div>
     </GlassCard>
