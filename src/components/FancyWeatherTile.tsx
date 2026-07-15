@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getMetForecastComplete } from "@/lib/met-forecast.functions";
+import { WeatherCanvasBackdrop } from "@/components/weather/WeatherCanvasBackdrop";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 
 /** Kutt ned lange labels til bare stedsnavnet (før første komma). */
@@ -110,36 +111,14 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
       className={`fancy-wx fancy-wx--${mood} ${isNight ? "fancy-wx--night" : "fancy-wx--day"}`}
       style={tileStyle}
     >
-      <div className="fancy-wx__bg">
-        {/* lag — kjøres alltid, CSS skjuler etter mood */}
-        <div className="fancy-wx__sky" />
-        <div className="fancy-wx__sun" />
-        <div
-          className="fancy-wx__moon"
-          style={{ backgroundImage: `url(${moonRealAsset.url})` }}
-        />
-
-        <div className="fancy-wx__stars" />
-        <div className="fancy-wx__cloud fancy-wx__cloud--a" />
-        <div className="fancy-wx__cloud fancy-wx__cloud--b" />
-        <div className="fancy-wx__cloud fancy-wx__cloud--c" />
-        {(mood === "rain" || mood === "sleet") && (
-          <>
-            <RainLayer drops={70} />
-            <SplashLayer count={14} />
-          </>
-        )}
-        {mood === "snow" && <SnowLayer flakes={34} />}
-        {mood === "thunder" && (
-          <>
-            <RainLayer drops={70} />
-            <SplashLayer count={14} />
-            <div className="fancy-wx__bolt" />
-            <BoltShape />
-          </>
-        )}
-        {mood === "fog" && <div className="fancy-wx__fog" />}
-      </div>
+      <WeatherCanvasBackdrop
+        contained
+        symbol={symbol}
+        cloud={active?.hours?.reduce((s, h) => s + ((h as any).cloud ?? 0), 0) ? undefined : undefined}
+        precip={active ? active.precip / Math.max(1, active.hours.length) : 0}
+        wind={avgWind}
+        now={new Date()}
+      />
 
       <div className="fancy-wx__content">
         <div className="fancy-wx__top">
