@@ -15,7 +15,6 @@ import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
-import { WeatherCanvasBackdrop } from "@/components/weather/WeatherCanvasBackdrop";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
 import { RadonCard } from "@/components/weather/RadonCard";
@@ -502,26 +501,14 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   return (
     <PageShell>
       <div
-        className={`min-h-screen relative ${tileColor ? "has-tile-color" : ""}`}
+        className={`min-h-screen bg-gradient-to-b ${bgGradient} transition-colors duration-1000 relative ${tileColor ? "has-tile-color" : ""}`}
         style={{
           ["--tile-opacity" as string]: opacity / 100,
           ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
         }}
       >
-        <WeatherCanvasBackdrop
-          symbol={currentHour?.symbol ?? null}
-          cloud={currentHour?.cloud ?? undefined}
-          precip={currentHour?.precip ?? 0}
-          precipProb={currentHour?.precipProbability ?? 0}
-          wind={currentHour?.wind ?? 3}
-          windDir={(currentHour as any)?.windDir ?? 270}
-          now={now}
-          sunrise={sun.sunrise ?? null}
-          sunset={sun.sunset ?? null}
-        />
         <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
-
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
 
