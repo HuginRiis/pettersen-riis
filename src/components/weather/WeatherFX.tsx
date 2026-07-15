@@ -265,7 +265,7 @@ export function CloudCoverFX({ intensity = 0.5, rainIntensity = 0, className = "
               left: `${b.left}%`,
               width: b.width,
               height: b.height,
-              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 60%, rgba(0,0,0,0) 78%)`,
+              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 70%, rgba(0,0,0,0) 88%)`,
               opacity: Math.min(1, b.op),
               filter: `blur(${b.blur}px)`,
               animationDuration: `${b.dur}s`,
