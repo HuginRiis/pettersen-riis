@@ -206,35 +206,42 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
 }
 
 /* ---------------- CLOUD COVER (realistic layered sky) ---------------- */
-export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
+type CloudCoverProps = { intensity?: number; rainIntensity?: number; className?: string };
+
+export function CloudCoverFX({ intensity = 0.5, rainIntensity = 0, className = "" }: CloudCoverProps) {
   const _mounted = useMounted();
   const i = Math.max(0, Math.min(1, intensity));
-  // 0 = blå klar himmel, 1 = mørk, tett dekke
-  const count = Math.round(6 + i * 14);
+  const rain = Math.max(0, Math.min(1, rainIntensity));
+  // 0 = blå klar himmel, 1 = mørk, tett dekke. Regn gjør skyene mørkere.
+  const count = Math.round(8 + i * 18 + rain * 4);
   const blobs = useMemo(
     () =>
       Array.from({ length: count }).map((_, k) => {
         const layer = k % 3; // 0=bak, 1=midt, 2=front
-        const baseTop = layer === 0 ? 4 : layer === 1 ? 18 : 38;
+        // ved tett dekke presses skyene utover hele flisen
+        const fullCover = i > 0.8;
+        const baseTop = fullCover
+          ? layer === 0 ? -14 : layer === 1 ? 14 : 44
+          : layer === 0 ? 4 : layer === 1 ? 18 : 38;
         return {
-          top: baseTop + Math.random() * 28,
-          left: Math.random() * 120 - 10,
-          width: 140 + Math.random() * 220 + layer * 60,
-          height: 60 + Math.random() * 80 + layer * 20,
+          top: baseTop + Math.random() * (fullCover ? 48 : 28),
+          left: Math.random() * 140 - 20,
+          width: (fullCover ? 240 : 140) + Math.random() * (fullCover ? 380 : 220) + layer * 90,
+          height: (fullCover ? 130 : 60) + Math.random() * (fullCover ? 160 : 80) + layer * 50,
           dur: 50 + Math.random() * 70 - layer * 8,
           delay: -Math.random() * 80,
-          blur: 14 + layer * 6 + Math.random() * 8,
-          // mørkere skyer jo høyere intensitet og jo lenger fram
-          darkness: Math.min(0.95, 0.15 + i * (0.55 + layer * 0.15) + Math.random() * 0.1),
-          op: 0.45 + i * 0.45 + layer * 0.05,
+          blur: (fullCover ? 8 : 14) + layer * 6 + Math.random() * 8,
+          // mørkere skyer jo høyere intensitet, regn og jo lenger fram
+          darkness: Math.min(0.95, 0.12 + i * (0.5 + layer * 0.12) + rain * 0.35 + Math.random() * 0.1),
+          op: Math.min(1, 0.45 + i * 0.45 + layer * 0.05 + rain * 0.15),
         };
       }),
-    [count, i],
+    [count, i, rain],
   );
 
-  // himmelfarge bak skyene: klarblå → mørk grå/blå
-  const skyTop = `rgba(${Math.round(120 - i * 100)}, ${Math.round(170 - i * 140)}, ${Math.round(220 - i * 170)}, ${0.35 + i * 0.45})`;
-  const skyBot = `rgba(${Math.round(80 - i * 70)}, ${Math.round(110 - i * 95)}, ${Math.round(160 - i * 135)}, ${0.25 + i * 0.5})`;
+  // himmelfarge bak skyene: klarblå → mørk grå/blå. Regn trekker mot blygrå.
+  const skyTop = `rgba(${Math.round(120 - i * 100 - rain * 60)}, ${Math.round(170 - i * 140 - rain * 50)}, ${Math.round(220 - i * 170 - rain * 40)}, ${0.35 + i * 0.45 + rain * 0.2})`;
+  const skyBot = `rgba(${Math.round(80 - i * 70 - rain * 50)}, ${Math.round(110 - i * 95 - rain * 40)}, ${Math.round(160 - i * 135 - rain * 30)}, ${0.25 + i * 0.5 + rain * 0.25})`;
 
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
@@ -243,9 +250,9 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
         style={{ background: `linear-gradient(to bottom, ${skyTop}, ${skyBot})` }}
       />
       {blobs.map((b, k) => {
-        // sky-fargen: lys topp, mørk bunn — mørkere overall ved høy intensitet
-        const lightL = Math.round(255 - b.darkness * 150);
-        const darkL = Math.round(255 - b.darkness * 220);
+        // sky-fargen: lys topp, mørk bunn — mørkere overall ved høy intensitet / regn
+        const lightL = Math.round(255 - b.darkness * 160);
+        const darkL = Math.round(255 - b.darkness * 235);
         const lightCol = `rgb(${lightL},${lightL},${Math.min(255, lightL + 8)})`;
         const darkCol = `rgb(${darkL},${darkL},${Math.min(255, darkL + 12)})`;
         if (!_mounted) return null;
@@ -258,7 +265,7 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
               left: `${b.left}%`,
               width: b.width,
               height: b.height,
-              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 55%, rgba(0,0,0,0) 75%)`,
+              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 70%, rgba(0,0,0,0) 88%)`,
               opacity: Math.min(1, b.op),
               filter: `blur(${b.blur}px)`,
               animationDuration: `${b.dur}s`,
@@ -268,12 +275,12 @@ export function CloudCoverFX({ intensity = 0.5, className = "" }: Common) {
           />
         );
       })}
-      {/* mørk underbelysning ved tungt dekke */}
-      {i > 0.6 && (
+      {/* mørk underbelysning / tak ved tungt dekke og regn */}
+      {(i > 0.6 || rain > 0.3) && (
         <div
           className="absolute inset-0"
           style={{
-            background: `radial-gradient(ellipse at 50% 110%, rgba(10,12,20,${(i - 0.6) * 1.2}) 0%, rgba(0,0,0,0) 60%)`,
+            background: `radial-gradient(ellipse at 50% 110%, rgba(10,12,20,${Math.min(0.85, (i - 0.6) * 1.0 + rain * 0.6)}) 0%, rgba(0,0,0,0) 65%)`,
           }}
         />
       )}
