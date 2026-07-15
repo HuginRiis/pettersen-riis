@@ -1110,7 +1110,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const fx =
     panel === "nedbor" ? <RainFX intensity={rainIntensity} /> :
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
-    panel === "skydekke" ? <CloudCoverFX intensity={1} rainIntensity={0.8} /> :
+    panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} rainIntensity={rainIntensity} /> :
     panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
     maxThunder < 10 ? null :
     <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
