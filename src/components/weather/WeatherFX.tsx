@@ -205,85 +205,208 @@ export function CloudFX({ intensity = 0.5, className = "" }: Common) {
   );
 }
 
-/* ---------------- CLOUD COVER (realistic layered sky) ---------------- */
-type CloudCoverProps = { intensity?: number; rainIntensity?: number; className?: string };
+/* ---------------- CLOUD COVER (levende himmel som følger været) ---------------- */
+type CloudCoverProps = {
+  intensity?: number;
+  rainIntensity?: number;
+  windIntensity?: number;
+  thunderIntensity?: number;
+  isNight?: boolean;
+  className?: string;
+};
 
-export function CloudCoverFX({ intensity = 0.5, rainIntensity = 0, className = "" }: CloudCoverProps) {
+export function CloudCoverFX({
+  intensity = 0.5,
+  rainIntensity = 0,
+  windIntensity = 0.3,
+  thunderIntensity = 0,
+  isNight = false,
+  className = "",
+}: CloudCoverProps) {
   const _mounted = useMounted();
   const i = Math.max(0, Math.min(1, intensity));
   const rain = Math.max(0, Math.min(1, rainIntensity));
-  // 0 = blå klar himmel, 1 = mørk, tett dekke. Regn gjør skyene mørkere.
-  const count = Math.round(8 + i * 18 + rain * 4);
-  const blobs = useMemo(
-    () =>
-      Array.from({ length: count }).map((_, k) => {
-        const layer = k % 3; // 0=bak, 1=midt, 2=front
-        // ved tett dekke presses skyene utover hele flisen
-        const fullCover = i > 0.8;
-        const baseTop = fullCover
-          ? layer === 0 ? -14 : layer === 1 ? 14 : 44
-          : layer === 0 ? 4 : layer === 1 ? 18 : 38;
-        return {
-          top: baseTop + Math.random() * (fullCover ? 48 : 28),
-          left: Math.random() * 140 - 20,
-          width: (fullCover ? 240 : 140) + Math.random() * (fullCover ? 380 : 220) + layer * 90,
-          height: (fullCover ? 130 : 60) + Math.random() * (fullCover ? 160 : 80) + layer * 50,
-          dur: 50 + Math.random() * 70 - layer * 8,
-          delay: -Math.random() * 80,
-          blur: (fullCover ? 8 : 14) + layer * 6 + Math.random() * 8,
-          // mørkere skyer jo høyere intensitet, regn og jo lenger fram
-          darkness: Math.min(0.95, 0.12 + i * (0.5 + layer * 0.12) + rain * 0.35 + Math.random() * 0.1),
-          op: Math.min(1, 0.45 + i * 0.45 + layer * 0.05 + rain * 0.15),
-        };
-      }),
-    [count, i, rain],
-  );
+  const wind = Math.max(0, Math.min(1, windIntensity));
+  const thunder = Math.max(0, Math.min(1, thunderIntensity));
 
-  // himmelfarge bak skyene: klarblå → mørk grå/blå. Regn trekker mot blygrå.
-  const skyTop = `rgba(${Math.round(120 - i * 100 - rain * 60)}, ${Math.round(170 - i * 140 - rain * 50)}, ${Math.round(220 - i * 170 - rain * 40)}, ${0.35 + i * 0.45 + rain * 0.2})`;
-  const skyBot = `rgba(${Math.round(80 - i * 70 - rain * 50)}, ${Math.round(110 - i * 95 - rain * 40)}, ${Math.round(160 - i * 135 - rain * 30)}, ${0.25 + i * 0.5 + rain * 0.25})`;
+  // Sol/måne synlig når det ikke er tett dekke. Delvis skyet → sol titter fram.
+  const sunOpacity = Math.max(0, Math.min(1, 1 - i * 1.15)) * (isNight ? 0.9 : 1);
+  const showSun = sunOpacity > 0.05;
+
+  // Antall skyer skalerer med skydekke
+  const cloudCount = Math.round(3 + i * 7);
+  // Fart: base 90s, raskere med vind
+  const speedMult = 0.6 + wind * 2.2;
+
+  const clouds = useMemo(() => {
+    const rng = seededRng(Math.floor(i * 1000) + Math.floor(wind * 137) + Math.floor(rain * 91));
+    return Array.from({ length: cloudCount }).map((_, k) => {
+      const layer = k % 3; // 0 bak, 1 midt, 2 front
+      const scale = 0.7 + layer * 0.35 + rng() * 0.5;
+      const top = layer === 0 ? -6 + rng() * 22 : layer === 1 ? 18 + rng() * 30 : 45 + rng() * 35;
+      const baseDur = (85 - layer * 12) / speedMult;
+      return {
+        key: `c${k}-${layer}`,
+        layer,
+        top,
+        scale,
+        dur: baseDur * (0.85 + rng() * 0.35),
+        delay: -rng() * baseDur,
+        darkness: Math.min(0.85, i * (0.35 + layer * 0.15) + rain * 0.35 + thunder * 0.15),
+        opacity: Math.min(1, 0.55 + i * 0.45 + layer * 0.05),
+        blur: 1 + layer * 0.5,
+      };
+    });
+  }, [cloudCount, i, rain, wind, thunder, speedMult]);
+
+  const skyTop = isNight
+    ? `rgb(${Math.round(28 - i * 12)}, ${Math.round(38 - i * 18)}, ${Math.round(68 - i * 30)})`
+    : `rgb(${Math.round(120 - i * 70 - rain * 40)}, ${Math.round(180 - i * 110 - rain * 45)}, ${Math.round(230 - i * 140 - rain * 40)})`;
+  const skyBot = isNight
+    ? `rgb(${Math.round(10 - i * 4)}, ${Math.round(16 - i * 6)}, ${Math.round(38 - i * 14)})`
+    : `rgb(${Math.round(170 - i * 120 - rain * 50)}, ${Math.round(200 - i * 140 - rain * 55)}, ${Math.round(230 - i * 150 - rain * 45)})`;
 
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
       <div
-        className="absolute inset-0"
-        style={{ background: `linear-gradient(to bottom, ${skyTop}, ${skyBot})` }}
+        className="absolute inset-0 transition-colors duration-700"
+        style={{ background: `linear-gradient(to bottom, ${skyTop} 0%, ${skyBot} 100%)` }}
       />
-      {blobs.map((b, k) => {
-        // sky-fargen: lys topp, mørk bunn — mørkere overall ved høy intensitet / regn
-        const lightL = Math.round(255 - b.darkness * 160);
-        const darkL = Math.round(255 - b.darkness * 235);
-        const lightCol = `rgb(${lightL},${lightL},${Math.min(255, lightL + 8)})`;
-        const darkCol = `rgb(${darkL},${darkL},${Math.min(255, darkL + 12)})`;
-        if (!_mounted) return null;
-        return (
+
+      {showSun && _mounted && (
+        <div
+          className="absolute"
+          style={{
+            top: "12%",
+            right: "14%",
+            width: 88,
+            height: 88,
+            opacity: sunOpacity,
+            transition: "opacity 700ms ease",
+            filter: isNight ? "none" : `drop-shadow(0 0 24px rgba(255,220,140,${0.55 * sunOpacity}))`,
+          }}
+        >
           <div
-            key={k}
-            className="absolute rounded-full animate-wx-cloud"
+            className="absolute inset-0 rounded-full animate-wx-pressure"
             style={{
-              top: `${b.top}%`,
-              left: `${b.left}%`,
-              width: b.width,
-              height: b.height,
-              background: `radial-gradient(ellipse at 50% 35%, ${lightCol} 0%, ${darkCol} 70%, rgba(0,0,0,0) 88%)`,
-              opacity: Math.min(1, b.op),
-              filter: `blur(${b.blur}px)`,
-              animationDuration: `${b.dur}s`,
-              animationDelay: `${b.delay}s`,
-              mixBlendMode: "normal",
+              background: isNight
+                ? "radial-gradient(circle at 40% 40%, #f4f0d8 0%, #d9d2a8 55%, rgba(180,170,120,0) 78%)"
+                : "radial-gradient(circle at 40% 40%, #fff7c8 0%, #ffd66b 45%, rgba(255,180,60,0.35) 72%, rgba(255,180,60,0) 82%)",
+              animationDuration: "6s",
             }}
           />
+        </div>
+      )}
+
+      {_mounted && clouds.map((c) => {
+        const bodyLight = Math.round(255 - c.darkness * 120);
+        const bodyMid = Math.round(255 - c.darkness * 180);
+        const bodyDark = Math.round(255 - c.darkness * 235);
+        const lightCol = `rgb(${bodyLight}, ${bodyLight}, ${Math.min(255, bodyLight + 6)})`;
+        const midCol = `rgb(${bodyMid}, ${bodyMid}, ${Math.min(255, bodyMid + 8)})`;
+        const darkCol = `rgb(${bodyDark}, ${bodyDark}, ${Math.min(255, bodyDark + 12)})`;
+        const width = 140 * c.scale;
+        const height = 70 * c.scale;
+        return (
+          <div
+            key={c.key}
+            className="absolute animate-wx-cloud"
+            style={{
+              top: `${c.top}%`,
+              left: 0,
+              width,
+              height,
+              opacity: c.opacity,
+              filter: `blur(${c.blur}px)`,
+              animationDuration: `${c.dur}s`,
+              animationDelay: `${c.delay}s`,
+              willChange: "transform",
+            }}
+          >
+            <FluffyCloud light={lightCol} mid={midCol} dark={darkCol} gradId={`cc${c.key}`} />
+            {rain > 0.05 && c.layer >= 1 && <CloudRain rain={rain} width={width} />}
+          </div>
         );
       })}
-      {/* mørk underbelysning / tak ved tungt dekke og regn */}
-      {(i > 0.6 || rain > 0.3) && (
+
+      {thunder > 0.1 && _mounted && (
         <div
           className="absolute inset-0"
           style={{
-            background: `radial-gradient(ellipse at 50% 110%, rgba(10,12,20,${Math.min(0.85, (i - 0.6) * 1.0 + rain * 0.6)}) 0%, rgba(0,0,0,0) 65%)`,
+            background: "radial-gradient(ellipse at 50% 30%, rgba(255,255,240,0.9) 0%, rgba(255,255,240,0) 60%)",
+            animation: `wx-flash ${Math.max(3, 8 - thunder * 5)}s ease-in-out infinite`,
+            opacity: 0.9,
           }}
         />
       )}
+
+      {(i > 0.55 || rain > 0.25) && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(ellipse at 50% 115%, rgba(10,12,20,${Math.min(0.7, (i - 0.5) * 0.9 + rain * 0.5)}) 0%, rgba(0,0,0,0) 60%)`,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function FluffyCloud({ light, mid, dark, gradId }: { light: string; mid: string; dark: string; gradId: string }) {
+  return (
+    <svg viewBox="0 0 140 70" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id={gradId} cx="50%" cy="35%" r="65%">
+          <stop offset="0%" stopColor={light} />
+          <stop offset="55%" stopColor={mid} />
+          <stop offset="100%" stopColor={dark} />
+        </radialGradient>
+      </defs>
+      <g fill={`url(#${gradId})`}>
+        <ellipse cx="35" cy="42" rx="26" ry="18" />
+        <ellipse cx="62" cy="34" rx="28" ry="22" />
+        <ellipse cx="92" cy="40" rx="24" ry="18" />
+        <ellipse cx="110" cy="46" rx="20" ry="14" />
+        <ellipse cx="52" cy="50" rx="30" ry="14" />
+      </g>
+    </svg>
+  );
+}
+
+function CloudRain({ rain, width }: { rain: number; width: number }) {
+  const dropCount = Math.max(3, Math.round(4 + rain * 8));
+  const drops = useMemo(
+    () =>
+      Array.from({ length: dropCount }).map(() => ({
+        left: 15 + Math.random() * 70,
+        delay: Math.random() * 1.2,
+        dur: 0.7 + Math.random() * 0.5,
+        h: 8 + Math.random() * 6,
+      })),
+    [dropCount],
+  );
+  return (
+    <div
+      className="absolute pointer-events-none"
+      style={{ top: "70%", left: 0, width, height: 60, overflow: "visible" }}
+    >
+      {drops.map((d, i) => (
+        <span
+          key={i}
+          className="absolute animate-wx-rain"
+          style={{
+            top: 0,
+            left: `${d.left}%`,
+            width: 1.2,
+            height: d.h,
+            borderRadius: 2,
+            background: "linear-gradient(to bottom, rgba(200,235,255,0), rgba(200,235,255,0.9))",
+            opacity: 0.55 + rain * 0.35,
+            animationDuration: `${d.dur}s`,
+            animationDelay: `${d.delay}s`,
+          }}
+        />
+      ))}
     </div>
   );
 }
