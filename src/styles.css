@@ -1207,12 +1207,16 @@ main .container {
   opacity: 0.9;
   border-radius: 50%;
 }
-.fancy-wx__cloud--a { top: 14%; left: -30%; width: 320px; height: 130px; animation: fancyWxDrift calc(42s / var(--wx-wind)) linear infinite; }
-.fancy-wx__cloud--b { top: -4%; left: -50%; width: 420px; height: 170px; opacity: 0.75; animation: fancyWxDrift calc(60s / var(--wx-wind)) linear infinite; animation-delay: -18s; }
-.fancy-wx__cloud--c { top: 40%; left: -35%; width: 280px; height: 110px; opacity: 0.65; animation: fancyWxDrift calc(50s / var(--wx-wind)) linear infinite; animation-delay: -8s; }
+.fancy-wx__cloud--a { top: 14%; left: -30%; width: 320px; height: 130px; animation: fancyWxDrift calc(42s / var(--wx-wind)) linear infinite, fancyWxBob 9s ease-in-out infinite; }
+.fancy-wx__cloud--b { top: -4%; left: -50%; width: 420px; height: 170px; opacity: 0.75; animation: fancyWxDrift calc(60s / var(--wx-wind)) linear infinite, fancyWxBob 11s ease-in-out infinite; animation-delay: -18s, -3s; }
+.fancy-wx__cloud--c { top: 40%; left: -35%; width: 280px; height: 110px; opacity: 0.65; animation: fancyWxDrift calc(50s / var(--wx-wind)) linear infinite, fancyWxBob 8s ease-in-out infinite; animation-delay: -8s, -5s; }
 @keyframes fancyWxDrift {
   0%   { transform: translateX(0); }
   100% { transform: translateX(200%); }
+}
+@keyframes fancyWxBob {
+  0%,100% { margin-top: 0; }
+  50%     { margin-top: 6px; }
 }
 /* Mørkere skyer i regn/torden */
 .fancy-wx--rain .fancy-wx__cloud,
@@ -1226,6 +1230,10 @@ main .container {
 .fancy-wx--clear .fancy-wx__cloud--a { opacity: 0.45; }
 .fancy-wx--clear .fancy-wx__cloud--b,
 .fancy-wx--clear .fancy-wx__cloud--c { opacity: 0; }
+/* Delvis skyet: solen skinner mellom lette, spredte skyer */
+.fancy-wx--partlycloudy .fancy-wx__cloud--a { opacity: 0.72; }
+.fancy-wx--partlycloudy .fancy-wx__cloud--b { opacity: 0.55; }
+.fancy-wx--partlycloudy .fancy-wx__cloud--c { opacity: 0.5; }
 
 /* Regn */
 .fancy-wx__rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
