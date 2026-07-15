@@ -15,6 +15,7 @@ import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
   GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
 } from "@/components/weather/WeatherFX";
+import { WeatherCanvasBackdrop } from "@/components/weather/WeatherCanvasBackdrop";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
 import { RadonCard } from "@/components/weather/RadonCard";
