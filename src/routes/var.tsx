@@ -1445,7 +1445,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
                 />
               </div>
               <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
-                {Math.round(h.wind)}
+                {formatWind(h.wind, unit, { digits: 0, withUnit: false })}
               </div>
               <div
                 className="text-[9px] text-white/60 leading-none"
