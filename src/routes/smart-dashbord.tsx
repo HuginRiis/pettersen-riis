@@ -70,6 +70,7 @@ import rebekkaSad from "@/assets/rebekka-sad.png";
 import doorOpenImg from "@/assets/door-open.png";
 import doorClosedImg from "@/assets/door-closed.png";
 import { useWindUnit, formatWind, windUnitShort, WIND_UNITS } from "@/hooks/use-wind-unit";
+import { useTempUnit, formatTemp, TEMP_UNITS } from "@/hooks/use-temp-unit";
 
 // ----- shared settings (skala, bold, gap) -----
 type DashSettings = {
@@ -4643,6 +4644,7 @@ function NetatmoMetricList({
   unit: string;
   digits: number;
 }) {
+  const [tempUnit] = useTempUnit();
   const typeLabel = (t: string) =>
     t === "NAMain"
       ? "Stua (hovedmodul)"
@@ -4682,8 +4684,9 @@ function NetatmoMetricList({
             <div className="text-[10px] uppercase tracking-widest text-white/40">{typeLabel(m.type)}</div>
           </div>
           <div className={`text-lg tabular-nums font-semibold ${tone(v)}`}>
-            {v.toFixed(digits).replace(".", ",")}
-            {unit}
+            {metric === "temperature"
+              ? formatTemp(v, tempUnit, { digits })
+              : `${v.toFixed(digits).replace(".", ",")}${unit}`}
           </div>
         </div>
       ))}
@@ -4795,6 +4798,7 @@ export function SmartDashbord() {
   const [now, setNow] = useState(() => new Date());
   const [locId, setLocId] = useState<LocId>("borgen");
   const loc = LOCS[locId];
+  const [tempUnit] = useTempUnit();
 
   const [settings, setSettings] = useState<DashSettings>(DEFAULT_SETTINGS);
   const [hydrated, setHydrated] = useState(false);
@@ -5166,14 +5170,14 @@ export function SmartDashbord() {
           <MiniTile
             icon={<CloudSun size={16} />}
             label="Ute"
-            value={tollnes.outTemp != null ? `${tollnes.outTemp.toFixed(1).replace(".", ",")}°` : "—"}
+            value={tollnes.outTemp != null ? formatTemp(tollnes.outTemp, tempUnit, { digits: 1 }) : "—"}
             sub={loc.label}
             accent="text-amber-300"
             detail={<NetatmoMetricList modules={tollnes.modules} metric="temperature" unit="°" digits={1} />}
             anim="temp"
             numericValue={tollnes.outTemp ?? null}
             trackKey={`smart_mini_max_${locId}_outTemp`}
-            formatMax={(n) => `${n.toFixed(1).replace(".", ",")}°`}
+            formatMax={(n) => formatTemp(n, tempUnit, { digits: 1 })}
           />
           <MiniTile
             icon={<Gauge size={16} />}
@@ -5286,6 +5290,7 @@ export function SmartDashbord() {
             </div>
 
             <WindUnitSetting />
+            <TempUnitSetting />
 
             <div className="pt-2 border-t border-white/10">
               <div className="flex items-center justify-between text-xs mb-2">
@@ -5350,6 +5355,36 @@ function WindUnitSetting() {
       </div>
       <div className="flex flex-wrap gap-1.5">
         {WIND_UNITS.map((u) => (
+          <button
+            key={u.id}
+            type="button"
+            onClick={() => setUnit(u.id)}
+            aria-pressed={unit === u.id}
+            title={u.label}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
+              unit === u.id
+                ? "bg-white text-slate-900"
+                : "bg-white/10 text-white/80 hover:bg-white/20"
+            }`}
+          >
+            {u.short}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TempUnitSetting() {
+  const [unit, setUnit] = useTempUnit();
+  return (
+    <div className="pt-2 border-t border-white/10">
+      <div className="flex items-center justify-between text-xs mb-2">
+        <span className="text-white/70">Temp-enhet</span>
+        <span className="text-white/40 text-[10px]">Gjelder overalt</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {TEMP_UNITS.map((u) => (
           <button
             key={u.id}
             type="button"

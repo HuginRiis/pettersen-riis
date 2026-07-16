@@ -6,6 +6,7 @@ import {
   type WeatherStationResult,
 } from "@/lib/netatmo-weather.functions";
 import { useWindUnit, formatWindFromKmh, windUnitShort } from "@/hooks/use-wind-unit";
+import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
 
 const REFRESH_MS = 10 * 60_000;
 
@@ -22,6 +23,7 @@ export function OutdoorWeatherStrip({
 }: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
   const [unit] = useWindUnit();
+  const [tUnit] = useTempUnit();
   const cacheKey = `outdoor-strip:${stationMatch}`;
   const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
@@ -100,20 +102,20 @@ export function OutdoorWeatherStrip({
             <div className="flex flex-col items-center text-center">
               <Thermometer className="h-4 w-4 text-primary mb-1" />
               <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
-                {fmt(temp, 1, "°")}
+                {formatTemp(temp, tUnit, { digits: 1 })}
               </div>
               {(tMin !== null || tMax !== null) && (
                 <div className="mt-1 flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground tabular-nums">
                   {tMin !== null && (
                     <span className="inline-flex items-center gap-0.5">
                       <ArrowDown className="h-3 w-3 text-sky-400" />
-                      {fmt(tMin, 1, "°")}
+                      {formatTemp(tMin, tUnit, { digits: 1 })}
                     </span>
                   )}
                   {tMax !== null && (
                     <span className="inline-flex items-center gap-0.5">
                       <ArrowUp className="h-3 w-3 text-orange-400" />
-                      {fmt(tMax, 1, "°")}
+                      {formatTemp(tMax, tUnit, { digits: 1 })}
                     </span>
                   )}
                 </div>

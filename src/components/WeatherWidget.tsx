@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
+import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
 
 
 type Props = {
@@ -87,6 +88,7 @@ export function WeatherWidget({ title, subtitle, lat, lon, mode }: Props) {
 function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
   void compact; // alltid detaljert nå — vi viser timeslot + sammendrag for begge modus
   const [unit] = useWindUnit();
+  const [tUnit] = useTempUnit();
   const avgWind =
     day.slots.length > 0
       ? day.slots.reduce((s, x) => s + x.wind, 0) / day.slots.length
@@ -106,10 +108,10 @@ function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
         <div className="text-3xl">{symbolEmoji(day.symbol)}</div>
         <div className="text-right">
           <div className="text-foreground font-semibold">
-            {Math.round(day.tempMax)}°
+            {formatTemp(day.tempMax, tUnit)}
           </div>
           <div className="text-xs text-muted-foreground">
-            min {Math.round(day.tempMin)}°
+            min {formatTemp(day.tempMin, tUnit)}
           </div>
         </div>
       </div>
@@ -130,10 +132,10 @@ function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
             </div>
             <div className="text-base">{symbolEmoji(s.symbol)}</div>
             <div className="text-xs text-foreground">
-              {Math.round(s.temp)}°
+              {formatTemp(s.temp, tUnit)}
             </div>
             <div className="text-[9px] text-muted-foreground/80 mt-0.5">
-              🌬 {Math.round(s.wind)}
+              🌬 {formatWind(s.wind, unit, { digits: 0, withUnit: false })}
             </div>
           </div>
         ))}
