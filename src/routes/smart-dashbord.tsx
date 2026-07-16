@@ -5285,6 +5285,8 @@ export function SmartDashbord() {
               />
             </div>
 
+            <WindUnitSetting />
+
             <div className="pt-2 border-t border-white/10">
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-white/70">Varmepumpe ({loc.label})</span>
