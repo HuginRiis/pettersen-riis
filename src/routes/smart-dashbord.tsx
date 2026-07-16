@@ -69,6 +69,7 @@ import rebekkaHappy from "@/assets/rebekka-happy.png";
 import rebekkaSad from "@/assets/rebekka-sad.png";
 import doorOpenImg from "@/assets/door-open.png";
 import doorClosedImg from "@/assets/door-closed.png";
+import { useWindUnit, formatWind, windUnitShort, WIND_UNITS } from "@/hooks/use-wind-unit";
 
 // ----- shared settings (skala, bold, gap) -----
 type DashSettings = {
