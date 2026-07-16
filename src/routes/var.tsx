@@ -2368,20 +2368,22 @@ function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
 // ============================================================
 
 function WindDetailCard({ hour }: { hour: Hour | null }) {
+  const [unit] = useWindUnit();
   const dir = hour?.windDir ?? 0;
   const speed = hour?.wind ?? 0;
   const gust = hour?.windGust ?? speed;
   const month = new Date().getMonth();
   const normal = SKIEN_MONTHLY_WIND_NORMAL_MS[month];
   const delta = speed - normal;
+  const unitSuffix = ` ${windUnitShort(unit)}`;
   return (
     <GlassCard eyebrow="Vind" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, speed / 12)} />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
-          <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
-          <Row label="Vindkast" value={`${gust.toFixed(1)} m/s`} />
+          <Row label="Vind" value={formatWind(speed, unit)} />
+          <Row label="Vindkast" value={formatWind(gust, unit)} />
           <Row label="Retning" value={`${Math.round(dir)}° ${dirCardinal(dir)}`} />
-          <NormalDelta delta={delta} unit=" m/s" normal={normal} upIsBad />
+          <NormalDelta delta={delta} unit={unitSuffix} normal={normal} upIsBad />
         </div>
         <div className="relative w-28 h-28">
           <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -2406,8 +2408,8 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             </g>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="text-xl font-light tabular-nums leading-none">{speed.toFixed(0)}</div>
-            <div className="text-[9px] text-white/70">m/s</div>
+            <div className="text-xl font-light tabular-nums leading-none">{formatWind(speed, unit, { digits: 0, withUnit: false })}</div>
+            <div className="text-[9px] text-white/70">{windUnitShort(unit)}</div>
           </div>
         </div>
       </div>
