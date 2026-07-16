@@ -682,8 +682,6 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             <WindRose name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
           </GlassCard>
 
-          {/* HYTTA prognose */}
-          <DailyListCard days={hyttaDays} hours={hyttaHours} title="Hytta · Numedal · 10 dager" />
 
           {/* WINDY KART */}
           <CollapsibleMap />
