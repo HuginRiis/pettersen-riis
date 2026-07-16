@@ -104,6 +104,7 @@ function co2Tone(co2?: number): { label: string; cls: string } {
 }
 
 function ModuleCard({ m }: { m: WeatherModule }) {
+  const [unit] = useWindUnit();
   const meta = metaFor(m.type);
   const co2 = co2Tone(m.metrics.co2);
   const isOutdoor = m.type === "NAModule1";
