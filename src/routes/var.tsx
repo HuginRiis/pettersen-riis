@@ -679,10 +679,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* VINDROSE */}
           <GlassCard eyebrow={`Vindrose · ${rangeLabel(rangeHours)}`} icon={<Navigation size={14} />}>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <WindRose name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
-              <WindRose name="Hytta · Numedal" hours={hyttaHours} rangeHours={rangeHours} />
-            </div>
+            <WindRose name={userLoc.active.label} hours={skienHours} rangeHours={rangeHours} />
           </GlassCard>
 
           {/* HYTTA prognose */}
