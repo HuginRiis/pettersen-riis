@@ -51,6 +51,7 @@ import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/compon
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
+import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
