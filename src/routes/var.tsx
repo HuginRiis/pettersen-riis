@@ -3250,8 +3250,8 @@ function SkydekkeSceneFX({
   const baseDur = 26; // sekunder tvers over ved windMult=1
   // Antall skyer skalerer med dekning
   const cloudCount = Math.round(2 + cov * 6); // 2..8
-  // Sol synlig når dekning < ~85 %. Blir mer skjult jo mer skyer.
-  const sunOpacity = cov < 0.15 ? 1 : cov < 0.85 ? 1 - (cov - 0.15) * 0.9 : 0;
+  // Sol kun synlig når det er under 40 % skydekke.
+  const sunOpacity = cov < 0.4 ? 1 - cov / 0.4 : 0;
   // Skyfarge blir mørkere jo mer regn
   const rainMix = Math.max(rainIntensity, rainProb / 100);
   const cloudTop = `hsl(210 15% ${Math.round(96 - rainMix * 40)}%)`;
@@ -3270,7 +3270,8 @@ function SkydekkeSceneFX({
       const scale = 0.75 + r(2) * 0.9;
       const delay = -(r(3) * baseDur);
       const dur = (baseDur + r(4) * 14) / windMult;
-      const opacity = 0.75 + r(5) * 0.25;
+      // Mye mer gjennomsiktige skyer så prosent-tallet er lett å lese
+      const opacity = 0.28 + r(5) * 0.22 + rainMix * 0.15;
       arr.push({ top, scale, delay, dur, opacity, z: Math.round(r(6) * 10) });
     }
     return arr.sort((a, b) => a.scale - b.scale);
