@@ -3358,7 +3358,7 @@ function SkydekkeSceneFX({
             opacity: c.opacity,
             animation: `skyDekkeDrift ${c.dur}s linear ${c.delay}s infinite`,
             zIndex: c.z,
-            filter: `drop-shadow(0 6px 10px rgba(15,25,45,${0.18 + rainMix * 0.35}))`,
+            filter: `drop-shadow(0 4px 6px rgba(15,25,45,${0.08 + rainMix * 0.2}))`,
           }}
         >
           <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden>
