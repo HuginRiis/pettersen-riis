@@ -176,12 +176,12 @@ function ModuleCard({ m }: { m: WeatherModule }) {
             <>
               <Stat
                 label="Vind"
-                value={`${fmt(m.metrics.windStrength, 0)} km/t`}
+                value={formatWindFromKmh(m.metrics.windStrength, unit, { digits: 0 })}
                 hint={compass(m.metrics.windAngle)}
               />
               <Stat
                 label="Kast"
-                value={`${fmt(m.metrics.gustStrength, 0)} km/t`}
+                value={formatWindFromKmh(m.metrics.gustStrength, unit, { digits: 0 })}
                 hint={compass(m.metrics.gustAngle)}
               />
             </>
