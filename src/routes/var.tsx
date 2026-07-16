@@ -2228,6 +2228,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
 
 
 function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
+  const [unit] = useWindUnit();
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
 
