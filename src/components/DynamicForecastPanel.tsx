@@ -28,6 +28,7 @@ type Props = {
  * og viser nå-status, 24 timer og 7 dager. Tegner inn i panel-stil.
  */
 export function DynamicForecastPanel({ label, lat, lon }: Props) {
+  const [unit] = useWindUnit();
   const [hours, setHours] = useState<Hour[] | null>(null);
   const [days, setDays] = useState<Day[] | null>(null);
   const [error, setError] = useState<string | null>(null);
