@@ -21,6 +21,7 @@ export function OutdoorWeatherStrip({
   label = "Ute nå · Tollnes",
 }: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
+  const [unit] = useWindUnit();
   const cacheKey = `outdoor-strip:${stationMatch}`;
   const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
