@@ -7,6 +7,7 @@ import {
   type WeatherStationResult,
 } from "@/lib/netatmo-weather.functions";
 import { useWindUnit, formatWindFromKmh } from "@/hooks/use-wind-unit";
+import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
 
 const REFRESH_MS = 10 * 60_000; // 10 min
 
@@ -105,6 +106,7 @@ function co2Tone(co2?: number): { label: string; cls: string } {
 
 function ModuleCard({ m }: { m: WeatherModule }) {
   const [unit] = useWindUnit();
+  const [tUnit] = useTempUnit();
   const meta = metaFor(m.type);
   const co2 = co2Tone(m.metrics.co2);
   const isOutdoor = m.type === "NAModule1";
@@ -137,7 +139,7 @@ function ModuleCard({ m }: { m: WeatherModule }) {
           <div>
             <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
               <span className="text-display text-xl sm:text-3xl text-foreground leading-none">
-                {fmt(m.metrics.temperature, 1)}°
+                {formatTemp(m.metrics.temperature, tUnit, { digits: 1 })}
               </span>
               {m.metrics.humidity !== undefined && (
                 <span className="text-[11px] sm:text-sm text-muted-foreground">
@@ -147,8 +149,8 @@ function ModuleCard({ m }: { m: WeatherModule }) {
             </div>
             {(m.metrics.minTemp !== undefined || m.metrics.maxTemp !== undefined) && (
               <div className="text-[9px] sm:text-[10px] tracking-[0.15em] sm:tracking-[0.2em] uppercase text-muted-foreground mt-0.5 sm:mt-1">
-                ▼ {fmt(m.metrics.minTemp, 1)}° &nbsp;·&nbsp; ▲{" "}
-                {fmt(m.metrics.maxTemp, 1)}°
+                ▼ {m.metrics.minTemp !== undefined ? formatTemp(m.metrics.minTemp, tUnit, { digits: 1 }) : "—"} &nbsp;·&nbsp; ▲{" "}
+                {m.metrics.maxTemp !== undefined ? formatTemp(m.metrics.maxTemp, tUnit, { digits: 1 }) : "—"}
               </div>
             )}
           </div>

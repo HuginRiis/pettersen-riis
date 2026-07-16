@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
+import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
 
 type Hour = {
   time: string;
@@ -29,6 +30,7 @@ type Props = {
  */
 export function DynamicForecastPanel({ label, lat, lon }: Props) {
   const [unit] = useWindUnit();
+  const [tUnit] = useTempUnit();
   const [hours, setHours] = useState<Hour[] | null>(null);
   const [days, setDays] = useState<Day[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +91,7 @@ export function DynamicForecastPanel({ label, lat, lon }: Props) {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           <NowCard
             label="Nå"
-            value={`${Math.round(now.temp)}°`}
+            value={formatTemp(now.temp, tUnit)}
             sub={symbolEmoji(now.symbol)}
           />
           <NowCard label="Vind" value={formatWind(now.wind, unit)} sub="💨" />
@@ -101,7 +103,7 @@ export function DynamicForecastPanel({ label, lat, lon }: Props) {
           <NowCard
             label="Topp i dag"
             value={
-              days?.[0] ? `${Math.round(days[0].tempMax)}°` : "—"
+              days?.[0] ? formatTemp(days[0].tempMax, tUnit) : "—"
             }
             sub={days?.[0] ? symbolEmoji(days[0].symbol) : "—"}
           />
@@ -124,10 +126,10 @@ export function DynamicForecastPanel({ label, lat, lon }: Props) {
                 </div>
                 <div className="text-base">{symbolEmoji(h.symbol)}</div>
                 <div className="text-xs text-foreground">
-                  {Math.round(h.temp)}°
+                  {formatTemp(h.temp, tUnit)}
                 </div>
                 <div className="text-[9px] text-muted-foreground/80 mt-0.5">
-                  🌬 {Math.round(h.wind)}
+                  🌬 {formatWind(h.wind, unit, { digits: 0, withUnit: false })}
                 </div>
               </div>
             ))}
@@ -154,10 +156,10 @@ export function DynamicForecastPanel({ label, lat, lon }: Props) {
                 </div>
                 <div className="text-xl my-1">{symbolEmoji(d.symbol)}</div>
                 <div className="text-foreground text-sm font-semibold">
-                  {Math.round(d.tempMax)}°
+                  {formatTemp(d.tempMax, tUnit)}
                 </div>
                 <div className="text-[10px] text-muted-foreground">
-                  min {Math.round(d.tempMin)}°
+                  min {formatTemp(d.tempMin, tUnit)}
                 </div>
                 {d.precip > 0 && (
                   <div className="text-[10px] text-ice mt-0.5">

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getTelemarkAlerts, type TelemarkAlert } from "@/lib/met-alerts.functions";
 import { alertsToCounselLines, severityBadge } from "@/lib/telemark-alerts-got";
 import { CloakIcon, HorseCartIcon, PollenIcon } from "@/components/MaesterIcons";
+import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
+import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
 
 /**
  * MaesterCounsel — "Hærmesterens råd"
@@ -101,10 +103,12 @@ export function MaesterCounsel() {
     };
   }, []);
 
+  const [windUnit] = useWindUnit();
+  const [tempUnit] = useTempUnit();
   const advice = useMemo(() => {
     if (!mounted || !date) return null;
-    return buildAdvice({ date, weather: now, alerts });
-  }, [mounted, date, now, alerts]);
+    return buildAdvice({ date, weather: now, alerts, windUnit, tempUnit });
+  }, [mounted, date, now, alerts, windUnit, tempUnit]);
 
   const badge = useMemo(() => severityBadge(alerts), [alerts]);
   const lastUpdated = useMemo(() => {
@@ -253,10 +257,14 @@ function buildAdvice({
   date,
   weather,
   alerts = [],
+  windUnit = "ms" as import("@/hooks/use-wind-unit").WindUnit,
+  tempUnit = "c" as import("@/hooks/use-temp-unit").TempUnit,
 }: {
   date: Date;
   weather: Now | null;
   alerts?: TelemarkAlert[];
+  windUnit?: import("@/hooks/use-wind-unit").WindUnit;
+  tempUnit?: import("@/hooks/use-temp-unit").TempUnit;
 }) {
   const month = date.getMonth(); // 0-11
   const hour = date.getHours();
@@ -367,8 +375,8 @@ function buildAdvice({
   const greeting = pickGreeting(season, dayPart);
   const proverb = pickProverb({ isSnow, isRain, isStorm, isWarm, isFreezing, season });
 
-  const tStr = t !== null ? `${Math.round(t)}°` : "ukjent temp";
-  const wStr = wind !== null ? `${Math.round(wind)} m/s` : "stille vind";
+  const tStr = t !== null ? formatTemp(t, tempUnit) : "ukjent temp";
+  const wStr = wind !== null ? formatWind(wind, windUnit) : "stille vind";
   const symStr = symbol ? prettifySymbol(symbol) : "uleste tegn";
   const contextLine = `${tStr} · ${wStr} · ${symStr}`;
 

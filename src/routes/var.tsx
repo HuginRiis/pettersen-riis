@@ -52,6 +52,7 @@ import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } fro
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
+import { useTempUnit, formatTemp, TEMP_UNITS } from "@/hooks/use-temp-unit";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -463,6 +464,9 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
     showThunderProbability, setShowThunderProbability,
   } = props;
 
+  const [tempUnit] = useTempUnit();
+
+
   const isDay = useMemo(() => {
     if (nightModeOverride) return false;
     const t = now.getTime();
@@ -525,7 +529,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
               {userLoc.ready && userLoc.active.source === "gps" ? (
                 <div className="inline-flex items-center justify-center gap-3 mt-2">
                   <div className="leading-none font-thin drop-shadow-lg tabular-nums text-[88px]">
-                    {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+                    {currentHour ? formatTemp(currentHour.temp, tempUnit) : "—"}
                   </div>
                   <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-white/90 text-[10px] tracking-[0.2em] uppercase backdrop-blur-sm">
                     <Navigation size={10} /> Min posisjon
@@ -536,13 +540,13 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                   className="leading-none font-thin drop-shadow-lg tabular-nums text-[88px] mt-2 inline-block"
                   suppressHydrationWarning
                 >
-                  {userLoc.ready && currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+                  {userLoc.ready && currentHour ? formatTemp(currentHour.temp, tempUnit) : "—"}
                 </div>
               )}
               <div className="font-medium text-xl mt-2 block">{condition}</div>
               {todayDay && (
                 <div className="text-base font-medium mt-1 tabular-nums">
-                  H: {Math.round(todayDay.tempMax)}°  L: {Math.round(todayDay.tempMin)}°
+                  H: {formatTemp(todayDay.tempMax, tempUnit)}  L: {formatTemp(todayDay.tempMin, tempUnit)}
                 </div>
               )}
               {headline && (
@@ -567,7 +571,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-2xl font-thin tabular-nums" suppressHydrationWarning>
-                      {currentHour ? `${Math.round(currentHour.temp)}°` : "—"}
+                      {currentHour ? formatTemp(currentHour.temp, tempUnit) : "—"}
                     </div>
                     <div className="text-sm font-medium">{condition}</div>
                   </div>
@@ -1002,6 +1006,7 @@ function WeatherMenuButton({
           </div>
 
           <WindUnitSelect />
+          <TempUnitSelect />
 
           <div className="h-px bg-white/10" />
 
@@ -1038,6 +1043,33 @@ function WindUnitSelect() {
       <span className="text-[10px] text-white/50 uppercase tracking-wider">Vind-enhet</span>
       <div className="flex flex-wrap gap-1">
         {WIND_UNITS.map((u) => (
+          <button
+            key={u.id}
+            type="button"
+            onClick={() => setUnit(u.id)}
+            aria-pressed={unit === u.id}
+            title={u.label}
+            className={`rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
+              unit === u.id
+                ? "bg-white text-slate-900"
+                : "bg-white/10 text-white/80 hover:bg-white/20"
+            }`}
+          >
+            {u.short}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TempUnitSelect() {
+  const [unit, setUnit] = useTempUnit();
+  return (
+    <div className="flex flex-col gap-1.5 px-1">
+      <span className="text-[10px] text-white/50 uppercase tracking-wider">Temp-enhet</span>
+      <div className="flex flex-wrap gap-1">
+        {TEMP_UNITS.map((u) => (
           <button
             key={u.id}
             type="button"
@@ -1310,12 +1342,13 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
 }
 
 function VaerPanel({ hours }: { hours: Hour[] }) {
+  const [tempUnit] = useTempUnit();
   const temps = hours.map((h) => h.temp);
   const tMin = Math.min(...temps);
   const tMax = Math.max(...temps);
   const warmIdx = temps.indexOf(tMax);
   const coldIdx = temps.indexOf(tMin);
-  const summary = `Temp ${Math.round(tMin)}° – ${Math.round(tMax)}° · varmest ${fmtWhen(hours[warmIdx].time)} · kaldest ${fmtWhen(hours[coldIdx].time)}`;
+  const summary = `Temp ${formatTemp(tMin, tempUnit)} – ${formatTemp(tMax, tempUnit)} · varmest ${fmtWhen(hours[warmIdx].time)} · kaldest ${fmtWhen(hours[coldIdx].time)}`;
 
   return (
     <div className="space-y-2">
@@ -1337,7 +1370,7 @@ function VaerPanel({ hours }: { hours: Hour[] }) {
                   {Math.round(h.precipProbability)}%
                 </div>
               )}
-              <div className="text-sm font-medium tabular-nums mt-0.5">{Math.round(h.temp)}°</div>
+              <div className="text-sm font-medium tabular-nums mt-0.5">{formatTemp(h.temp, tempUnit)}</div>
             </div>
           ))}
         </div>
@@ -1567,6 +1600,7 @@ function NedborCard({ hours }: { hours: Hour[] | null }) {
 // ============================================================
 
 function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
+  const [tempUnit] = useTempUnit();
   if (!hours) return <GlassCard eyebrow="Værforhold" icon={<Cloud size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 24);
   return (
@@ -1584,7 +1618,7 @@ function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
                   {Math.round(h.precipProbability)}%
                 </div>
               )}
-              <div className="text-base font-medium tabular-nums mt-1">{Math.round(h.temp)}°</div>
+              <div className="text-base font-medium tabular-nums mt-1">{formatTemp(h.temp, tempUnit)}</div>
             </div>
           ))}
         </div>
@@ -1772,6 +1806,7 @@ function DailyRollInStyles() {
 
 function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
+  const [tempUnit] = useTempUnit();
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
 
@@ -1885,7 +1920,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
                 />
               </div>
               <div className="text-[13px] tabular-nums text-right text-white/90">
-                {Math.round(d.tempMin)}° <span className="text-white/60">·</span> {Math.round(d.tempMax)}°
+                {formatTemp(d.tempMin, tempUnit)} <span className="text-white/60">·</span> {formatTemp(d.tempMax, tempUnit)}
               </div>
             </div>
           );
@@ -3104,6 +3139,7 @@ function UvIosChart({ hours, nowProgress, uvNow }: { hours: { time: string; uv: 
 // ============================================================
 
 function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
+  const [tempUnit] = useTempUnit();
   const t = hour?.temp ?? 0;
   const w = hour?.wind ?? 0;
   const hum = hour?.humidity ?? 0;
@@ -3115,9 +3151,9 @@ function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
   const sunBoost = isDay ? Math.min(8, 2 + Math.max(0, t - 5) * 0.35) : 0;
   // Overskyet/skyet: ingen solbidrag, ofte litt kjøligere enn i skygge en solskinnsdag
   const overcast = base - (isDay ? 0.5 : 0);
-  const sun = Math.round(base + sunBoost);
-  const shade = Math.round(base);
-  const cloudy = Math.round(overcast);
+  const sun = base + sunBoost;
+  const shade = base;
+  const cloudy = overcast;
   const hint = feelsLikeReason(hour, isDay);
   const cold = shade <= 5;
   const fx = cold ? <SnowFX intensity={0.5} /> : sun >= 18 ? <HeatwaveFX intensity={1} /> : <HeatwaveFX intensity={-1} />;
@@ -3130,15 +3166,15 @@ function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
         <div className="grid grid-cols-3 gap-1 text-center">
           <div>
             <div className="text-[10px] text-white/70 leading-none whitespace-nowrap">☀️ Sol</div>
-            <div className="text-xl font-light tabular-nums mt-1">{sun}°</div>
+            <div className="text-xl font-light tabular-nums mt-1">{formatTemp(sun, tempUnit)}</div>
           </div>
           <div>
             <div className="text-[10px] text-white/70 leading-none whitespace-nowrap">🌳 Skygge</div>
-            <div className="text-xl font-light tabular-nums mt-1">{shade}°</div>
+            <div className="text-xl font-light tabular-nums mt-1">{formatTemp(shade, tempUnit)}</div>
           </div>
           <div>
             <div className="text-[10px] text-white/70 leading-none whitespace-nowrap">☁️ Skyet</div>
-            <div className="text-xl font-light tabular-nums mt-1">{cloudy}°</div>
+            <div className="text-xl font-light tabular-nums mt-1">{formatTemp(cloudy, tempUnit)}</div>
           </div>
         </div>
       ) : (
@@ -3461,12 +3497,14 @@ function GustCard({ hour }: { hour: Hour | null }) {
 }
 
 function HumidityCard({ hour }: { hour: Hour | null }) {
+  const [tempUnit] = useTempUnit();
   const h = Math.round(hour?.humidity ?? 0);
+  const dew = (hour?.temp ?? 0) - (100 - h) / 5;
   return (
     <GlassCard eyebrow="Luftfuktighet" icon={<Droplets size={14} />} fx={<HumidityFX intensity={h / 100} />}>
       <div className="text-3xl font-light tabular-nums">{h} %</div>
       <div className="text-[12px] text-white/75 mt-3 leading-snug">
-        Duggpunkt ca {Math.round((hour?.temp ?? 0) - (100 - h) / 5)}°.
+        Duggpunkt ca {formatTemp(dew, tempUnit)}.
       </div>
     </GlassCard>
   );
@@ -3512,6 +3550,7 @@ function PressureCard({ hour }: { hour: Hour | null }) {
 const SKIEN_MONTHLY_NORMALS = [-3, -3, 1, 6, 11, 15, 17, 16, 12, 7, 2, -2];
 
 function AvgTempCard({ hours }: { hours: Hour[] | null }) {
+  const [tempUnit] = useTempUnit();
   if (!hours || hours.length === 0) {
     return (
       <GlassCard eyebrow="Snittemp. i dag" icon={<Thermometer size={14} />}>
@@ -3528,9 +3567,10 @@ function AvgTempCard({ hours }: { hours: Hour[] | null }) {
   const delta = avg - normal;
   const deltaAbs = Math.abs(delta);
   const dir = delta >= 0.5 ? "over" : delta <= -0.5 ? "under" : "på";
+  const normalTxt = formatTemp(normal, tempUnit);
   const hint = dir === "på"
-    ? `Omtrent som normalen (${normal}°) for måneden.`
-    : `${deltaAbs.toFixed(1)}° ${dir} normalen (${normal}°) for måneden.`;
+    ? `Omtrent som normalen (${normalTxt}) for måneden.`
+    : `${deltaAbs.toFixed(1)}° ${dir} normalen (${normalTxt}) for måneden.`;
   const fx = avg <= 2
     ? <SnowFX intensity={0.5} />
     : avg >= 18
@@ -3542,7 +3582,7 @@ function AvgTempCard({ hours }: { hours: Hour[] | null }) {
           : <HeatwaveFX intensity={-1} />;
   return (
     <GlassCard eyebrow="Snittemp. i dag" icon={<Thermometer size={14} />} fx={fx}>
-      <div className="text-3xl font-light tabular-nums">{avg.toFixed(1)}°</div>
+      <div className="text-3xl font-light tabular-nums">{formatTemp(avg, tempUnit, { digits: 1 })}</div>
       <div className={`text-sm flex items-center gap-1.5 ${delta >= 0.5 ? "text-orange-300" : delta <= -0.5 ? "text-sky-300" : "text-white/85"}`}>
         {delta >= 0.5 ? (
           <span
@@ -3724,11 +3764,12 @@ function NetatmoTile({
   label: string; temp: number | null; wind: number | null; rain: number | null; humidity: number | null; pressure: number | null;
 }) {
   const [unit] = useWindUnit();
+  const [tUnit] = useTempUnit();
   return (
     <div className="rounded-xl bg-black/15 border border-white/10 p-3">
       <div className="text-[11px] tracking-wider text-white/75 uppercase mb-2">{label}</div>
       <div className="grid grid-cols-2 gap-y-1.5 text-[12px]">
-        {temp !== null && (<><span className="text-white/70">Temp</span><span className="text-right tabular-nums">{temp.toFixed(1)}°</span></>)}
+        {temp !== null && (<><span className="text-white/70">Temp</span><span className="text-right tabular-nums">{formatTemp(temp, tUnit, { digits: 1 })}</span></>)}
         <span className="text-white/70">Vind</span><span className="text-right tabular-nums">{wind !== null ? formatWind(wind, unit) : "—"}</span>
         <span className="text-white/70">Regn i dag</span><span className="text-right tabular-nums">{rain !== null ? `${rain.toFixed(1)} mm` : "—"}</span>
         <span className="text-white/70">Fukt</span><span className="text-right tabular-nums">{humidity !== null ? `${Math.round(humidity)} %` : "—"}</span>
