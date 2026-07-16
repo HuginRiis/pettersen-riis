@@ -3859,8 +3859,8 @@ function WindRose({ name, hours, rangeHours }: { name: string; hours: Hour[] | n
           })}
         </svg>
         <div className="space-y-2 text-center text-xs">
-          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Snitt</div><div className="text-xl font-light tabular-nums">{avgWind.toFixed(1)}</div><div className="text-[10px] text-white/60">m/s</div></div>
-          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Maks</div><div className="text-base font-light tabular-nums">{maxWind.toFixed(1)}</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Snitt</div><div className="text-xl font-light tabular-nums">{formatWind(avgWind, unit, { withUnit: false })}</div><div className="text-[10px] text-white/60">{windUnitShort(unit)}</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Maks</div><div className="text-base font-light tabular-nums">{formatWind(maxWind, unit, { withUnit: false })}</div></div>
           <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Fra</div><div className="text-base font-light">{dirs[dominantIdx]}</div></div>
         </div>
       </div>
