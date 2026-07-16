@@ -851,7 +851,7 @@ export function GlassPaneFX({
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
   const isSnow = kind === "snow" || kind === "sleet";
-  const isClearDay = kind === "clear" || kind === "fair";
+  const isClearDay = kind === "clear" || kind === "fair" || kind === "partly";
   const isNight = kind === "night" || kind === "night-clear";
   const isCloudy = kind === "cloudy" || kind === "partly";
   const isFog = kind === "fog";
