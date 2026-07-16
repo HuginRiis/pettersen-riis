@@ -92,7 +92,7 @@ export function DynamicForecastPanel({ label, lat, lon }: Props) {
             value={`${Math.round(now.temp)}°`}
             sub={symbolEmoji(now.symbol)}
           />
-          <NowCard label="Vind" value={`${now.wind.toFixed(1)} m/s`} sub="💨" />
+          <NowCard label="Vind" value={formatWind(now.wind, unit)} sub="💨" />
           <NowCard
             label="Regn 1t"
             value={`${now.precip.toFixed(1)} mm`}
