@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
 
 type Hour = {
   time: string;
@@ -27,6 +28,7 @@ type Props = {
  * og viser nå-status, 24 timer og 7 dager. Tegner inn i panel-stil.
  */
 export function DynamicForecastPanel({ label, lat, lon }: Props) {
+  const [unit] = useWindUnit();
   const [hours, setHours] = useState<Hour[] | null>(null);
   const [days, setDays] = useState<Day[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +92,7 @@ export function DynamicForecastPanel({ label, lat, lon }: Props) {
             value={`${Math.round(now.temp)}°`}
             sub={symbolEmoji(now.symbol)}
           />
-          <NowCard label="Vind" value={`${now.wind.toFixed(1)} m/s`} sub="💨" />
+          <NowCard label="Vind" value={formatWind(now.wind, unit)} sub="💨" />
           <NowCard
             label="Regn 1t"
             value={`${now.precip.toFixed(1)} mm`}

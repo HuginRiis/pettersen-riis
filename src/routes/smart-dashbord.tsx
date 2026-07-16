@@ -69,6 +69,7 @@ import rebekkaHappy from "@/assets/rebekka-happy.png";
 import rebekkaSad from "@/assets/rebekka-sad.png";
 import doorOpenImg from "@/assets/door-open.png";
 import doorClosedImg from "@/assets/door-closed.png";
+import { useWindUnit, formatWind, windUnitShort, WIND_UNITS } from "@/hooks/use-wind-unit";
 
 // ----- shared settings (skala, bold, gap) -----
 type DashSettings = {
@@ -4528,6 +4529,7 @@ function WindTile({
   gustNow: number | null;
   windAngle: number | null;
 }) {
+  const [unit] = useWindUnit();
   const mm = useDailyMinMax("pbth.smart.gustMax", gustNow);
   const maxToday = Math.max(gustNow ?? 0, mm?.max ?? 0);
   const speed = gustNow ?? windNow ?? 0;
@@ -4605,8 +4607,8 @@ function WindTile({
         <div className="min-w-0 text-right">
           <div className="text-[9px] uppercase tracking-widest text-white/40">Vind nå</div>
           <div className="text-xl font-semibold text-white tabular-nums leading-none">
-            {windNow == null ? "—" : windNow.toFixed(1).replace(".", ",")}
-            <span className="text-[10px] text-white/40 ml-1">m/s</span>
+            {windNow == null ? "—" : formatWind(windNow, unit, { withUnit: false }).replace(".", ",")}
+            <span className="text-[10px] text-white/40 ml-1">{windUnitShort(unit)}</span>
           </div>
           <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Retning</div>
           <div className="text-xs text-yellow-200 tabular-nums leading-none">
@@ -4615,11 +4617,11 @@ function WindTile({
           </div>
           <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Vindkast</div>
           <div className="text-sm text-cyan-200 tabular-nums leading-none">
-            {gustNow == null ? "—" : `${gustNow.toFixed(1).replace(".", ",")} m/s`}
+            {gustNow == null ? "—" : `${formatWind(gustNow, unit, { withUnit: false }).replace(".", ",")} ${windUnitShort(unit)}`}
           </div>
           <div className="text-[9px] uppercase tracking-widest text-white/40 mt-1">Maks i dag</div>
           <div className="text-[11px] text-cyan-200/80 tabular-nums">
-            {maxToday > 0 ? `${maxToday.toFixed(1).replace(".", ",")} m/s` : "—"}
+            {maxToday > 0 ? `${formatWind(maxToday, unit, { withUnit: false }).replace(".", ",")} ${windUnitShort(unit)}` : "—"}
           </div>
         </div>
       </div>
@@ -5283,6 +5285,8 @@ export function SmartDashbord() {
               />
             </div>
 
+            <WindUnitSetting />
+
             <div className="pt-2 border-t border-white/10">
               <div className="flex items-center justify-between text-xs mb-2">
                 <span className="text-white/70">Varmepumpe ({loc.label})</span>
@@ -5332,6 +5336,36 @@ export function SmartDashbord() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function WindUnitSetting() {
+  const [unit, setUnit] = useWindUnit();
+  return (
+    <div className="pt-2 border-t border-white/10">
+      <div className="flex items-center justify-between text-xs mb-2">
+        <span className="text-white/70">Vind-enhet</span>
+        <span className="text-white/40 text-[10px]">Gjelder overalt</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {WIND_UNITS.map((u) => (
+          <button
+            key={u.id}
+            type="button"
+            onClick={() => setUnit(u.id)}
+            aria-pressed={unit === u.id}
+            title={u.label}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
+              unit === u.id
+                ? "bg-white text-slate-900"
+                : "bg-white/10 text-white/80 hover:bg-white/20"
+            }`}
+          >
+            {u.short}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

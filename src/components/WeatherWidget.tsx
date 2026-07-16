@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
+
 
 type Props = {
   title: string;
@@ -84,6 +86,7 @@ export function WeatherWidget({ title, subtitle, lat, lon, mode }: Props) {
 
 function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
   void compact; // alltid detaljert nå — vi viser timeslot + sammendrag for begge modus
+  const [unit] = useWindUnit();
   const avgWind =
     day.slots.length > 0
       ? day.slots.reduce((s, x) => s + x.wind, 0) / day.slots.length
@@ -113,9 +116,9 @@ function DayRow({ day, compact }: { day: DaySummary; compact: boolean }) {
 
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground mb-2">
         <span title="Total nedbør">💧 {day.precip.toFixed(1)} mm</span>
-        <span title="Snittvind">🌬 {avgWind.toFixed(1)} m/s</span>
+        <span title="Snittvind">🌬 {formatWind(avgWind, unit)}</span>
         {maxWind > avgWind + 1 && (
-          <span title="Maks vindkast">↑ {maxWind.toFixed(1)} m/s</span>
+          <span title="Maks vindkast">↑ {formatWind(maxWind, unit)}</span>
         )}
       </div>
 

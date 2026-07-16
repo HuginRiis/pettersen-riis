@@ -6,6 +6,7 @@ import {
   type WeatherModule,
   type WeatherStationResult,
 } from "@/lib/netatmo-weather.functions";
+import { useWindUnit, formatWindFromKmh } from "@/hooks/use-wind-unit";
 
 const REFRESH_MS = 10 * 60_000; // 10 min
 
@@ -103,6 +104,7 @@ function co2Tone(co2?: number): { label: string; cls: string } {
 }
 
 function ModuleCard({ m }: { m: WeatherModule }) {
+  const [unit] = useWindUnit();
   const meta = metaFor(m.type);
   const co2 = co2Tone(m.metrics.co2);
   const isOutdoor = m.type === "NAModule1";
@@ -174,12 +176,12 @@ function ModuleCard({ m }: { m: WeatherModule }) {
             <>
               <Stat
                 label="Vind"
-                value={`${fmt(m.metrics.windStrength, 0)} km/t`}
+                value={formatWindFromKmh(m.metrics.windStrength, unit, { digits: 0 })}
                 hint={compass(m.metrics.windAngle)}
               />
               <Stat
                 label="Kast"
-                value={`${fmt(m.metrics.gustStrength, 0)} km/t`}
+                value={formatWindFromKmh(m.metrics.gustStrength, unit, { digits: 0 })}
                 hint={compass(m.metrics.gustAngle)}
               />
             </>

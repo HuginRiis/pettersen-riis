@@ -51,6 +51,7 @@ import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/compon
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
+import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -1000,6 +1001,8 @@ function WeatherMenuButton({
             </button>
           </div>
 
+          <WindUnitSelect />
+
           <div className="h-px bg-white/10" />
 
           <TileColorToggle />
@@ -1024,6 +1027,33 @@ function WeatherMenuButton({
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+function WindUnitSelect() {
+  const [unit, setUnit] = useWindUnit();
+  return (
+    <div className="flex flex-col gap-1.5 px-1">
+      <span className="text-[10px] text-white/50 uppercase tracking-wider">Vind-enhet</span>
+      <div className="flex flex-wrap gap-1">
+        {WIND_UNITS.map((u) => (
+          <button
+            key={u.id}
+            type="button"
+            onClick={() => setUnit(u.id)}
+            aria-pressed={unit === u.id}
+            title={u.label}
+            className={`rounded-full px-2 py-1 text-[10px] font-medium transition-all ${
+              unit === u.id
+                ? "bg-white text-slate-900"
+                : "bg-white/10 text-white/80 hover:bg-white/20"
+            }`}
+          >
+            {u.short}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1368,13 +1398,14 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
 
 
 function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
+  const [unit] = useWindUnit();
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
   const peakIdx = hours.reduce((b, h, i, a) => (h.windGust > a[b].windGust ? i : b), 0);
   const peak = hours[peakIdx];
   const summary =
     peak.windGust >= 10
-      ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
-      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste ${hours.length} t`;
+      ? `Sterkest kast ${formatWind(peak.windGust, unit, { digits: 0 })} rundt ${fmtWhen(peak.time)} · middelvind opp til ${formatWind(Math.max(...hours.map((h) => h.wind)), unit, { digits: 0 })}`
+      : `Rolig vind · maks ${formatWind(peak.windGust, unit, { digits: 0 })} neste ${hours.length} t`;
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
@@ -1414,7 +1445,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
                 />
               </div>
               <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
-                {Math.round(h.wind)}
+                {formatWind(h.wind, unit, { digits: 0, withUnit: false })}
               </div>
               <div
                 className="text-[9px] text-white/60 leading-none"
@@ -1427,7 +1458,7 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
         })}
         </div>
       </div>
-      <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast (m/s)</div>
+      <div className="text-[10px] text-white/60 mt-1 px-1">■ vind &nbsp; ▒ kast ({windUnitShort(unit)})</div>
     </div>
   );
 }
@@ -1567,6 +1598,7 @@ function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
 // ============================================================
 
 function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
+  const [unit] = useWindUnit();
   if (!hours) return <GlassCard eyebrow="Vind" icon={<Wind size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 24);
   const W = 600, H = 80, pad = 4;
@@ -1578,15 +1610,15 @@ function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
   const fillPath = `${path} L ${xFor(next.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
 
   return (
-    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, maxW / 12)} />}>
+    <GlassCard eyebrow={`Vind · Hastighet (${windUnitShort(unit)})`} icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, maxW / 12)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="min-w-max">
           <div className="flex items-end gap-4 mb-1">
             {next.filter((_, i) => i % 1 === 0).slice(0, 24).map((h, i) => (
               <div key={h.time} className="w-12 text-center">
                 <div className="text-[11px] text-white/80">{i === 0 ? "Nå" : h.time.slice(11, 16)}</div>
-                <div className="text-base font-medium tabular-nums mt-1">{Math.round(h.wind)}</div>
-                <div className="text-[10px] text-white/60">m/s</div>
+                <div className="text-base font-medium tabular-nums mt-1">{formatWind(h.wind, unit, { digits: 0, withUnit: false })}</div>
+                <div className="text-[10px] text-white/60">{windUnitShort(unit)}</div>
               </div>
             ))}
           </div>
@@ -2196,6 +2228,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
 
 
 function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
+  const [unit] = useWindUnit();
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
 
@@ -2275,7 +2308,7 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
         </svg>
       </div>
       <div className="text-[13px] tabular-nums text-right text-white/90">
-        {Math.round(maxWind)} <span className="text-white/60">({Math.round(maxGust)})</span> <span className="text-white/60 text-[11px]">m/s</span>
+        {formatWind(maxWind, unit, { digits: 0, withUnit: false })} <span className="text-white/60">({formatWind(maxGust, unit, { digits: 0, withUnit: false })})</span> <span className="text-white/60 text-[11px]">{windUnitShort(unit)}</span>
       </div>
     </div>
   );
@@ -2335,20 +2368,22 @@ function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
 // ============================================================
 
 function WindDetailCard({ hour }: { hour: Hour | null }) {
+  const [unit] = useWindUnit();
   const dir = hour?.windDir ?? 0;
   const speed = hour?.wind ?? 0;
   const gust = hour?.windGust ?? speed;
   const month = new Date().getMonth();
   const normal = SKIEN_MONTHLY_WIND_NORMAL_MS[month];
   const delta = speed - normal;
+  const unitSuffix = ` ${windUnitShort(unit)}`;
   return (
     <GlassCard eyebrow="Vind" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, speed / 12)} />}>
       <div className="grid grid-cols-[1fr_auto] gap-4 items-center">
         <div className="space-y-2 text-sm">
-          <Row label="Vind" value={`${speed.toFixed(1)} m/s`} />
-          <Row label="Vindkast" value={`${gust.toFixed(1)} m/s`} />
+          <Row label="Vind" value={formatWind(speed, unit)} />
+          <Row label="Vindkast" value={formatWind(gust, unit)} />
           <Row label="Retning" value={`${Math.round(dir)}° ${dirCardinal(dir)}`} />
-          <NormalDelta delta={delta} unit=" m/s" normal={normal} upIsBad />
+          <NormalDelta delta={delta} unit={unitSuffix} normal={normal} upIsBad />
         </div>
         <div className="relative w-28 h-28">
           <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -2373,8 +2408,8 @@ function WindDetailCard({ hour }: { hour: Hour | null }) {
             </g>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="text-xl font-light tabular-nums leading-none">{speed.toFixed(0)}</div>
-            <div className="text-[9px] text-white/70">m/s</div>
+            <div className="text-xl font-light tabular-nums leading-none">{formatWind(speed, unit, { digits: 0, withUnit: false })}</div>
+            <div className="text-[9px] text-white/70">{windUnitShort(unit)}</div>
           </div>
         </div>
       </div>
@@ -3408,17 +3443,19 @@ function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: Fo
 }
 
 function GustCard({ hour }: { hour: Hour | null }) {
+  const [unit] = useWindUnit();
   const w = hour?.wind ?? 0;
   const g = hour?.windGust ?? w;
   const month = new Date().getMonth();
   const normal = SKIEN_MONTHLY_GUST_NORMAL_MS[month];
   const delta = g - normal;
+  const suf = ` ${windUnitShort(unit)}`;
   return (
     <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />} fx={<GustFX intensity={Math.min(1, g / 15)} />}>
-      <div className="text-3xl font-light tabular-nums">{g.toFixed(1)}</div>
-      <div className="text-sm text-white/85">m/s</div>
-      <NormalDelta delta={delta} unit=" m/s" normal={normal} upIsBad />
-      <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {w.toFixed(1)} m/s.</div>
+      <div className="text-3xl font-light tabular-nums">{formatWind(g, unit, { withUnit: false })}</div>
+      <div className="text-sm text-white/85">{windUnitShort(unit)}</div>
+      <NormalDelta delta={delta} unit={suf} normal={normal} upIsBad />
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {formatWind(w, unit)}.</div>
     </GlassCard>
   );
 }
@@ -3686,12 +3723,13 @@ function NetatmoTile({
 }: {
   label: string; temp: number | null; wind: number | null; rain: number | null; humidity: number | null; pressure: number | null;
 }) {
+  const [unit] = useWindUnit();
   return (
     <div className="rounded-xl bg-black/15 border border-white/10 p-3">
       <div className="text-[11px] tracking-wider text-white/75 uppercase mb-2">{label}</div>
       <div className="grid grid-cols-2 gap-y-1.5 text-[12px]">
         {temp !== null && (<><span className="text-white/70">Temp</span><span className="text-right tabular-nums">{temp.toFixed(1)}°</span></>)}
-        <span className="text-white/70">Vind</span><span className="text-right tabular-nums">{wind !== null ? `${wind.toFixed(1)} m/s` : "—"}</span>
+        <span className="text-white/70">Vind</span><span className="text-right tabular-nums">{wind !== null ? formatWind(wind, unit) : "—"}</span>
         <span className="text-white/70">Regn i dag</span><span className="text-right tabular-nums">{rain !== null ? `${rain.toFixed(1)} mm` : "—"}</span>
         <span className="text-white/70">Fukt</span><span className="text-right tabular-nums">{humidity !== null ? `${Math.round(humidity)} %` : "—"}</span>
         <span className="text-white/70">Trykk</span><span className="text-right tabular-nums">{pressure !== null ? `${Math.round(pressure)} hPa` : "—"}</span>
@@ -3769,6 +3807,7 @@ function AlertCompactTile({ alert }: { alert: MetAlert }) {
 // ============================================================
 
 function WindRose({ name, hours, rangeHours }: { name: string; hours: Hour[] | null; rangeHours: number }) {
+  const [unit] = useWindUnit();
   if (!hours) return <div className="text-white/70 italic text-sm">{name}: laster…</div>;
   const next = hours.slice(0, rangeHours);
   const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
@@ -3820,8 +3859,8 @@ function WindRose({ name, hours, rangeHours }: { name: string; hours: Hour[] | n
           })}
         </svg>
         <div className="space-y-2 text-center text-xs">
-          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Snitt</div><div className="text-xl font-light tabular-nums">{avgWind.toFixed(1)}</div><div className="text-[10px] text-white/60">m/s</div></div>
-          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Maks</div><div className="text-base font-light tabular-nums">{maxWind.toFixed(1)}</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Snitt</div><div className="text-xl font-light tabular-nums">{formatWind(avgWind, unit, { withUnit: false })}</div><div className="text-[10px] text-white/60">{windUnitShort(unit)}</div></div>
+          <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Maks</div><div className="text-base font-light tabular-nums">{formatWind(maxWind, unit, { withUnit: false })}</div></div>
           <div><div className="text-white/70 uppercase tracking-wider text-[10px]">Fra</div><div className="text-base font-light">{dirs[dominantIdx]}</div></div>
         </div>
       </div>

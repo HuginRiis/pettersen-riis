@@ -5,6 +5,7 @@ import {
   getNetatmoWeatherStation,
   type WeatherStationResult,
 } from "@/lib/netatmo-weather.functions";
+import { useWindUnit, formatWindFromKmh, windUnitShort } from "@/hooks/use-wind-unit";
 
 const REFRESH_MS = 10 * 60_000;
 
@@ -20,6 +21,7 @@ export function OutdoorWeatherStrip({
   label = "Ute nå · Tollnes",
 }: { stationMatch?: string; label?: string } = {}) {
   const fetchData = useServerFn(getNetatmoWeatherStation);
+  const [unit] = useWindUnit();
   const cacheKey = `outdoor-strip:${stationMatch}`;
   const [data, setData] = useState<OkData | null>(null);
   const inFlight = useRef(false);
@@ -123,15 +125,15 @@ export function OutdoorWeatherStrip({
             <div className={`flex flex-col items-center text-center ${tiles === 3 ? "border-x border-border" : ""}`}>
               <Wind className="h-4 w-4 text-primary mb-1" />
               <div className="text-lg sm:text-2xl font-semibold text-foreground tabular-nums leading-none">
-                {fmt(gust ?? windNow, 0)}
+                {formatWindFromKmh(gust ?? windNow, unit, { digits: 0, withUnit: false })}
                 <span className="text-[10px] sm:text-xs text-muted-foreground ml-1">
-                  km/t
+                  {windUnitShort(unit)}
                 </span>
               </div>
               <div className="mt-1 text-[10px] sm:text-xs text-muted-foreground tabular-nums">
                 {gust !== null ? "maks kast" : "vind nå"}
                 {gust !== null && windNow !== null && (
-                  <> · {fmt(windNow, 0)} nå</>
+                  <> · {formatWindFromKmh(windNow, unit, { digits: 0, withUnit: false })} nå</>
                 )}
               </div>
             </div>
