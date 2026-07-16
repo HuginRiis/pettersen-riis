@@ -1480,6 +1480,9 @@ function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
               <div className="text-[10px] text-emerald-100 font-medium tabular-nums mt-1">
                 {formatWind(h.wind, unit, { digits: 0, withUnit: false })}
               </div>
+              <div className="text-[9px] text-emerald-200/80 tabular-nums leading-none">
+                kast {formatWind(h.windGust, unit, { digits: 0, withUnit: false })}
+              </div>
               <div
                 className="text-[9px] text-white/60 leading-none"
                 style={{ transform: `rotate(${h.windDir}deg)`, display: "inline-block" }}
