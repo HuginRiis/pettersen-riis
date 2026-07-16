@@ -3723,12 +3723,13 @@ function NetatmoTile({
 }: {
   label: string; temp: number | null; wind: number | null; rain: number | null; humidity: number | null; pressure: number | null;
 }) {
+  const [unit] = useWindUnit();
   return (
     <div className="rounded-xl bg-black/15 border border-white/10 p-3">
       <div className="text-[11px] tracking-wider text-white/75 uppercase mb-2">{label}</div>
       <div className="grid grid-cols-2 gap-y-1.5 text-[12px]">
         {temp !== null && (<><span className="text-white/70">Temp</span><span className="text-right tabular-nums">{temp.toFixed(1)}°</span></>)}
-        <span className="text-white/70">Vind</span><span className="text-right tabular-nums">{wind !== null ? `${wind.toFixed(1)} m/s` : "—"}</span>
+        <span className="text-white/70">Vind</span><span className="text-right tabular-nums">{wind !== null ? formatWind(wind, unit) : "—"}</span>
         <span className="text-white/70">Regn i dag</span><span className="text-right tabular-nums">{rain !== null ? `${rain.toFixed(1)} mm` : "—"}</span>
         <span className="text-white/70">Fukt</span><span className="text-right tabular-nums">{humidity !== null ? `${Math.round(humidity)} %` : "—"}</span>
         <span className="text-white/70">Trykk</span><span className="text-right tabular-nums">{pressure !== null ? `${Math.round(pressure)} hPa` : "—"}</span>
