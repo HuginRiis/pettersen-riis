@@ -3807,6 +3807,7 @@ function AlertCompactTile({ alert }: { alert: MetAlert }) {
 // ============================================================
 
 function WindRose({ name, hours, rangeHours }: { name: string; hours: Hour[] | null; rangeHours: number }) {
+  const [unit] = useWindUnit();
   if (!hours) return <div className="text-white/70 italic text-sm">{name}: laster…</div>;
   const next = hours.slice(0, rangeHours);
   const dirs = ["N", "NØ", "Ø", "SØ", "S", "SV", "V", "NV"];
