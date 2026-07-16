@@ -1598,6 +1598,7 @@ function HourlyForecastCard({ hours }: { hours: Hour[] | null }) {
 // ============================================================
 
 function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
+  const [unit] = useWindUnit();
   if (!hours) return <GlassCard eyebrow="Vind" icon={<Wind size={14} />}><Skeleton /></GlassCard>;
   const next = hours.slice(0, 24);
   const W = 600, H = 80, pad = 4;
@@ -1609,15 +1610,15 @@ function WindHourlyCard({ hours }: { hours: Hour[] | null }) {
   const fillPath = `${path} L ${xFor(next.length - 1).toFixed(1)} ${H} L ${pad} ${H} Z`;
 
   return (
-    <GlassCard eyebrow="Vind · Hastighet (m/s)" icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, maxW / 12)} />}>
+    <GlassCard eyebrow={`Vind · Hastighet (${windUnitShort(unit)})`} icon={<Wind size={14} />} fx={<WindFX intensity={Math.min(1, maxW / 12)} />}>
       <div className="overflow-x-auto -mx-2 px-2">
         <div className="min-w-max">
           <div className="flex items-end gap-4 mb-1">
             {next.filter((_, i) => i % 1 === 0).slice(0, 24).map((h, i) => (
               <div key={h.time} className="w-12 text-center">
                 <div className="text-[11px] text-white/80">{i === 0 ? "Nå" : h.time.slice(11, 16)}</div>
-                <div className="text-base font-medium tabular-nums mt-1">{Math.round(h.wind)}</div>
-                <div className="text-[10px] text-white/60">m/s</div>
+                <div className="text-base font-medium tabular-nums mt-1">{formatWind(h.wind, unit, { digits: 0, withUnit: false })}</div>
+                <div className="text-[10px] text-white/60">{windUnitShort(unit)}</div>
               </div>
             ))}
           </div>
