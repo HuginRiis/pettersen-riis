@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
 
 type Hour = {
   time: string;
