@@ -3443,17 +3443,19 @@ function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: Fo
 }
 
 function GustCard({ hour }: { hour: Hour | null }) {
+  const [unit] = useWindUnit();
   const w = hour?.wind ?? 0;
   const g = hour?.windGust ?? w;
   const month = new Date().getMonth();
   const normal = SKIEN_MONTHLY_GUST_NORMAL_MS[month];
   const delta = g - normal;
+  const suf = ` ${windUnitShort(unit)}`;
   return (
     <GlassCard eyebrow="Vindkast" icon={<Wind size={14} />} fx={<GustFX intensity={Math.min(1, g / 15)} />}>
-      <div className="text-3xl font-light tabular-nums">{g.toFixed(1)}</div>
-      <div className="text-sm text-white/85">m/s</div>
-      <NormalDelta delta={delta} unit=" m/s" normal={normal} upIsBad />
-      <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {w.toFixed(1)} m/s.</div>
+      <div className="text-3xl font-light tabular-nums">{formatWind(g, unit, { withUnit: false })}</div>
+      <div className="text-sm text-white/85">{windUnitShort(unit)}</div>
+      <NormalDelta delta={delta} unit={suf} normal={normal} upIsBad />
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">Gjennomsnitt {formatWind(w, unit)}.</div>
     </GlassCard>
   );
 }
