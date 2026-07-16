@@ -3444,6 +3444,10 @@ function SkydekkeSceneFX({
           0%,100% { transform: scale(1); }
           50% { transform: scale(1.05); }
         }
+        @keyframes skyDekkeSunSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
       `}</style>
     </div>
   );
