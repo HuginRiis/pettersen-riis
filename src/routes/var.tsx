@@ -3290,23 +3290,42 @@ function SkydekkeSceneFX({
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Sol som titter frem når det ikke er tett dekke */}
-      <div
-        className="absolute"
-        style={{
-          top: "14%",
-          right: "16%",
-          width: 78,
-          height: 78,
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle at 35% 35%, #fff6b0 0%, #ffd76a 45%, rgba(255,204,102,0) 72%)",
-          filter: `blur(0.5px) drop-shadow(0 0 18px rgba(255,214,120,${0.55 * sunOpacity}))`,
-          opacity: sunOpacity,
-          transition: "opacity 800ms ease",
-          animation: "skyDekkeSunPulse 6s ease-in-out infinite",
-        }}
-      />
+      {/* Sol som titter frem kun når det er under 40 % skydekke */}
+      {sunOpacity > 0 && (
+        <>
+          <div
+            className="absolute"
+            style={{
+              top: "10%",
+              right: "12%",
+              width: 90,
+              height: 90,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle at 35% 35%, #fff6b0 0%, #ffd76a 40%, rgba(255,200,100,0.18) 62%, rgba(255,200,100,0) 78%)",
+              filter: `blur(3px)`,
+              opacity: 0.55 * sunOpacity,
+              animation: "skyDekkeSunPulse 6s ease-in-out infinite",
+            }}
+          />
+          <div
+            className="absolute"
+            style={{
+              top: "16%",
+              right: "18%",
+              width: 54,
+              height: 54,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle at 35% 35%, #ffffff 0%, #ffe27a 45%, #ffb347 85%)",
+              boxShadow: `0 0 22px rgba(255,214,120,${0.75 * sunOpacity}), 0 0 44px rgba(255,180,80,${0.45 * sunOpacity})`,
+              opacity: sunOpacity,
+              transition: "opacity 800ms ease",
+              animation: "skyDekkeSunPulse 6s ease-in-out infinite",
+            }}
+          />
+        </>
+      )}
       {/* Regn */}
       {rainDrops.length > 0 && (
         <div className="absolute inset-0" style={{ opacity: Math.min(1, 0.5 + rainMix * 0.6) }}>
