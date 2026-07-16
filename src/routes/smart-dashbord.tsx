@@ -4528,6 +4528,7 @@ function WindTile({
   gustNow: number | null;
   windAngle: number | null;
 }) {
+  const [unit] = useWindUnit();
   const mm = useDailyMinMax("pbth.smart.gustMax", gustNow);
   const maxToday = Math.max(gustNow ?? 0, mm?.max ?? 0);
   const speed = gustNow ?? windNow ?? 0;
