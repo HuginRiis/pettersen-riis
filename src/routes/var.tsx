@@ -3297,39 +3297,86 @@ function SkydekkeSceneFX({
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {/* Sol som titter frem kun når det er under 40 % skydekke */}
       {sunOpacity > 0 && (
-        <>
+        <div
+          className="absolute"
+          style={{
+            top: "8%",
+            right: "10%",
+            width: 140,
+            height: 140,
+            opacity: sunOpacity,
+            transition: "opacity 800ms ease",
+            pointerEvents: "none",
+          }}
+        >
+          {/* Ytre glød / haze */}
           <div
-            className="absolute"
+            className="absolute inset-0"
             style={{
-              top: "10%",
-              right: "12%",
-              width: 90,
-              height: 90,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle at 35% 35%, #fff6b0 0%, #ffd76a 40%, rgba(255,200,100,0.18) 62%, rgba(255,200,100,0) 78%)",
-              filter: `blur(3px)`,
-              opacity: 0.55 * sunOpacity,
+                "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, rgba(255,246,200,0.55) 18%, rgba(180,210,255,0.25) 42%, rgba(180,210,255,0) 70%)",
+              filter: "blur(2px)",
               animation: "skyDekkeSunPulse 6s ease-in-out infinite",
             }}
           />
+          {/* Solstråler */}
+          <svg
+            viewBox="0 0 200 200"
+            className="absolute inset-0 w-full h-full"
+            style={{ animation: "skyDekkeSunSpin 60s linear infinite" }}
+            aria-hidden
+          >
+            <defs>
+              <radialGradient id="sdSunRayFade" cx="50%" cy="50%" r="50%">
+                <stop offset="30%" stopColor="rgba(255,255,255,0.95)" />
+                <stop offset="70%" stopColor="rgba(255,240,180,0.35)" />
+                <stop offset="100%" stopColor="rgba(255,240,180,0)" />
+              </radialGradient>
+            </defs>
+            <g stroke="url(#sdSunRayFade)" strokeLinecap="round">
+              {Array.from({ length: 16 }).map((_, i) => {
+                const a = (i * Math.PI * 2) / 16;
+                const x1 = 100 + Math.cos(a) * 32;
+                const y1 = 100 + Math.sin(a) * 32;
+                const x2 = 100 + Math.cos(a) * 96;
+                const y2 = 100 + Math.sin(a) * 96;
+                const w = i % 2 === 0 ? 3.2 : 1.4;
+                return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={w} />;
+              })}
+            </g>
+          </svg>
+          {/* Hvit kjerne */}
           <div
             className="absolute"
             style={{
-              top: "16%",
-              right: "18%",
-              width: 54,
-              height: 54,
+              top: "50%",
+              left: "50%",
+              width: 58,
+              height: 58,
+              marginLeft: -29,
+              marginTop: -29,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle at 35% 35%, #ffffff 0%, #ffe27a 45%, #ffb347 85%)",
-              boxShadow: `0 0 22px rgba(255,214,120,${0.75 * sunOpacity}), 0 0 44px rgba(255,180,80,${0.45 * sunOpacity})`,
-              opacity: sunOpacity,
-              transition: "opacity 800ms ease",
-              animation: "skyDekkeSunPulse 6s ease-in-out infinite",
+                "radial-gradient(circle at 45% 40%, #ffffff 0%, #ffffff 32%, #fff5c8 62%, rgba(255,220,140,0) 100%)",
+              boxShadow: `0 0 30px rgba(255,255,255,${0.9 * sunOpacity}), 0 0 60px rgba(255,220,140,${0.7 * sunOpacity}), 0 0 100px rgba(255,190,90,${0.45 * sunOpacity})`,
+              animation: "skyDekkeSunPulse 4s ease-in-out infinite",
             }}
           />
-        </>
+          {/* Liten lens-flare prikk */}
+          <div
+            className="absolute"
+            style={{
+              top: "78%",
+              left: "18%",
+              width: 14,
+              height: 14,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(180,210,255,0.6) 0%, rgba(180,210,255,0) 70%)",
+            }}
+          />
+        </div>
       )}
       {/* Regn */}
       {rainDrops.length > 0 && (
