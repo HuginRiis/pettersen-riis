@@ -3374,7 +3374,7 @@ function SkydekkeSceneFX({
               <ellipse cx="82" cy="36" rx="24" ry="15" />
               <ellipse cx="65" cy="42" rx="34" ry="10" />
             </g>
-            <ellipse cx="60" cy="52" rx="42" ry="4" fill={cloudShadow} opacity={0.35 + rainMix * 0.4} />
+            <ellipse cx="60" cy="52" rx="42" ry="4" fill={cloudShadow} opacity={0.15 + rainMix * 0.3} />
           </svg>
         </div>
       ))}
