@@ -2308,7 +2308,7 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
         </svg>
       </div>
       <div className="text-[13px] tabular-nums text-right text-white/90">
-        {Math.round(maxWind)} <span className="text-white/60">({Math.round(maxGust)})</span> <span className="text-white/60 text-[11px]">m/s</span>
+        {formatWind(maxWind, unit, { digits: 0, withUnit: false })} <span className="text-white/60">({formatWind(maxGust, unit, { digits: 0, withUnit: false })})</span> <span className="text-white/60 text-[11px]">{windUnitShort(unit)}</span>
       </div>
     </div>
   );
