@@ -5,6 +5,7 @@ import {
   getNetatmoWeatherStation,
   type WeatherStationResult,
 } from "@/lib/netatmo-weather.functions";
+import { useWindUnit, formatWindFromKmh, windUnitShort } from "@/hooks/use-wind-unit";
 
 const REFRESH_MS = 10 * 60_000;
 
