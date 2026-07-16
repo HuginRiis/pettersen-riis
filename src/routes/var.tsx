@@ -3292,44 +3292,136 @@ function SkydekkeSceneFX({
     });
   }, [rainDropCount]);
 
+  // Wispy cirrus-lag som drifter i ulik fart – gir iPhone-vær-følelse
+  const wisps = useMemo(() => {
+    const n = Math.max(3, Math.min(7, Math.round(3 + cov * 4)));
+    return Array.from({ length: n }).map((_, i) => {
+      const r = (k: number) => {
+        const x = Math.sin((i + 1) * 91.13 + k * 17.77 + cov * 9.31) * 43758.5453;
+        return x - Math.floor(x);
+      };
+      return {
+        top: 4 + r(1) * 78,
+        scale: 0.9 + r(2) * 1.4,
+        delay: -(r(3) * baseDur * 2),
+        dur: (baseDur * (1.4 + r(4) * 1.2)) / windMult,
+        opacity: 0.35 + r(5) * 0.45 + rainMix * 0.2,
+        seed: Math.floor(r(6) * 9000),
+        skew: -8 + r(7) * 16,
+      };
+    });
+  }, [cov, windMult, rainMix]);
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Sol som titter frem kun når det er under 40 % skydekke */}
+      {/* Blå himmel-gradient */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: rainMix > 0.15
+            ? "linear-gradient(180deg, #6b7d94 0%, #8a9bb0 55%, #a9b7c8 100%)"
+            : "linear-gradient(180deg, #4a86c8 0%, #78a8d6 45%, #b8d4ea 100%)",
+        }}
+      />
+
+      {/* Sol med bloom + lens-flare i øvre høyre hjørne */}
       {sunOpacity > 0 && (
         <>
+          {/* Ytre glow som fyller mye av bakgrunnen */}
           <div
             className="absolute"
             style={{
-              top: "10%",
-              right: "12%",
-              width: 90,
-              height: 90,
-              borderRadius: "50%",
+              top: "-30%",
+              right: "-20%",
+              width: "110%",
+              height: "160%",
               background:
-                "radial-gradient(circle at 35% 35%, #fff6b0 0%, #ffd76a 40%, rgba(255,200,100,0.18) 62%, rgba(255,200,100,0) 78%)",
-              filter: `blur(3px)`,
-              opacity: 0.55 * sunOpacity,
-              animation: "skyDekkeSunPulse 6s ease-in-out infinite",
+                "radial-gradient(circle at 70% 30%, rgba(255,248,220,0.85) 0%, rgba(255,235,180,0.45) 18%, rgba(255,220,150,0.18) 34%, rgba(255,220,150,0) 55%)",
+              opacity: 0.9 * sunOpacity,
+              mixBlendMode: "screen",
             }}
           />
+          {/* Selve sol-skiven, sterkt bloom */}
           <div
             className="absolute"
             style={{
-              top: "16%",
-              right: "18%",
-              width: 54,
-              height: 54,
+              top: "-8%",
+              right: "-4%",
+              width: 140,
+              height: 140,
               borderRadius: "50%",
               background:
-                "radial-gradient(circle at 35% 35%, #ffffff 0%, #ffe27a 45%, #ffb347 85%)",
-              boxShadow: `0 0 22px rgba(255,214,120,${0.75 * sunOpacity}), 0 0 44px rgba(255,180,80,${0.45 * sunOpacity})`,
+                "radial-gradient(circle at 50% 50%, #ffffff 0%, #fffbe6 25%, rgba(255,240,180,0.7) 45%, rgba(255,220,150,0.15) 70%, rgba(255,220,150,0) 85%)",
+              filter: "blur(2px)",
               opacity: sunOpacity,
-              transition: "opacity 800ms ease",
-              animation: "skyDekkeSunPulse 6s ease-in-out infinite",
+              animation: "skyDekkeSunPulse 7s ease-in-out infinite",
+              mixBlendMode: "screen",
+            }}
+          />
+          {/* Skarp kjerne */}
+          <div
+            className="absolute"
+            style={{
+              top: "2%",
+              right: "6%",
+              width: 46,
+              height: 46,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, #ffffff 0%, #fff8d8 60%, rgba(255,255,255,0) 100%)",
+              opacity: sunOpacity,
+              filter: "blur(1px)",
+              mixBlendMode: "screen",
             }}
           />
         </>
       )}
+
+      {/* SVG defs for wispy cirrus */}
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+        <defs>
+          <filter id="wispyClouds" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.045" numOctaves="2" seed="7" />
+            <feDisplacementMap in="SourceGraphic" scale="30" />
+            <feGaussianBlur stdDeviation="1.2" />
+          </filter>
+        </defs>
+      </svg>
+
+      {/* Wispy cirrus-lag */}
+      {wisps.map((w, i) => (
+        <div
+          key={`wisp-${i}`}
+          className="absolute"
+          style={{
+            top: `${w.top}%`,
+            left: "-40%",
+            width: "70%",
+            height: `${18 + (w.seed % 22)}%`,
+            transform: `scale(${w.scale}) skewX(${w.skew}deg)`,
+            opacity: w.opacity,
+            animation: `skyDekkeDrift ${w.dur}s linear ${w.delay}s infinite`,
+            mixBlendMode: "screen",
+          }}
+        >
+          <svg width="100%" height="100%" viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden>
+            <defs>
+              <filter id={`wisp-f-${i}`} x="-10%" y="-40%" width="120%" height="180%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.014 0.05" numOctaves="2" seed={w.seed} />
+                <feDisplacementMap in="SourceGraphic" scale="42" />
+                <feGaussianBlur stdDeviation="2.4" />
+              </filter>
+              <linearGradient id={`wisp-g-${i}`} x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="rgba(255,255,255,0)" />
+                <stop offset="20%" stopColor={`rgba(255,255,255,${0.65 - rainMix * 0.25})`} />
+                <stop offset="60%" stopColor={`rgba(255,255,255,${0.85 - rainMix * 0.3})`} />
+                <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+              </linearGradient>
+            </defs>
+            <ellipse cx="200" cy="50" rx="190" ry="18" fill={`url(#wisp-g-${i})`} filter={`url(#wisp-f-${i})`} />
+          </svg>
+        </div>
+      ))}
+
       {/* Regn */}
       {rainDrops.length > 0 && (
         <div className="absolute inset-0" style={{ opacity: Math.min(1, 0.5 + rainMix * 0.6) }}>
@@ -3350,8 +3442,9 @@ function SkydekkeSceneFX({
           ))}
         </div>
       )}
-      {/* Skyer */}
-      {clouds.map((c, i) => (
+
+      {/* Tettere skyer kun ved høyere dekning – utfyller de wispy */}
+      {cov > 0.45 && clouds.map((c, i) => (
         <div
           key={i}
           className="absolute"
@@ -3359,33 +3452,35 @@ function SkydekkeSceneFX({
             top: `${c.top}%`,
             left: "-30%",
             transform: `scale(${c.scale})`,
-            opacity: c.opacity,
+            opacity: c.opacity * (0.6 + (cov - 0.45) * 1.2),
             animation: `skyDekkeDrift ${c.dur}s linear ${c.delay}s infinite`,
             zIndex: c.z,
-            filter: `drop-shadow(0 4px 6px rgba(15,25,45,${0.08 + rainMix * 0.2}))`,
+            filter: `blur(2px) drop-shadow(0 4px 6px rgba(15,25,45,${0.08 + rainMix * 0.2}))`,
+            mixBlendMode: "screen",
           }}
         >
-          <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden>
+          <svg width="140" height="70" viewBox="0 0 140 70" aria-hidden>
             <defs>
-              <linearGradient id={`sd-cg-${i}-${Math.round(rainMix * 100)}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={cloudTop} />
-                <stop offset="100%" stopColor={cloudBot} />
-              </linearGradient>
+              <radialGradient id={`sd-cg-${i}-${Math.round(rainMix * 100)}`} cx="50%" cy="45%" r="55%">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+                <stop offset="70%" stopColor={cloudTop} stopOpacity="0.7" />
+                <stop offset="100%" stopColor={cloudBot} stopOpacity="0" />
+              </radialGradient>
             </defs>
             <g fill={`url(#sd-cg-${i}-${Math.round(rainMix * 100)})`}>
-              <ellipse cx="30" cy="38" rx="22" ry="14" />
-              <ellipse cx="55" cy="30" rx="26" ry="18" />
-              <ellipse cx="82" cy="36" rx="24" ry="15" />
-              <ellipse cx="65" cy="42" rx="34" ry="10" />
+              <ellipse cx="35" cy="42" rx="28" ry="18" />
+              <ellipse cx="65" cy="34" rx="34" ry="22" />
+              <ellipse cx="98" cy="40" rx="30" ry="18" />
+              <ellipse cx="70" cy="48" rx="44" ry="14" />
             </g>
-            <ellipse cx="60" cy="52" rx="42" ry="4" fill={cloudShadow} opacity={0.15 + rainMix * 0.3} />
           </svg>
         </div>
       ))}
+
       <style>{`
         @keyframes skyDekkeDrift {
           0% { transform: translateX(0) scale(var(--s,1)); }
-          100% { transform: translateX(160%) scale(var(--s,1)); }
+          100% { transform: translateX(200%) scale(var(--s,1)); }
         }
         @keyframes skyDekkeRain {
           0% { transform: translateY(-10px); opacity: 0; }
@@ -3393,8 +3488,8 @@ function SkydekkeSceneFX({
           100% { transform: translateY(220px); opacity: 0; }
         }
         @keyframes skyDekkeSunPulse {
-          0%,100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
+          0%,100% { transform: scale(1); opacity: var(--o, 1); }
+          50% { transform: scale(1.06); }
         }
       `}</style>
     </div>
