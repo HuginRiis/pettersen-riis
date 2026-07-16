@@ -1398,13 +1398,14 @@ function SkydekkePanel({ hours }: { hours: Hour[] }) {
 
 
 function VindPanel({ hours, maxW }: { hours: Hour[]; maxW: number }) {
+  const [unit] = useWindUnit();
   const maxG = Math.max(maxW, ...hours.map((h) => h.windGust));
   const peakIdx = hours.reduce((b, h, i, a) => (h.windGust > a[b].windGust ? i : b), 0);
   const peak = hours[peakIdx];
   const summary =
     peak.windGust >= 10
-      ? `Sterkest kast ${Math.round(peak.windGust)} m/s rundt ${fmtWhen(peak.time)} · middelvind opp til ${Math.round(Math.max(...hours.map((h) => h.wind)))} m/s`
-      : `Rolig vind · maks ${Math.round(peak.windGust)} m/s neste ${hours.length} t`;
+      ? `Sterkest kast ${formatWind(peak.windGust, unit, { digits: 0 })} rundt ${fmtWhen(peak.time)} · middelvind opp til ${formatWind(Math.max(...hours.map((h) => h.wind)), unit, { digits: 0 })}`
+      : `Rolig vind · maks ${formatWind(peak.windGust, unit, { digits: 0 })} neste ${hours.length} t`;
   return (
     <div className="space-y-2">
       <div className="text-[12px] text-white/90">{summary}</div>
