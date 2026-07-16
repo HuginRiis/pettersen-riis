@@ -1001,6 +1001,8 @@ function WeatherMenuButton({
             </button>
           </div>
 
+          <WindUnitSelect />
+
           <div className="h-px bg-white/10" />
 
           <TileColorToggle />
