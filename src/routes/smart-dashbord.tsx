@@ -5339,3 +5339,33 @@ export function SmartDashbord() {
     </div>
   );
 }
+
+function WindUnitSetting() {
+  const [unit, setUnit] = useWindUnit();
+  return (
+    <div className="pt-2 border-t border-white/10">
+      <div className="flex items-center justify-between text-xs mb-2">
+        <span className="text-white/70">Vind-enhet</span>
+        <span className="text-white/40 text-[10px]">Gjelder overalt</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {WIND_UNITS.map((u) => (
+          <button
+            key={u.id}
+            type="button"
+            onClick={() => setUnit(u.id)}
+            aria-pressed={unit === u.id}
+            title={u.label}
+            className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-all ${
+              unit === u.id
+                ? "bg-white text-slate-900"
+                : "bg-white/10 text-white/80 hover:bg-white/20"
+            }`}
+          >
+            {u.short}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
