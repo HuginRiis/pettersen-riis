@@ -1050,13 +1050,28 @@ export function GlassPaneFX({
             }}
           />
           {/* Sun container — plassert på sin faktiske posisjon på himmelen
-              (bue fra soloppgang venstre → zenit midt → solnedgang høyre). */}
+              (bue fra soloppgang venstre → zenit midt → solnedgang høyre).
+              Lens-flare-spøkelser genereres langs anti-diagonalen fra sola
+              gjennom bildesenteret slik ekte kamera-flare oppfører seg. */}
           {(() => {
             const p = sunProgress; // 0..1 eller null
             // Fallback (SSR / før mount / natt) = øvre høyre hjørne
             const leftPct = p == null ? 88 : 6 + p * 88; // 6% → 94%
             const topPct = p == null ? 6 : 78 - Math.sin(p * Math.PI) * 68; // horisont → zenit
+            // Ghost-posisjoner: senter + (senter - sol) * k
+            const cx = 50, cy = 50;
+            const dx = cx - leftPct;
+            const dy = cy - topPct;
+            const ghosts: Array<{ k: number; size: number; color: string; blur: number; opacity: number }> = [
+              { k: 0.35, size: 32, color: "rgba(255,215,120,0.55)", blur: 1, opacity: 0.9 },
+              { k: 0.7,  size: 20, color: "rgba(255,255,255,0.6)",  blur: 0, opacity: 0.85 },
+              { k: 1.0,  size: 70, color: "rgba(255,140,190,0.4)",  blur: 2, opacity: 0.85 },
+              { k: 1.35, size: 28, color: "rgba(140,220,255,0.55)", blur: 1, opacity: 0.9 },
+              { k: 1.7,  size: 96, color: "rgba(120,200,220,0.28)", blur: 3, opacity: 0.85 },
+              { k: 2.0,  size: 42, color: "rgba(180,210,255,0.45)", blur: 1, opacity: 0.85 },
+            ];
             return (
+              <>
               <div
                 className="absolute"
                 style={{
@@ -1123,68 +1138,36 @@ export function GlassPaneFX({
                 animation: "wxFxSunPulse 4s ease-in-out infinite",
               }}
             />
-            {/* Liten lens-flare prikk */}
-            <div
-              className="absolute"
-              style={{
-                top: "78%",
-                left: "18%",
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle, rgba(180,210,255,0.6) 0%, rgba(180,210,255,0) 70%)",
-              }}
-            />
           </div>
+          {/* Lens flare ghosts — langs anti-diagonalen fra sola gjennom senter */}
+          <div className="absolute inset-0 pointer-events-none">
+            {ghosts.map((g, gi) => {
+              const gx = leftPct + dx * g.k;
+              const gy = topPct + dy * g.k;
+              return (
+                <div
+                  key={gi}
+                  className="absolute rounded-full animate-wx-flare-drift"
+                  style={{
+                    left: `calc(${gx}% - ${g.size / 2}px)`,
+                    top: `calc(${gy}% - ${g.size / 2}px)`,
+                    width: g.size,
+                    height: g.size,
+                    background: `radial-gradient(circle, ${g.color} 0%, ${g.color.replace(/[\d.]+\)$/, "0)")} 70%)`,
+                    mixBlendMode: "screen",
+                    filter: g.blur ? `blur(${g.blur}px)` : undefined,
+                    opacity: g.opacity,
+                    transition: "left 800ms ease, top 800ms ease",
+                    animationDelay: `${gi * 0.4}s`,
+                  }}
+                />
+              );
+            })}
+          </div>
+              </>
             );
           })()}
-          {/* Lens flare diagonal from sun */}
-          <div className="absolute inset-0 pointer-events-none animate-wx-flare-drift">
-            <div
-              className="absolute rounded-full"
-              style={{
-                top: "22%", right: "22%",
-                width: 42, height: 42,
-                background:
-                  "radial-gradient(circle, rgba(255,215,120,0) 40%, rgba(255,215,120,0.55) 55%, rgba(255,215,120,0) 70%)",
-                mixBlendMode: "screen",
-                filter: "blur(1px)",
-              }}
-            />
-            <div
-              className="absolute rounded-full"
-              style={{
-                top: "38%", right: "38%",
-                width: 60, height: 60,
-                background:
-                  "radial-gradient(circle, rgba(255,140,190,0.45) 0%, rgba(255,140,190,0) 70%)",
-                mixBlendMode: "screen",
-                filter: "blur(2px)",
-              }}
-            />
-            <div
-              className="absolute rounded-full"
-              style={{
-                top: "52%", right: "52%",
-                width: 28, height: 28,
-                background:
-                  "radial-gradient(circle, rgba(140,220,255,0.6) 0%, rgba(140,220,255,0) 70%)",
-                mixBlendMode: "screen",
-              }}
-            />
-            <div
-              className="absolute rounded-full"
-              style={{
-                top: "64%", right: "62%",
-                width: 96, height: 96,
-                background:
-                  "radial-gradient(circle, rgba(120,200,220,0.28) 0%, rgba(120,200,220,0) 70%)",
-                mixBlendMode: "screen",
-                filter: "blur(3px)",
-              }}
-            />
-          </div>
+
           <div
             className="absolute top-0 bottom-0 w-[35%] animate-wx-shine"
             style={{
