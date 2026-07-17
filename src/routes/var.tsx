@@ -1187,7 +1187,11 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
 
   return (
     <article className={toneCardCn(tone)}>
-      {fx}
+      {animFlags.rotating ? fx : (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.06]">
+          <div className="text-white [&>svg]:w-40 [&>svg]:h-40">{active.icon}</div>
+        </div>
+      )}
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/80 uppercase">
