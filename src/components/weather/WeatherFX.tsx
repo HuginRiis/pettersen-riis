@@ -973,7 +973,7 @@ export function GlassPaneFX({
         }}
       />
 
-      {/* RAIN: fritt fallende dråper — samme stil som Nedbør-flisen */
+      {/* RAIN: fritt fallende dråper — samme stil som Nedbør-flisen */}
       {isWet && (
         <>
           <RainFX intensity={intensity} />
