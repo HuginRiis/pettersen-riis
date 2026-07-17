@@ -1188,8 +1188,12 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   return (
     <article className={toneCardCn(tone)}>
       {animFlags.rotating ? fx : (
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.06]">
-          <div className="text-white [&>svg]:w-40 [&>svg]:h-40">{active.icon}</div>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.07]">
+          {panel === "nedbor" ? <Droplets size={160} strokeWidth={1} /> :
+           panel === "vaer" ? <Cloud size={160} strokeWidth={1} /> :
+           panel === "skydekke" ? <CloudFog size={160} strokeWidth={1} /> :
+           panel === "vind" ? <Wind size={160} strokeWidth={1} /> :
+           <Zap size={160} strokeWidth={1} />}
         </div>
       )}
       <div className="relative">
