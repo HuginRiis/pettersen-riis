@@ -107,8 +107,9 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
           key={i}
           className="absolute animate-wx-rain"
           style={{
-            top: 0,
-            left: `${d.left}%`,
+            top: -20,
+            // Start litt til venstre for skjermen, driver mot høyre — vi kompenserer for skråstillingen
+            left: `${d.left - 12}%`,
             width: d.w,
             height: d.h,
             background:
@@ -119,6 +120,8 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
             animationDelay: `${d.delay}s`,
             animationFillMode: "backwards",
             filter: "drop-shadow(0 0 1px rgba(200,235,255,0.5))",
+            ["--rain-angle" as never]: "14deg",
+            ["--rain-drift" as never]: "160px",
           }}
         />
       ))}
