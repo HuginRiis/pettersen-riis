@@ -107,8 +107,9 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
           key={i}
           className="absolute animate-wx-rain"
           style={{
-            top: 0,
-            left: `${d.left}%`,
+            top: -20,
+            // Start litt til venstre for skjermen, driver mot høyre — vi kompenserer for skråstillingen
+            left: `${d.left - 12}%`,
             width: d.w,
             height: d.h,
             background:
@@ -119,6 +120,8 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
             animationDelay: `${d.delay}s`,
             animationFillMode: "backwards",
             filter: "drop-shadow(0 0 1px rgba(200,235,255,0.5))",
+            ["--rain-angle" as never]: "14deg",
+            ["--rain-drift" as never]: "160px",
           }}
         />
       ))}
@@ -914,6 +917,35 @@ export function GlassPaneFX({
     [dripCount],
   );
 
+  // Splash på toppen av øverste flis — små sprut + krusninger som en vannpytt
+  const splashCount = isWet ? Math.round(10 + intensity * 14) : 0;
+  const splashes = useMemo(
+    () =>
+      Array.from({ length: splashCount }).map(() => {
+        const dur = 0.9 + Math.random() * 0.9;
+        const delay = -Math.random() * 3;
+        // Ligger langs en horisontal linje der topp-flisen begynner (ca. 128px fra topp),
+        // med litt variasjon slik at det ikke ser plassert ut.
+        const topPx = 118 + Math.random() * 18;
+        // Antall sprut-dråper pr. treff
+        const bits = 3 + Math.floor(Math.random() * 3);
+        const shards = Array.from({ length: bits }).map(() => ({
+          sx: (Math.random() * 2 - 1) * 14, // -14..14 px
+          sy: -(8 + Math.random() * 14), // opp
+          size: 1.4 + Math.random() * 1.6,
+          d: 0.15 + Math.random() * 0.25,
+        }));
+        return {
+          left: Math.random() * 100,
+          topPx,
+          dur,
+          delay,
+          shards,
+        };
+      }),
+    [splashCount],
+  );
+
   // Snowflakes drifting across the pane
   const snowCount = isSnow ? Math.round(22 + intensity * 18) : 0;
   const snow = useMemo(
@@ -1014,6 +1046,55 @@ export function GlassPaneFX({
                 animationDelay: `${d.delay}s`,
               }}
             />
+          ))}
+
+          {/* SPLASHES — regnet treffer topp-flisen og spruter opp som en vannpytt */}
+          {splashes.map((sp, i) => (
+            <span
+              key={`sp${i}`}
+              className="absolute"
+              style={{
+                left: `${sp.left}%`,
+                top: sp.topPx,
+                width: 0,
+                height: 0,
+              }}
+            >
+              {/* krusning / ripple */}
+              <span
+                className="absolute animate-wx-splash-ring rounded-full"
+                style={{
+                  left: 0,
+                  top: 0,
+                  width: 14,
+                  height: 4,
+                  border: "1px solid rgba(200,230,255,0.75)",
+                  boxShadow: "0 0 3px rgba(200,230,255,0.5)",
+                  animationDuration: `${sp.dur}s`,
+                  animationDelay: `${sp.delay}s`,
+                }}
+              />
+              {/* sprut-dråper som skyter opp og til sidene */}
+              {sp.shards.map((s, k) => (
+                <span
+                  key={k}
+                  className="absolute animate-wx-splash-drop rounded-full"
+                  style={{
+                    left: 0,
+                    top: 0,
+                    width: s.size,
+                    height: s.size,
+                    background:
+                      "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95) 0%, rgba(200,230,255,0.85) 60%, rgba(160,205,240,0.4) 100%)",
+                    boxShadow: "0 0 2px rgba(200,230,255,0.6)",
+                    animationDuration: `${sp.dur * 0.9}s`,
+                    animationDelay: `${sp.delay + s.d}s`,
+                    ["--sx" as never]: `${s.sx}px`,
+                    ["--sy" as never]: `${s.sy}px`,
+                  }}
+                />
+              ))}
+            </span>
           ))}
         </>
       )}
