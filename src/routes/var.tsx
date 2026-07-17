@@ -2272,12 +2272,13 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
           const grad = hot
             ? "linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fde047 100%)"
             : "linear-gradient(to top, #4338ca 0%, #818cf8 60%, #c7d2fe 100%)";
+          const isNow = isToday && now != null && i === now.bucket;
           return (
             <div
               key={i}
-              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
-              style={{ background: baseBg }}
-              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.thunder)} %`}
+              className={`relative flex-1 h-full rounded-md overflow-hidden ring-1 ${isNow ? "ring-2 ring-white/90" : "ring-white/10"}`}
+              style={{ background: baseBg, boxShadow: isNow ? "0 0 0 1px rgba(56,189,248,0.6), 0 0 10px rgba(56,189,248,0.55)" : undefined }}
+              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.thunder)} %${isNow ? " · nå" : ""}`}
             >
               {fill > 0 && (
                 <div
