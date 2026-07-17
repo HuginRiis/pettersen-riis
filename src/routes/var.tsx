@@ -1022,6 +1022,10 @@ function WeatherMenuButton({
 
           <div className="h-px bg-white/10 mx-2" />
 
+          <AnimTogglesPanel />
+
+          <div className="h-px bg-white/10 mx-2" />
+
           <Link
             to="/varfavoritter"
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
