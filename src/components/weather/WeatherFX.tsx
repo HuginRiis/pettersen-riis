@@ -844,9 +844,13 @@ export type GlassKind =
 export function GlassPaneFX({
   kind,
   intensity = 0.6,
+  sun,
+  now,
 }: {
   kind: GlassKind;
   intensity?: number;
+  sun?: { sunrise: Date | null; sunset: Date | null } | null;
+  now?: Date | null;
 }) {
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
@@ -856,6 +860,30 @@ export function GlassPaneFX({
   const isCloudy = kind === "cloudy" || kind === "partly";
   const isFog = kind === "fog";
   const isThunder = kind === "thunder";
+
+  // Client-only sol-posisjon (0..1 sunrise→sunset) — null på SSR og før mount
+  // for å unngå hydration-mismatch. Oppdaterer hvert minutt.
+  const [sunProgress, setSunProgress] = useState<number | null>(null);
+  useEffect(() => {
+    const compute = () => {
+      const sr = sun?.sunrise?.getTime();
+      const ss = sun?.sunset?.getTime();
+      const t = (now ?? new Date()).getTime();
+      if (!sr || !ss || ss <= sr) {
+        setSunProgress(null);
+        return;
+      }
+      if (t < sr || t > ss) {
+        setSunProgress(null);
+        return;
+      }
+      setSunProgress((t - sr) / (ss - sr));
+    };
+    compute();
+    const id = setInterval(compute, 60_000);
+    return () => clearInterval(id);
+  }, [sun?.sunrise, sun?.sunset, now]);
+
 
   // Static glass beads — randomly scattered "stuck" droplets (små, realistiske)
   const beadCount = isWet ? Math.round(32 + intensity * 28) : 0;
