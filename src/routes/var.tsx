@@ -2389,6 +2389,15 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
               <path d={toPath(windPts, false)} fill="none" stroke="#2dd4bf" strokeWidth="1.6" />
             </>
           )}
+          {isToday && now && (() => {
+            const nx = x(Math.min(23, now.hour + now.minute / 60));
+            return (
+              <g>
+                <line x1={nx} x2={nx} y1={0} y2={H} stroke="rgba(255,255,255,0.9)" strokeWidth="1" strokeDasharray="2 2" />
+                <circle cx={nx} cy={2} r="1.6" fill="rgba(255,255,255,0.95)" />
+              </g>
+            );
+          })()}
         </svg>
       </div>
       <div className="text-[13px] tabular-nums text-right text-white/90">
