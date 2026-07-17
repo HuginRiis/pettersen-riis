@@ -1146,6 +1146,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const [panel, setPanel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>("var:rotating:rangeHours", 48);
   const { tone } = useTileTone();
+  const { flags: animFlags } = useAnimToggles();
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
 
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
