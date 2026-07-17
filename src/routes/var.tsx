@@ -952,7 +952,7 @@ function WeatherMenuButton({
       </button>
 
       {open && (
-        <div className="absolute bottom-14 right-0 p-3 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2.5 w-[260px] max-h-[70vh] overflow-y-auto">
+        <div className="absolute bottom-14 right-0 p-3 rounded-2xl bg-black/50 backdrop-blur-xl border border-white/10 shadow-2xl flex flex-col gap-2.5 w-[min(92vw,380px)] min-w-[300px] max-h-[70vh] overflow-y-auto">
           <div className="flex items-center justify-between px-1">
             <span className="text-xs text-white/70">Værlyd</span>
             <button
