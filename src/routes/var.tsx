@@ -49,6 +49,7 @@ import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/use
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type TileTone } from "@/components/weather/TileTone";
 import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
+import { AnimTogglesProvider, AnimTogglesPanel, useAnimToggles } from "@/components/weather/AnimToggles";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
