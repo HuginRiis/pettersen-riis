@@ -917,6 +917,35 @@ export function GlassPaneFX({
     [dripCount],
   );
 
+  // Splash på toppen av øverste flis — små sprut + krusninger som en vannpytt
+  const splashCount = isWet ? Math.round(10 + intensity * 14) : 0;
+  const splashes = useMemo(
+    () =>
+      Array.from({ length: splashCount }).map(() => {
+        const dur = 0.9 + Math.random() * 0.9;
+        const delay = -Math.random() * 3;
+        // Ligger langs en horisontal linje der topp-flisen begynner (ca. 128px fra topp),
+        // med litt variasjon slik at det ikke ser plassert ut.
+        const topPx = 118 + Math.random() * 18;
+        // Antall sprut-dråper pr. treff
+        const bits = 3 + Math.floor(Math.random() * 3);
+        const shards = Array.from({ length: bits }).map(() => ({
+          sx: (Math.random() * 2 - 1) * 14, // -14..14 px
+          sy: -(8 + Math.random() * 14), // opp
+          size: 1.4 + Math.random() * 1.6,
+          d: 0.15 + Math.random() * 0.25,
+        }));
+        return {
+          left: Math.random() * 100,
+          topPx,
+          dur,
+          delay,
+          shards,
+        };
+      }),
+    [splashCount],
+  );
+
   // Snowflakes drifting across the pane
   const snowCount = isSnow ? Math.round(22 + intensity * 18) : 0;
   const snow = useMemo(
