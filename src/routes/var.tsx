@@ -2140,6 +2140,8 @@ function DriftingClouds({ intensity, seed = 0, className = "", rainy = false }: 
 }
 
 function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const now = useCurrentBucket();
+  const isToday = now?.date === day.date;
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   // 12 buckets × 2 timer
   const buckets = Array.from({ length: 12 }, (_, b) => {
