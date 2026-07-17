@@ -1257,7 +1257,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
         <div
           key={panel}
           style={{
-            animation:
+            animation: !animFlags.rotating ? undefined :
               panel === "nedbor"  ? "panelFlyRight 0.6s cubic-bezier(.2,.8,.2,1) both" :
               panel === "vaer"    ? "panelFlyLeft 0.6s cubic-bezier(.2,.8,.2,1) both" :
               panel === "skydekke"? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
