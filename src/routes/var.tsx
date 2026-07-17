@@ -1999,44 +1999,64 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
         })}
         <style>{`@keyframes dailyRainDrop { 0% { transform: translateY(-12px); opacity: 0; } 15% { opacity: var(--rd-op,0.9); } 85% { opacity: var(--rd-op,0.9); } 100% { transform: translateY(40px); opacity: 0; } }`}</style>
       </div>
-      <div className="flex items-end gap-[3px] h-8">
-        {buckets.map((b, i) => {
-          const rainFill = b.precip > 0 ? Math.max(6, Math.min(100, (b.precip / 6) * 100)) : 0;
-          const probAlpha = Math.max(0.12, Math.min(0.42, (b.prob / 100) * 0.42));
-          const baseBg = b.isNight
-            ? `rgba(148, 163, 184, ${probAlpha * 0.6 + 0.08})`
-            : `rgba(186, 230, 253, ${probAlpha + 0.08})`;
-          const intense = b.precip >= 2;
-          return (
+      <div className="flex flex-col gap-0.5">
+        <div className="flex items-end gap-[3px] h-8">
+          {buckets.map((b, i) => {
+            const rainFill = b.precip > 0 ? Math.max(6, Math.min(100, (b.precip / 6) * 100)) : 0;
+            const probAlpha = Math.max(0.12, Math.min(0.42, (b.prob / 100) * 0.42));
+            const baseBg = b.isNight
+              ? `rgba(148, 163, 184, ${probAlpha * 0.6 + 0.08})`
+              : `rgba(186, 230, 253, ${probAlpha + 0.08})`;
+            const intense = b.precip >= 2;
+            return (
+              <div
+                key={i}
+                className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
+                style={{ background: baseBg }}
+                title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%`}
+              >
+                {rainFill > 0 && (
+                  <div
+                    className="absolute bottom-0 left-0 right-0 rounded-b-md"
+                    style={{
+                      height: `${filled ? rainFill : 0}%`,
+                      transition: "height 10s cubic-bezier(0.22, 1, 0.36, 1)",
+                      background: intense
+                        ? "linear-gradient(to top, #1d4ed8 0%, #3b82f6 60%, #60a5fa 100%)"
+                        : "linear-gradient(to top, #0284c7 0%, #38bdf8 70%, #7dd3fc 100%)",
+                      boxShadow: intense
+                        ? "inset 0 1px 0 rgba(255,255,255,0.4), 0 0 6px rgba(59,130,246,0.5)"
+                        : "inset 0 1px 0 rgba(255,255,255,0.35)",
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-[3px]">
+          {buckets.map((b, i) => (
             <div
               key={i}
-              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
-              style={{ background: baseBg }}
-              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%`}
+              className="flex-1 text-center tabular-nums leading-none"
+              style={{ fontSize: 8 }}
             >
-              {rainFill > 0 && (
-                <div
-                  className="absolute bottom-0 left-0 right-0 rounded-b-md"
-                  style={{
-                    height: `${filled ? rainFill : 0}%`,
-                    transition: "height 10s cubic-bezier(0.22, 1, 0.36, 1)",
-                    background: intense
-                      ? "linear-gradient(to top, #1d4ed8 0%, #3b82f6 60%, #60a5fa 100%)"
-                      : "linear-gradient(to top, #0284c7 0%, #38bdf8 70%, #7dd3fc 100%)",
-                    boxShadow: intense
-                      ? "inset 0 1px 0 rgba(255,255,255,0.4), 0 0 6px rgba(59,130,246,0.5)"
-                      : "inset 0 1px 0 rgba(255,255,255,0.35)",
-                  }}
-                />
+              {b.precip >= 0.05 ? (
+                <span className="text-sky-200/90">{b.precip.toFixed(1)}</span>
+              ) : (
+                <span className="text-white/25">·</span>
               )}
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
       <div className="text-right leading-tight">
         <div className="text-[13px] tabular-nums text-white/90">
-          {hasAnyHours ? `${day.precip.toFixed(day.precip >= 10 ? 0 : 1)} mm` : <span className="text-white/40">0 mm</span>}
+          {hasAnyHours ? (() => {
+            const total = buckets.reduce((s, b) => s + b.precip, 0);
+            return `${total.toFixed(total >= 10 ? 0 : 1)} mm`;
+          })() : <span className="text-white/40">0 mm</span>}
         </div>
         <div className="text-[11px] tabular-nums">
           {day.precipProbability >= 20 ? (
