@@ -1117,9 +1117,10 @@ function GlassCard({
   fx?: React.ReactNode;
 }) {
   const { tone } = useTileTone();
+  const { flags } = useAnimToggles();
   return (
     <article className={toneCardCn(tone, className)}>
-      {fx}
+      {flags.tiles && fx}
       <div className="relative">
         {eyebrow && (
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
