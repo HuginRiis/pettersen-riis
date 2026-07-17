@@ -1137,6 +1137,8 @@ export function GlassPaneFX({
               }}
             />
           </div>
+            );
+          })()}
           {/* Lens flare diagonal from sun */}
           <div className="absolute inset-0 pointer-events-none animate-wx-flare-drift">
             <div
