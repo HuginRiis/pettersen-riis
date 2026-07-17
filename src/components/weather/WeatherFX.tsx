@@ -1047,6 +1047,55 @@ export function GlassPaneFX({
               }}
             />
           ))}
+
+          {/* SPLASHES — regnet treffer topp-flisen og spruter opp som en vannpytt */}
+          {splashes.map((sp, i) => (
+            <span
+              key={`sp${i}`}
+              className="absolute"
+              style={{
+                left: `${sp.left}%`,
+                top: sp.topPx,
+                width: 0,
+                height: 0,
+              }}
+            >
+              {/* krusning / ripple */}
+              <span
+                className="absolute animate-wx-splash-ring rounded-full"
+                style={{
+                  left: 0,
+                  top: 0,
+                  width: 14,
+                  height: 4,
+                  border: "1px solid rgba(200,230,255,0.75)",
+                  boxShadow: "0 0 3px rgba(200,230,255,0.5)",
+                  animationDuration: `${sp.dur}s`,
+                  animationDelay: `${sp.delay}s`,
+                }}
+              />
+              {/* sprut-dråper som skyter opp og til sidene */}
+              {sp.shards.map((s, k) => (
+                <span
+                  key={k}
+                  className="absolute animate-wx-splash-drop rounded-full"
+                  style={{
+                    left: 0,
+                    top: 0,
+                    width: s.size,
+                    height: s.size,
+                    background:
+                      "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.95) 0%, rgba(200,230,255,0.85) 60%, rgba(160,205,240,0.4) 100%)",
+                    boxShadow: "0 0 2px rgba(200,230,255,0.6)",
+                    animationDuration: `${sp.dur * 0.9}s`,
+                    animationDelay: `${sp.delay + s.d}s`,
+                    ["--sx" as never]: `${s.sx}px`,
+                    ["--sy" as never]: `${s.sy}px`,
+                  }}
+                />
+              ))}
+            </span>
+          ))}
         </>
       )}
 
