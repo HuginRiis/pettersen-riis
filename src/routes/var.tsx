@@ -2427,6 +2427,12 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
 }
 
 
+function DailyLeafFXGated({ wind, seed }: { wind: number; seed: number }) {
+  const { flags } = useAnimToggles();
+  if (!flags.daily) return <div className="w-[42px] h-[34px]" aria-hidden />;
+  return <DailyLeafFX wind={wind} seed={seed} />;
+}
+
 function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
   // Leaf count = floor(wind m/s). 0.9 → 0, 8.5 → 8 osv. Cap på 15.
   const count = Math.max(0, Math.min(15, Math.floor(wind || 0)));
