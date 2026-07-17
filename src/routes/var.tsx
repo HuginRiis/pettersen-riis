@@ -1821,6 +1821,18 @@ function DailyRollInStyles() {
   );
 }
 
+function DailyStaticStyles() {
+  return (
+    <style>{`
+      .wx-daily-static, .wx-daily-static * {
+        animation: none !important;
+        transition: none !important;
+      }
+      .wx-daily-static .wx-daily-fx { display: none !important; }
+    `}</style>
+  );
+}
+
 function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [tempUnit] = useTempUnit();
