@@ -1923,9 +1923,9 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
           const label = i === 0 ? "I dag" : weekdayShort(d.date);
           return (
-            <div key={d.date} className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5 wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+            <div key={d.date} className={`grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5 ${animFlags.daily ? "wx-roll-in" : ""}`} style={animFlags.daily ? { animationDelay: `${i * 70}ms` } : undefined}>
               <div className="text-[15px] capitalize">{label}</div>
-              <DailyLeafFX wind={d.windMax} seed={i} />
+              {animFlags.daily ? <DailyLeafFX wind={d.windMax} seed={i} /> : <div />}
               <div className="flex items-center justify-center"><AnimatedWeatherIcon symbol={d.symbol} size={34} /></div>
               <div className="text-[11px] text-sky-200 tabular-nums text-right">
                 {d.precipProbability >= 20 ? `${Math.round(d.precipProbability)}%` : ""}
