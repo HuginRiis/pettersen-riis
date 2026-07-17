@@ -2029,12 +2029,13 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
               ? `rgba(148, 163, 184, ${probAlpha * 0.6 + 0.08})`
               : `rgba(186, 230, 253, ${probAlpha + 0.08})`;
             const intense = b.precip >= 2;
+            const isNow = isToday && now != null && i === now.bucket;
             return (
               <div
                 key={i}
-                className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
-                style={{ background: baseBg }}
-                title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%`}
+                className={`relative flex-1 h-full rounded-md overflow-hidden ring-1 ${isNow ? "ring-2 ring-white/90" : "ring-white/10"}`}
+                style={{ background: baseBg, boxShadow: isNow ? "0 0 0 1px rgba(56,189,248,0.6), 0 0 10px rgba(56,189,248,0.55)" : undefined }}
+                title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%${isNow ? " · nå" : ""}`}
               >
                 {rainFill > 0 && (
                   <div
