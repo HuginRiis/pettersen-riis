@@ -1141,23 +1141,49 @@ main .container {
 .fancy-wx--fog .fancy-wx__sky     { background: linear-gradient(180deg, #6a7480 0%, #97a3ad 60%, #c9d1d8 100%); }
 .fancy-wx--night .fancy-wx__sky   { background: linear-gradient(180deg, #050912 0%, #0e1830 50%, #1d2a4a 100%); }
 
-/* Sol */
+/* Sol — samme design som værbakgrunn (haze + roterende stråler + hvit kjerne) */
 .fancy-wx__sun {
-  position: absolute; top: 28px; right: 32px;
-  width: 88px; height: 88px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #fff5b0 0%, #ffd24a 45%, #ff9b2c 100%);
-  box-shadow: 0 0 60px 18px rgba(255, 200, 80, 0.55), 0 0 140px 40px rgba(255, 180, 60, 0.25);
+  position: absolute; top: 8px; right: 8px;
+  width: 132px; height: 132px;
+  pointer-events: none;
   opacity: 0;
+}
+.fancy-wx__sun-haze,
+.fancy-wx__sun-rays,
+.fancy-wx__sun-core { position: absolute; inset: 0; }
+.fancy-wx__sun-haze {
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, rgba(255,246,200,0.55) 18%, rgba(180,210,255,0.25) 42%, rgba(180,210,255,0) 70%);
+  filter: blur(3px);
   animation: fancyWxSunPulse 6s ease-in-out infinite;
+}
+.fancy-wx__sun-rays {
+  width: 100%; height: 100%;
+  animation: fancyWxSunSpin 60s linear infinite;
+}
+.fancy-wx__sun-core {
+  top: 50%; left: 50%;
+  width: 58px; height: 58px;
+  margin-left: -29px; margin-top: -29px;
+  inset: auto;
+  border-radius: 50%;
+  background: radial-gradient(circle at 45% 40%, #ffffff 0%, #ffffff 32%, #fff5c8 62%, rgba(255,220,140,0) 100%);
+  box-shadow: 0 0 20px rgba(255,255,255,0.9), 0 0 44px rgba(255,220,140,0.7), 0 0 80px rgba(255,190,90,0.45);
+  animation: fancyWxSunPulse 4s ease-in-out infinite;
 }
 .fancy-wx--day.fancy-wx--clear .fancy-wx__sun,
 .fancy-wx--day.fancy-wx--fair  .fancy-wx__sun,
 .fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sun { opacity: 1; }
-.fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sun { opacity: 0.92; filter: brightness(0.98); }
+.fancy-wx--day.fancy-wx--partlycloudy .fancy-wx__sun { opacity: 0.92; }
 @keyframes fancyWxSunPulse {
-  0%,100% { transform: scale(1); filter: brightness(1); }
-  50%     { transform: scale(1.05); filter: brightness(1.08); }
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.05); }
 }
+@keyframes fancyWxSunSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 
 /* Måne + stjerner */
 .fancy-wx__moon {

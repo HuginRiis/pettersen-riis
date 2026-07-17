@@ -113,7 +113,31 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
       <div className="fancy-wx__bg">
         {/* lag — kjøres alltid, CSS skjuler etter mood */}
         <div className="fancy-wx__sky" />
-        <div className="fancy-wx__sun" />
+        <div className="fancy-wx__sun" aria-hidden>
+          <div className="fancy-wx__sun-haze" />
+          <svg className="fancy-wx__sun-rays" viewBox="0 0 200 200" aria-hidden>
+            <defs>
+              <radialGradient id="fancyWxSunRay" cx="50%" cy="50%" r="50%">
+                <stop offset="30%" stopColor="rgba(255,255,255,0.95)" />
+                <stop offset="70%" stopColor="rgba(255,240,180,0.35)" />
+                <stop offset="100%" stopColor="rgba(255,240,180,0)" />
+              </radialGradient>
+            </defs>
+            <g stroke="url(#fancyWxSunRay)" strokeLinecap="round">
+              {Array.from({ length: 16 }).map((_, i) => {
+                const a = (i * Math.PI * 2) / 16;
+                const x1 = 100 + Math.cos(a) * 32;
+                const y1 = 100 + Math.sin(a) * 32;
+                const x2 = 100 + Math.cos(a) * 96;
+                const y2 = 100 + Math.sin(a) * 96;
+                const w = i % 2 === 0 ? 3.2 : 1.4;
+                return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={w} />;
+              })}
+            </g>
+          </svg>
+          <div className="fancy-wx__sun-core" />
+        </div>
+
         <div
           className="fancy-wx__moon"
           style={{ backgroundImage: `url(${moonRealAsset.url})` }}
