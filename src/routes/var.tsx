@@ -2275,7 +2275,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
   return (
     <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+      <div className="wx-daily-fx relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: boltCount }, (_, i) => {
           const top = 2 + i * 8;
           const left = 4 + i * 10;
