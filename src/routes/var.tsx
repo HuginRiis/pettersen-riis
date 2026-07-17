@@ -1924,8 +1924,9 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
       <AnimatedWeatherIconStyles />
       <DailyRollInStyles />
+      <DailyStaticStyles />
 
-      <div className="divide-y divide-white/10">
+      <div className={`divide-y divide-white/10 ${staticCls}`}>
         {list.map((d, i) => {
           const startPct = ((d.tempMin - globalMin) / range) * 100;
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
