@@ -1055,9 +1055,10 @@ export function GlassPaneFX({
               gjennom bildesenteret slik ekte kamera-flare oppfører seg. */}
           {(() => {
             const p = sunProgress; // 0..1 eller null
-            // Fallback (SSR / før mount / natt) = øvre høyre hjørne
-            const leftPct = p == null ? 88 : 6 + p * 88; // 6% → 94%
-            const topPct = p == null ? 6 : 78 - Math.sin(p * Math.PI) * 68; // horisont → zenit
+            // Sola går lenger ut av bildet: på toppen vises kun en kvart,
+            // ute på sidene vises nesten halve skiva.
+            const leftPct = p == null ? 98 : 2 + p * 96; // 2% → 98%
+            const topPct = p == null ? 2 : 80 - Math.sin(p * Math.PI) * 88; // 80% → -8%
             // Ghost-posisjoner: senter + (senter - sol) * k
             const cx = 50, cy = 50;
             const dx = cx - leftPct;
