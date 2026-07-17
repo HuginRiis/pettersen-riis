@@ -973,9 +973,10 @@ export function GlassPaneFX({
         }}
       />
 
-      {/* RAIN: beads + sliding drips */}
+      {/* RAIN: fritt fallende dråper — samme stil som Nedbør-flisen */}
       {isWet && (
         <>
+          <RainFX intensity={intensity} />
           {beads.map((b, i) => (
             <span
               key={`b${i}`}
