@@ -813,22 +813,11 @@ main .container {
 .animate-wx-inside-rain { animation: wx-inside-rain linear infinite; }
 
 @keyframes wx-rain-fall {
-  0%   { transform: translate3d(0, -20px, 0) rotate(var(--rain-angle, 14deg)); opacity: 0; }
+  0%   { transform: translate3d(0, -20px, 0); opacity: 0; }
   10%  { opacity: 0.85; }
   90%  { opacity: 0.85; }
-  100% { transform: translate3d(var(--rain-drift, 150px), 900px, 0) rotate(var(--rain-angle, 14deg)); opacity: 0; }
+  100% { transform: translate3d(6px, 600px, 0); opacity: 0; }
 }
-@keyframes wx-splash-drop {
-  0%   { transform: translate(0, 0) scale(0.5); opacity: 0; }
-  15%  { opacity: 0.95; }
-  100% { transform: translate(var(--sx, 6px), var(--sy, -14px)) scale(0.9); opacity: 0; }
-}
-@keyframes wx-splash-ring {
-  0%   { transform: translate(-50%, -50%) scale(0.25); opacity: 0.75; }
-  100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
-}
-.animate-wx-splash-drop { animation: wx-splash-drop ease-out infinite; will-change: transform, opacity; }
-.animate-wx-splash-ring { animation: wx-splash-ring ease-out infinite; will-change: transform, opacity; }
 
 @keyframes wx-snow-fall {
   0%   { transform: translateY(-15%) translateX(0);   opacity: 0; }
