@@ -484,6 +484,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { opacity } = useTileOpacity();
   const { color: tileColor } = useTileColor();
   const { tone } = useTileTone();
+  const { flags: animFlags } = useAnimToggles();
 
 
   // Scroll-drevet inn/ut-fading på sammendragsboksen (replaces hero shrink)
