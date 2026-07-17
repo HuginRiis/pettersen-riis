@@ -1821,6 +1821,18 @@ function DailyRollInStyles() {
   );
 }
 
+function DailyStaticStyles() {
+  return (
+    <style>{`
+      .wx-daily-static, .wx-daily-static * {
+        animation: none !important;
+        transition: none !important;
+      }
+      .wx-daily-static .wx-daily-fx { display: none !important; }
+    `}</style>
+  );
+}
+
 function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [tempUnit] = useTempUnit();
@@ -1829,14 +1841,19 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   const list = days.slice(0, 10);
 
 
+  const staticCls = animFlags.daily ? "" : "wx-daily-static";
+  const rowCls = animFlags.daily ? "wx-roll-in" : "";
+  const rowStyle = (i: number) => (animFlags.daily ? { animationDelay: `${i * 70}ms` } : undefined);
+
   // Nedbør-modus: bytt ut radene med 12 to-timers barer per dag
   if (panel === "nedbor" && hours && hours.length > 0) {
     return (
       <GlassCard eyebrow={title} icon={<Droplets size={14} />}>
         <DailyRollInStyles />
-        <div className="divide-y divide-white/10">
+        <DailyStaticStyles />
+        <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
-            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+            <div key={d.date} className={rowCls} style={rowStyle(i)}>
               <DailyRainRow day={d} hours={hours} index={i} />
             </div>
           ))}
@@ -1858,9 +1875,10 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     return (
       <GlassCard eyebrow={title} icon={<Wind size={14} />}>
         <DailyRollInStyles />
-        <div className="divide-y divide-white/10">
+        <DailyStaticStyles />
+        <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
-            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+            <div key={d.date} className={rowCls} style={rowStyle(i)}>
               <DailyWindRow day={d} hours={hours} index={i} globalMaxG={globalMaxG} />
             </div>
           ))}
@@ -1874,9 +1892,10 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     return (
       <GlassCard eyebrow={title} icon={<Cloud size={14} />}>
         <DailyRollInStyles />
-        <div className="divide-y divide-white/10">
+        <DailyStaticStyles />
+        <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
-            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+            <div key={d.date} className={rowCls} style={rowStyle(i)}>
               <DailyCloudRow day={d} hours={hours} index={i} />
             </div>
           ))}
@@ -1889,9 +1908,10 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     return (
       <GlassCard eyebrow={title} icon={<Zap size={14} />}>
         <DailyRollInStyles />
-        <div className="divide-y divide-white/10">
+        <DailyStaticStyles />
+        <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
-            <div key={d.date} className="wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+            <div key={d.date} className={rowCls} style={rowStyle(i)}>
               <DailyLynRow day={d} hours={hours} index={i} />
             </div>
           ))}
@@ -1916,8 +1936,9 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
     <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}>
       <AnimatedWeatherIconStyles />
       <DailyRollInStyles />
+      <DailyStaticStyles />
 
-      <div className="divide-y divide-white/10">
+      <div className={`divide-y divide-white/10 ${staticCls}`}>
         {list.map((d, i) => {
           const startPct = ((d.tempMin - globalMin) / range) * 100;
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
@@ -2007,7 +2028,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   return (
     <div ref={rowRef} className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+      <div className="wx-daily-fx relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: dropCount }, (_, i) => {
           // Seeded random fra dato + index for naturlig spredning uten hydration-mismatch
           const seed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + i * 2654435761) >>> 0;
@@ -2133,7 +2154,7 @@ function DriftingClouds({ intensity, seed = 0, className = "", rainy = false }: 
   }, [count, seed, i]);
   if (count === 0) return null;
   return (
-    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`} aria-hidden>
+    <div className={`wx-daily-fx absolute inset-0 overflow-hidden pointer-events-none ${className}`} aria-hidden>
       {clouds.map((c) => (
         <svg
           key={c.key}
@@ -2254,7 +2275,7 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
   return (
     <div className="grid grid-cols-[56px_46px_1fr_56px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+      <div className="wx-daily-fx relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: boltCount }, (_, i) => {
           const top = 2 + i * 8;
           const left = 4 + i * 10;
