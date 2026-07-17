@@ -2393,7 +2393,7 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
   return (
     <div className="grid grid-cols-[56px_42px_1fr_88px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <DailyLeafFX wind={maxWind} seed={index} />
+      <DailyLeafFXGated wind={maxWind} seed={index} />
       <div className="relative h-9">
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
           {/* Dag-bånd: 06–22 — lys grå */}
