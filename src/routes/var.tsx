@@ -1824,6 +1824,7 @@ function DailyRollInStyles() {
 function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [tempUnit] = useTempUnit();
+  const { flags: animFlags } = useAnimToggles();
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
 
