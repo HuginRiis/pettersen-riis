@@ -2210,6 +2210,8 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
 
 
 function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const now = useCurrentBucket();
+  const isToday = now?.date === day.date;
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const buckets = Array.from({ length: 12 }, (_, b) => {
     const startHour = b * 2;
