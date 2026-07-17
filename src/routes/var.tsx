@@ -363,6 +363,7 @@ function WeatherPage() {
     <TileToneProvider>
       <TileOpacityProvider>
         <TileColorProvider>
+          <AnimTogglesProvider>
           <WeatherPageInner
             data={data}
             netatmoData={netatmoData}
@@ -405,6 +406,7 @@ function WeatherPage() {
             showThunderProbability={showThunderProbability}
             setShowThunderProbability={setShowThunderProbability}
           />
+          </AnimTogglesProvider>
         </TileColorProvider>
       </TileOpacityProvider>
     </TileToneProvider>
