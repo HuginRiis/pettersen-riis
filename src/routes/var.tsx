@@ -2028,7 +2028,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
   return (
     <div ref={rowRef} className="grid grid-cols-[52px_46px_1fr_56px] items-center gap-2 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <div className="relative w-[46px] h-9 overflow-hidden" aria-hidden>
+      <div className="wx-daily-fx relative w-[46px] h-9 overflow-hidden" aria-hidden>
         {Array.from({ length: dropCount }, (_, i) => {
           // Seeded random fra dato + index for naturlig spredning uten hydration-mismatch
           const seed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + i * 2654435761) >>> 0;
