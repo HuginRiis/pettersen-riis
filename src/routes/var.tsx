@@ -1929,8 +1929,29 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   );
 }
 
+// Client-only "nå"-tid brukt til å markere aktuell 2-timers boks / kolonne i
+// 10-dagers-radene. Returnerer null på SSR for å unngå hydration-mismatch.
+function useCurrentBucket() {
+  const [now, setNow] = useState<{ date: string; bucket: number; hour: number; minute: number } | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      const d = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      setNow({ date, bucket: Math.floor(d.getHours() / 2), hour: d.getHours(), minute: d.getMinutes() });
+    };
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
 function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const now = useCurrentBucket();
+  const isToday = now?.date === day.date;
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
+
   // 12 buckets × 2 timer = 24 timer (00-02, 02-04, ..., 22-24)
   const buckets = Array.from({ length: 12 }, (_, b) => {
     const startHour = b * 2;
