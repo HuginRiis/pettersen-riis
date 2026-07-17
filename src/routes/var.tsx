@@ -49,6 +49,7 @@ import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/use
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type TileTone } from "@/components/weather/TileTone";
 import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
+import { AnimTogglesProvider, AnimTogglesPanel, useAnimToggles } from "@/components/weather/AnimToggles";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
@@ -362,6 +363,7 @@ function WeatherPage() {
     <TileToneProvider>
       <TileOpacityProvider>
         <TileColorProvider>
+          <AnimTogglesProvider>
           <WeatherPageInner
             data={data}
             netatmoData={netatmoData}
@@ -404,6 +406,7 @@ function WeatherPage() {
             showThunderProbability={showThunderProbability}
             setShowThunderProbability={setShowThunderProbability}
           />
+          </AnimTogglesProvider>
         </TileColorProvider>
       </TileOpacityProvider>
     </TileToneProvider>
@@ -481,6 +484,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { opacity } = useTileOpacity();
   const { color: tileColor } = useTileColor();
   const { tone } = useTileTone();
+  const { flags: animFlags } = useAnimToggles();
 
 
   // Scroll-drevet inn/ut-fading på sammendragsboksen (replaces hero shrink)
@@ -512,7 +516,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
         }}
       >
-        <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} />
+        {animFlags.bg && <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} />}
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
@@ -1018,6 +1022,10 @@ function WeatherMenuButton({
 
           <div className="h-px bg-white/10 mx-2" />
 
+          <AnimTogglesPanel />
+
+          <div className="h-px bg-white/10 mx-2" />
+
           <Link
             to="/varfavoritter"
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
@@ -1109,9 +1117,10 @@ function GlassCard({
   fx?: React.ReactNode;
 }) {
   const { tone } = useTileTone();
+  const { flags } = useAnimToggles();
   return (
     <article className={toneCardCn(tone, className)}>
-      {fx}
+      {flags.tiles && fx}
       <div className="relative">
         {eyebrow && (
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase mb-3">
@@ -1137,6 +1146,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
   const [panel, setPanel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [rangeHours, setRangeHours] = usePerUserPersistedState<24 | 48 | 96>("var:rotating:rangeHours", 48);
   const { tone } = useTileTone();
+  const { flags: animFlags } = useAnimToggles();
   useWeatherSound(soundEnabled ? (panel as WeatherSoundKind) : null, soundEnabled);
 
   const panels: { key: PanelKey; label: string; icon: React.ReactNode }[] = [
@@ -1177,7 +1187,15 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
 
   return (
     <article className={toneCardCn(tone)}>
-      {fx}
+      {animFlags.rotating ? fx : (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.07]">
+          {panel === "nedbor" ? <Droplets size={160} strokeWidth={1} /> :
+           panel === "vaer" ? <Cloud size={160} strokeWidth={1} /> :
+           panel === "skydekke" ? <CloudFog size={160} strokeWidth={1} /> :
+           panel === "vind" ? <Wind size={160} strokeWidth={1} /> :
+           <Zap size={160} strokeWidth={1} />}
+        </div>
+      )}
       <div className="relative">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5 text-[11px] tracking-[0.15em] font-semibold text-white/80 uppercase">
@@ -1239,7 +1257,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
         <div
           key={panel}
           style={{
-            animation:
+            animation: !animFlags.rotating ? undefined :
               panel === "nedbor"  ? "panelFlyRight 0.6s cubic-bezier(.2,.8,.2,1) both" :
               panel === "vaer"    ? "panelFlyLeft 0.6s cubic-bezier(.2,.8,.2,1) both" :
               panel === "skydekke"? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
@@ -1806,6 +1824,7 @@ function DailyRollInStyles() {
 function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hours?: Hour[] | null; title: string }) {
   const [panel] = usePerUserPersistedState<PanelKey>("var:rotating:panel", "nedbor");
   const [tempUnit] = useTempUnit();
+  const { flags: animFlags } = useAnimToggles();
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
 
@@ -1904,9 +1923,9 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
           const widthPct = ((d.tempMax - d.tempMin) / range) * 100;
           const label = i === 0 ? "I dag" : weekdayShort(d.date);
           return (
-            <div key={d.date} className="grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5 wx-roll-in" style={{ animationDelay: `${i * 70}ms` }}>
+            <div key={d.date} className={`grid grid-cols-[60px_42px_40px_56px_1fr_44px] items-center gap-3 py-2.5 ${animFlags.daily ? "wx-roll-in" : ""}`} style={animFlags.daily ? { animationDelay: `${i * 70}ms` } : undefined}>
               <div className="text-[15px] capitalize">{label}</div>
-              <DailyLeafFX wind={d.windMax} seed={i} />
+              {animFlags.daily ? <DailyLeafFX wind={d.windMax} seed={i} /> : <div />}
               <div className="flex items-center justify-center"><AnimatedWeatherIcon symbol={d.symbol} size={34} /></div>
               <div className="text-[11px] text-sky-200 tabular-nums text-right">
                 {d.precipProbability >= 20 ? `${Math.round(d.precipProbability)}%` : ""}
@@ -2374,7 +2393,7 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
   return (
     <div className="grid grid-cols-[56px_42px_1fr_88px] items-center gap-3 py-2.5">
       <div className="text-[15px] capitalize">{label}</div>
-      <DailyLeafFX wind={maxWind} seed={index} />
+      <DailyLeafFXGated wind={maxWind} seed={index} />
       <div className="relative h-9">
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="w-full h-full overflow-visible">
           {/* Dag-bånd: 06–22 — lys grå */}
@@ -2407,6 +2426,12 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
   );
 }
 
+
+function DailyLeafFXGated({ wind, seed }: { wind: number; seed: number }) {
+  const { flags } = useAnimToggles();
+  if (!flags.daily) return <div className="w-[42px] h-[34px]" aria-hidden />;
+  return <DailyLeafFX wind={wind} seed={seed} />;
+}
 
 function DailyLeafFX({ wind, seed }: { wind: number; seed: number }) {
   // Leaf count = floor(wind m/s). 0.9 → 0, 8.5 → 8 osv. Cap på 15.
