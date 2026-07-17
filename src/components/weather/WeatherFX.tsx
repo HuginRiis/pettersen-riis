@@ -1049,17 +1049,25 @@ export function GlassPaneFX({
               mixBlendMode: "screen",
             }}
           />
-          {/* Sun container — top-right, same visual language as Skydekke-flisen */}
-          <div
-            className="absolute"
-            style={{
-              top: "-40px",
-              right: "-40px",
-              width: 280,
-              height: 280,
-              pointerEvents: "none",
-            }}
-          >
+          {/* Sun container — plassert på sin faktiske posisjon på himmelen
+              (bue fra soloppgang venstre → zenit midt → solnedgang høyre). */}
+          {(() => {
+            const p = sunProgress; // 0..1 eller null
+            // Fallback (SSR / før mount / natt) = øvre høyre hjørne
+            const leftPct = p == null ? 88 : 6 + p * 88; // 6% → 94%
+            const topPct = p == null ? 6 : 78 - Math.sin(p * Math.PI) * 68; // horisont → zenit
+            return (
+              <div
+                className="absolute"
+                style={{
+                  left: `calc(${leftPct}% - 140px)`,
+                  top: `calc(${topPct}% - 140px)`,
+                  width: 280,
+                  height: 280,
+                  pointerEvents: "none",
+                  transition: "left 800ms ease, top 800ms ease",
+                }}
+              >
             {/* Ytre glød / haze */}
             <div
               className="absolute inset-0"
