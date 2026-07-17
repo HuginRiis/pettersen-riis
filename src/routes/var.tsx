@@ -512,7 +512,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
         }}
       >
-        <GlassPaneFX kind={glassKind} intensity={glassIntensity} />
+        <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} />
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
