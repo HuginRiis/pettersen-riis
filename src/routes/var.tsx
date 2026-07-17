@@ -2181,12 +2181,13 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
           const grad = b.isNight
             ? "linear-gradient(to top, rgba(71,85,105,0.85) 0%, rgba(148,163,184,0.85) 100%)"
             : "linear-gradient(to top, rgba(148,163,184,0.85) 0%, rgba(226,232,240,0.95) 100%)";
+          const isNow = isToday && now != null && i === now.bucket;
           return (
             <div
               key={i}
-              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
-              style={{ background: baseBg }}
-              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.cloud)} %`}
+              className={`relative flex-1 h-full rounded-md overflow-hidden ring-1 ${isNow ? "ring-2 ring-white/90" : "ring-white/10"}`}
+              style={{ background: baseBg, boxShadow: isNow ? "0 0 0 1px rgba(56,189,248,0.6), 0 0 10px rgba(56,189,248,0.55)" : undefined }}
+              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.cloud)} %${isNow ? " · nå" : ""}`}
             >
               <div
                 className="absolute bottom-0 left-0 right-0 rounded-b-md transition-all"
