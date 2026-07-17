@@ -2154,7 +2154,7 @@ function DriftingClouds({ intensity, seed = 0, className = "", rainy = false }: 
   }, [count, seed, i]);
   if (count === 0) return null;
   return (
-    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`} aria-hidden>
+    <div className={`wx-daily-fx absolute inset-0 overflow-hidden pointer-events-none ${className}`} aria-hidden>
       {clouds.map((c) => (
         <svg
           key={c.key}
