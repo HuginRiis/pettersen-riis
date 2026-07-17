@@ -1929,8 +1929,29 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   );
 }
 
+// Client-only "nå"-tid brukt til å markere aktuell 2-timers boks / kolonne i
+// 10-dagers-radene. Returnerer null på SSR for å unngå hydration-mismatch.
+function useCurrentBucket() {
+  const [now, setNow] = useState<{ date: string; bucket: number; hour: number; minute: number } | null>(null);
+  useEffect(() => {
+    const tick = () => {
+      const d = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      setNow({ date, bucket: Math.floor(d.getHours() / 2), hour: d.getHours(), minute: d.getMinutes() });
+    };
+    tick();
+    const id = setInterval(tick, 60_000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
 function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const now = useCurrentBucket();
+  const isToday = now?.date === day.date;
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
+
   // 12 buckets × 2 timer = 24 timer (00-02, 02-04, ..., 22-24)
   const buckets = Array.from({ length: 12 }, (_, b) => {
     const startHour = b * 2;
@@ -2008,12 +2029,13 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
               ? `rgba(148, 163, 184, ${probAlpha * 0.6 + 0.08})`
               : `rgba(186, 230, 253, ${probAlpha + 0.08})`;
             const intense = b.precip >= 2;
+            const isNow = isToday && now != null && i === now.bucket;
             return (
               <div
                 key={i}
-                className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
-                style={{ background: baseBg }}
-                title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%`}
+                className={`relative flex-1 h-full rounded-md overflow-hidden ring-1 ${isNow ? "ring-2 ring-white/90" : "ring-white/10"}`}
+                style={{ background: baseBg, boxShadow: isNow ? "0 0 0 1px rgba(56,189,248,0.6), 0 0 10px rgba(56,189,248,0.55)" : undefined }}
+                title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${b.precip.toFixed(1)} mm · ${Math.round(b.prob)}%${isNow ? " · nå" : ""}`}
               >
                 {rainFill > 0 && (
                   <div
@@ -2118,6 +2140,8 @@ function DriftingClouds({ intensity, seed = 0, className = "", rainy = false }: 
 }
 
 function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const now = useCurrentBucket();
+  const isToday = now?.date === day.date;
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   // 12 buckets × 2 timer
   const buckets = Array.from({ length: 12 }, (_, b) => {
@@ -2157,12 +2181,13 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
           const grad = b.isNight
             ? "linear-gradient(to top, rgba(71,85,105,0.85) 0%, rgba(148,163,184,0.85) 100%)"
             : "linear-gradient(to top, rgba(148,163,184,0.85) 0%, rgba(226,232,240,0.95) 100%)";
+          const isNow = isToday && now != null && i === now.bucket;
           return (
             <div
               key={i}
-              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
-              style={{ background: baseBg }}
-              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.cloud)} %`}
+              className={`relative flex-1 h-full rounded-md overflow-hidden ring-1 ${isNow ? "ring-2 ring-white/90" : "ring-white/10"}`}
+              style={{ background: baseBg, boxShadow: isNow ? "0 0 0 1px rgba(56,189,248,0.6), 0 0 10px rgba(56,189,248,0.55)" : undefined }}
+              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.cloud)} %${isNow ? " · nå" : ""}`}
             >
               <div
                 className="absolute bottom-0 left-0 right-0 rounded-b-md transition-all"
@@ -2185,6 +2210,8 @@ function DailyCloudRow({ day, hours, index }: { day: ForecastDay; hours: Hour[];
 
 
 function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; index: number }) {
+  const now = useCurrentBucket();
+  const isToday = now?.date === day.date;
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const buckets = Array.from({ length: 12 }, (_, b) => {
     const startHour = b * 2;
@@ -2245,12 +2272,13 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
           const grad = hot
             ? "linear-gradient(to top, #b45309 0%, #f59e0b 50%, #fde047 100%)"
             : "linear-gradient(to top, #4338ca 0%, #818cf8 60%, #c7d2fe 100%)";
+          const isNow = isToday && now != null && i === now.bucket;
           return (
             <div
               key={i}
-              className="relative flex-1 h-full rounded-md overflow-hidden ring-1 ring-white/10"
-              style={{ background: baseBg }}
-              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.thunder)} %`}
+              className={`relative flex-1 h-full rounded-md overflow-hidden ring-1 ${isNow ? "ring-2 ring-white/90" : "ring-white/10"}`}
+              style={{ background: baseBg, boxShadow: isNow ? "0 0 0 1px rgba(56,189,248,0.6), 0 0 10px rgba(56,189,248,0.55)" : undefined }}
+              title={`${String(b.startHour).padStart(2, "0")}–${String(b.startHour + 2).padStart(2, "0")} · ${Math.round(b.thunder)} %${isNow ? " · nå" : ""}`}
             >
               {fill > 0 && (
                 <div
@@ -2283,6 +2311,8 @@ function DailyLynRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; i
 
 function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hours: Hour[]; index: number; globalMaxG: number }) {
   const [unit] = useWindUnit();
+  const now = useCurrentBucket();
+  const isToday = now?.date === day.date;
   const label = index === 0 ? "I dag" : weekdayShort(day.date);
   const dayHours = hours.filter((h) => h.time.slice(0, 10) === day.date);
 
@@ -2359,6 +2389,15 @@ function DailyWindRow({ day, hours, index, globalMaxG }: { day: ForecastDay; hou
               <path d={toPath(windPts, false)} fill="none" stroke="#2dd4bf" strokeWidth="1.6" />
             </>
           )}
+          {isToday && now && (() => {
+            const nx = x(Math.min(23, now.hour + now.minute / 60));
+            return (
+              <g>
+                <line x1={nx} x2={nx} y1={0} y2={H} stroke="rgba(255,255,255,0.9)" strokeWidth="1" strokeDasharray="2 2" />
+                <circle cx={nx} cy={2} r="1.6" fill="rgba(255,255,255,0.95)" />
+              </g>
+            );
+          })()}
         </svg>
       </div>
       <div className="text-[13px] tabular-nums text-right text-white/90">
