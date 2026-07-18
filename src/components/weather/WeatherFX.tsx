@@ -857,11 +857,13 @@ export function GlassPaneFX({
   intensity = 0.6,
   sun,
   now,
+  wind = 0,
 }: {
   kind: GlassKind;
   intensity?: number;
   sun?: { sunrise: Date | null; sunset: Date | null } | null;
   now?: Date | null;
+  wind?: number;
 }) {
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
