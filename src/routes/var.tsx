@@ -54,6 +54,7 @@ import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
 import { useTempUnit, formatTemp, TEMP_UNITS } from "@/hooks/use-temp-unit";
+import { RainOnGlass } from "@/components/RainOnGlass";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
@@ -1840,6 +1841,23 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
 
+  // Regn-på-glass: kun når det faktisk regner (eller er meldt regn) nå
+  // for det stedet flisen viser. Intensitet = mm/t skalert 0..1.
+  const nowPrecip = (() => {
+    if (!hours || hours.length === 0) return 0;
+    const nowMs = Date.now();
+    let best = hours[0];
+    let bestDiff = Infinity;
+    for (const h of hours) {
+      const diff = Math.abs(new Date(h.time).getTime() - nowMs);
+      if (diff < bestDiff) { bestDiff = diff; best = h; }
+    }
+    return Math.max(0, best?.precip ?? 0);
+  })();
+  const rainIntensity = Math.min(1, nowPrecip / 3);
+  const rainOverlay = animFlags.daily && rainIntensity > 0
+    ? <RainOnGlass force={rainIntensity} />
+    : null;
 
   const staticCls = animFlags.daily ? "" : "wx-daily-static";
   const rowCls = animFlags.daily ? "wx-roll-in" : "";
@@ -1851,6 +1869,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Droplets size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1876,6 +1895,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Wind size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1893,6 +1913,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Cloud size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1909,6 +1930,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Zap size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1937,6 +1959,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <AnimatedWeatherIconStyles />
       <DailyRollInStyles />
       <DailyStaticStyles />
+        {rainOverlay}
 
       <div className={`divide-y divide-white/10 ${staticCls}`}>
         {list.map((d, i) => {
