@@ -885,35 +885,6 @@ export function GlassPaneFX({
   }, [sun?.sunrise, sun?.sunset, now]);
 
 
-  // Static glass beads — randomly scattered "stuck" droplets (små, realistiske)
-  const beadCount = isWet ? Math.round(32 + intensity * 28) : 0;
-  const beads = useMemo(
-    () =>
-      Array.from({ length: beadCount }).map(() => ({
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        size: 1 + Math.random() * 2.5,
-        delay: Math.random() * 4,
-        dur: 3 + Math.random() * 4,
-      })),
-    [beadCount],
-  );
-
-  // Sliding drips down the glass (tynnere/mindre)
-  const dripCount = isWet ? Math.round(8 + intensity * 14) : 0;
-  const drips = useMemo(
-    () =>
-      Array.from({ length: dripCount }).map(() => ({
-        left: Math.random() * 100,
-        w: 1.5 + Math.random() * 2,
-        h: 8 + Math.random() * 20,
-        delay: -Math.random() * 9,
-        dur: 4 + Math.random() * 7,
-        op: 0.45 + Math.random() * 0.35,
-      })),
-    [dripCount],
-  );
-
   // Snowflakes drifting across the pane
   const snowCount = isSnow ? Math.round(22 + intensity * 18) : 0;
   const snow = useMemo(
@@ -973,50 +944,8 @@ export function GlassPaneFX({
         }}
       />
 
-      {/* RAIN: fritt fallende dråper — samme stil som Nedbør-flisen */}
-      {isWet && (
-        <>
-          <RainFX intensity={intensity} />
-          {beads.map((b, i) => (
-            <span
-              key={`b${i}`}
-              className="absolute rounded-full animate-wx-bead"
-              style={{
-                left: `${b.left}%`,
-                top: `${b.top}%`,
-                width: b.size,
-                height: b.size,
-                background:
-                  "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(200,225,255,0.55) 55%, rgba(160,200,240,0.15) 100%)",
-                boxShadow:
-                  "inset -0.5px -0.5px 1px rgba(0,0,0,0.18), 0 0 1px rgba(255,255,255,0.5)",
-                animationDuration: `${b.dur}s`,
-                animationDelay: `${b.delay}s`,
-              }}
-            />
-          ))}
-          {drips.map((d, i) => (
-            <span
-              key={`d${i}`}
-              className="absolute animate-wx-drip"
-              style={{
-                left: `${d.left}%`,
-                top: 0,
-                width: d.w,
-                height: d.h,
-                borderRadius: 999,
-                background:
-                  "linear-gradient(180deg, rgba(220,235,255,0.15) 0%, rgba(220,235,255,0.55) 60%, rgba(255,255,255,0.95) 100%)",
-                boxShadow:
-                  "inset -0.5px -0.5px 1px rgba(0,0,0,0.2), 0 0 2px rgba(255,255,255,0.4)",
-                opacity: d.op,
-                animationDuration: `${d.dur}s`,
-                animationDelay: `${d.delay}s`,
-              }}
-            />
-          ))}
-        </>
-      )}
+      {/* RAIN: kun fritt fallende dråper — samme stil som Nedbør-flisen */}
+      {isWet && <RainFX intensity={intensity} />}
 
       {/* SNOW */}
       {isSnow &&
