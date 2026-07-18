@@ -947,10 +947,11 @@ const GlassPaneFX = memo(function GlassPaneFX({
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 overflow-hidden"
+      className="pointer-events-none fixed left-0 right-0 top-0 overflow-hidden"
       aria-hidden
-      style={{ zIndex: 1 }}
+      style={{ zIndex: 1, height: heightPx && heightPx > 0 ? `${heightPx}px` : "100%", bottom: heightPx && heightPx > 0 ? "auto" : 0 }}
     >
+
       {/* Subtle glass tint + soft top/bottom vignette */}
       <div
         className="absolute inset-0"
