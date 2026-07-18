@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { getMetForecastComplete } from "@/lib/met-forecast.functions";
 
 type Drop = {
   id: number;
@@ -16,24 +14,30 @@ type Drop = {
  * Vanndråper på glasset — vises kun når det er nedbør nå.
  * Jo mer nedbør, jo flere og større dråper. Enkelte dråper renner
  * sakte nedover som på et vindu.
+ *
+ * `force` kan sette en fast intensitet 0..1 (for testing/preview).
  */
 export function RainOnGlass({
   lat = 59.1789,
   lon = 9.5732,
   className = "",
+  force,
 }: {
   lat?: number;
   lon?: number;
   className?: string;
+  force?: number;
 }) {
-  const metFn = useServerFn(getMetForecastComplete);
   const [precip, setPrecip] = useState<number | null>(null);
 
   useEffect(() => {
+    if (force != null) return;
     let cancelled = false;
     (async () => {
       try {
-        const data: any = await metFn({ data: { lat, lon } });
+        const url = `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${lat}&lon=${lon}`;
+        const r = await fetch(url, { headers: { Accept: "application/json" } });
+        const data: any = await r.json();
         const ts = data?.properties?.timeseries?.[0];
         const mm =
           ts?.data?.next_1_hours?.details?.precipitation_amount ??
@@ -47,14 +51,15 @@ export function RainOnGlass({
     return () => {
       cancelled = true;
     };
-  }, [lat, lon, metFn]);
+  }, [lat, lon, force]);
 
   // Intensitet 0..1
   const intensity = useMemo(() => {
+    if (force != null) return Math.max(0, Math.min(1, force));
     if (precip == null) return 0;
     if (precip <= 0) return 0;
     return Math.min(1, precip / 4);
-  }, [precip]);
+  }, [precip, force]);
 
   const drops = useMemo<Drop[]>(() => {
     if (intensity <= 0) return [];
