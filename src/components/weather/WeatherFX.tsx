@@ -958,7 +958,7 @@ export function GlassPaneFX({
       />
 
       {/* RAIN: kun fritt fallende dråper — samme stil som Nedbør-flisen */}
-      {isWet && <RainFX intensity={intensity} />}
+      {isWet && <RainFX intensity={intensity} wind={wind} />}
 
       {/* SNOW */}
       {isSnow &&
