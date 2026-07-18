@@ -620,9 +620,11 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* Søke-knapp → åpner favoritt-siden med animert vær pr sted */}
           <Link
+            ref={searchRef}
             to="/varfavoritter"
             className={`${toneCardCn(tone)} relative z-10 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors`}
           >
+
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <div className="relative z-10 flex items-center gap-3 w-full">
               <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
