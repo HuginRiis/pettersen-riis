@@ -55,10 +55,11 @@ export function RainOnGlass({
 
   // Intensitet 0..1
   const intensity = useMemo(() => {
+    if (force != null) return Math.max(0, Math.min(1, force));
     if (precip == null) return 0;
     if (precip <= 0) return 0;
     return Math.min(1, precip / 4);
-  }, [precip]);
+  }, [precip, force]);
 
   const drops = useMemo<Drop[]>(() => {
     if (intensity <= 0) return [];
