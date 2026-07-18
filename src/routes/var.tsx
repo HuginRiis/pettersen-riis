@@ -1869,6 +1869,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Droplets size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1894,6 +1895,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Wind size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1911,6 +1913,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Cloud size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1927,6 +1930,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <GlassCard eyebrow={title} icon={<Zap size={14} />}>
         <DailyRollInStyles />
         <DailyStaticStyles />
+        {rainOverlay}
         <div className={`divide-y divide-white/10 ${staticCls}`}>
           {list.map((d, i) => (
             <div key={d.date} className={rowCls} style={rowStyle(i)}>
@@ -1955,6 +1959,7 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
       <AnimatedWeatherIconStyles />
       <DailyRollInStyles />
       <DailyStaticStyles />
+        {rainOverlay}
 
       <div className={`divide-y divide-white/10 ${staticCls}`}>
         {list.map((d, i) => {
