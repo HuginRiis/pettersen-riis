@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Search, Sparkles, X } from "lucide-react";
 import { searchIndex, type SearchEntry } from "@/lib/search-index";
 import { aiSmartSearch, type SmartSearchResult } from "@/lib/smart-search.functions";
+import { RainOnGlass } from "@/components/RainOnGlass";
 
 export function SmartSearch() {
   const navigate = useNavigate();
@@ -54,7 +55,8 @@ export function SmartSearch() {
   return (
     <div ref={boxRef} className="container mx-auto px-4 mb-6 relative z-20">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-2 bg-background/80 backdrop-blur border-2 border-primary/40 rounded-lg px-3 py-2 shadow-[0_0_18px_hsl(var(--primary)/0.25)]">
+        <div className="relative flex items-center gap-2 bg-background/80 backdrop-blur border-2 border-primary/40 rounded-lg px-3 py-2 shadow-[0_0_18px_hsl(var(--primary)/0.25)] overflow-hidden">
+          <RainOnGlass />
           <Search size={16} className="text-primary shrink-0" />
           <input
             type="text"
