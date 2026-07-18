@@ -858,7 +858,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
   sun,
   now,
   wind = 0,
-}: {);
+}: {
   kind: GlassKind;
   intensity?: number;
   sun?: { sunrise: Date | null; sunset: Date | null } | null;
@@ -1252,7 +1252,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
 const TileSplashFX = memo(function TileSplashFX({
   kind,
   intensity = 0.6,
-}: {);
+}: {
   kind: GlassKind;
   intensity?: number;
 }) {
