@@ -858,16 +858,13 @@ const GlassPaneFX = memo(function GlassPaneFX({
   sun,
   now,
   wind = 0,
-  heightPx,
 }: {
   kind: GlassKind;
   intensity?: number;
   sun?: { sunrise: Date | null; sunset: Date | null } | null;
   now?: Date | null;
   wind?: number;
-  heightPx?: number | null;
 }) {
-
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
   const isSnow = kind === "snow" || kind === "sleet";
@@ -947,11 +944,10 @@ const GlassPaneFX = memo(function GlassPaneFX({
 
   return (
     <div
-      className="pointer-events-none fixed left-0 right-0 top-0 overflow-hidden"
+      className="pointer-events-none fixed inset-0 overflow-hidden"
       aria-hidden
-      style={{ zIndex: 1, height: heightPx && heightPx > 0 ? `${heightPx}px` : "100%", bottom: heightPx && heightPx > 0 ? "auto" : 0 }}
+      style={{ zIndex: 1 }}
     >
-
       {/* Subtle glass tint + soft top/bottom vignette */}
       <div
         className="absolute inset-0"

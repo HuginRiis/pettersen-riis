@@ -507,30 +507,6 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   }, []);
 
 
-  // Mål søkeflisens topp-posisjon (viewport-relativ ved scroll=0) slik at
-  // bakgrunns-animasjonen (regn/snø/skyer) kan stoppes akkurat der.
-  // Høyden holdes konstant under scrolling.
-  const searchRef = useRef<HTMLAnchorElement>(null);
-  const [bgHeight, setBgHeight] = useState<number | null>(null);
-  useEffect(() => {
-    const measure = () => {
-      const el = searchRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const top = rect.top + window.scrollY; // absolutt dokument-Y
-      // Kutt litt før selve flisen så dråpene fader ut mot kanten
-      setBgHeight(Math.max(120, Math.round(top - 4)));
-    };
-    measure();
-    const t = setTimeout(measure, 300);
-    window.addEventListener("resize", measure);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("resize", measure);
-    };
-  }, []);
-
-
   return (
     <PageShell>
       <div
@@ -540,7 +516,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
         }}
       >
-        {animFlags.bg && <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} wind={currentHour?.wind ?? 0} heightPx={bgHeight} />}
+        {animFlags.bg && <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} wind={currentHour?.wind ?? 0} />}
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
@@ -620,11 +596,9 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* Søke-knapp → åpner favoritt-siden med animert vær pr sted */}
           <Link
-            ref={searchRef}
             to="/varfavoritter"
             className={`${toneCardCn(tone)} relative z-10 flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors`}
           >
-
             <TileSplashFX kind={glassKind} intensity={glassIntensity} />
             <div className="relative z-10 flex items-center gap-3 w-full">
               <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
