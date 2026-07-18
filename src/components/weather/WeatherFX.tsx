@@ -81,9 +81,17 @@ export function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
 }
 
 /* ---------------- RAIN ---------------- */
-export function RainFX({ intensity = 0.5, className = "" }: Common) {
+export function RainFX({
+  intensity = 0.5,
+  wind = 0,
+  className = "",
+}: Common & { wind?: number }) {
   const _mounted = useMounted();
   const clamped = Math.max(0, Math.min(1, intensity));
+  // Vind i m/s → skrå-vinkel opp til ~35°, og horisontal drift under fallet.
+  const w = Math.max(0, Math.min(20, wind));
+  const tilt = (w / 20) * 35; // deg
+  const drift = 40 + w * 22; // px horisontal forskyvning under fallet
   const drops = useMemo(() => {
     // Synlig selv når det er tørt: 26–34 dråper totalt gir ~10–14 synlige på én gang.
     // Øker raskt til ~55–65 når regnet kommer.
@@ -94,8 +102,8 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
       delay: Math.random() * 1.8,
       // Faster fall when more intense
       dur: 1.6 - clamped * 0.7 + Math.random() * 0.6,
-      h: 10 + Math.random() * 14,
-      w: 0.8 + Math.random() * 1.2,
+      h: 6 + Math.random() * 9,
+      w: 0.5 + Math.random() * 0.8,
       op: 0.55 + clamped * 0.35 + Math.random() * 0.25,
     }));
   }, [clamped]);
@@ -119,6 +127,9 @@ export function RainFX({ intensity = 0.5, className = "" }: Common) {
             animationDelay: `${d.delay}s`,
             animationFillMode: "backwards",
             filter: "drop-shadow(0 0 1px rgba(200,235,255,0.5))",
+            transformOrigin: "top center",
+            ["--wx-rain-rot" as string]: `${tilt}deg`,
+            ["--wx-rain-dx" as string]: `${drift}px`,
           }}
         />
       ))}
