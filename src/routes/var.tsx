@@ -54,6 +54,7 @@ import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
 import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
 import { useTempUnit, formatTemp, TEMP_UNITS } from "@/hooks/use-temp-unit";
+import { RainOnGlass } from "@/components/RainOnGlass";
 
 export const Route = createFileRoute("/var")({
   head: () => ({
