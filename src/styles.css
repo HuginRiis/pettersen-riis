@@ -813,10 +813,10 @@ main .container {
 .animate-wx-inside-rain { animation: wx-inside-rain linear infinite; }
 
 @keyframes wx-rain-fall {
-  0%   { transform: translate3d(0, -20px, 0); opacity: 0; }
+  0%   { transform: translate3d(0, -20px, 0) rotate(var(--wx-rain-rot, 0deg)); opacity: 0; }
   10%  { opacity: 0.85; }
   90%  { opacity: 0.85; }
-  100% { transform: translate3d(6px, 600px, 0); opacity: 0; }
+  100% { transform: translate3d(var(--wx-rain-dx, 6px), 600px, 0) rotate(var(--wx-rain-rot, 0deg)); opacity: 0; }
 }
 
 @keyframes wx-snow-fall {
