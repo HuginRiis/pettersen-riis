@@ -1841,6 +1841,23 @@ function DailyListCard({ days, hours, title }: { days: ForecastDay[] | null; hou
   if (!days) return <GlassCard eyebrow={title} icon={<TrendingUp size={14} />}><Skeleton /></GlassCard>;
   const list = days.slice(0, 10);
 
+  // Regn-på-glass: kun når det faktisk regner (eller er meldt regn) nå
+  // for det stedet flisen viser. Intensitet = mm/t skalert 0..1.
+  const nowPrecip = (() => {
+    if (!hours || hours.length === 0) return 0;
+    const nowMs = Date.now();
+    let best = hours[0];
+    let bestDiff = Infinity;
+    for (const h of hours) {
+      const diff = Math.abs(new Date(h.time).getTime() - nowMs);
+      if (diff < bestDiff) { bestDiff = diff; best = h; }
+    }
+    return Math.max(0, best?.precip ?? 0);
+  })();
+  const rainIntensity = Math.min(1, nowPrecip / 3);
+  const rainOverlay = animFlags.daily && rainIntensity > 0
+    ? <RainOnGlass force={rainIntensity} />
+    : null;
 
   const staticCls = animFlags.daily ? "" : "wx-daily-static";
   const rowCls = animFlags.daily ? "wx-roll-in" : "";
