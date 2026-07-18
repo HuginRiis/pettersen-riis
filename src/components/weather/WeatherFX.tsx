@@ -935,12 +935,14 @@ const GlassPaneFX = memo(function GlassPaneFX({
   sun,
   now,
   wind = 0,
+  precipMm = 0,
 }: {
   kind: GlassKind;
   intensity?: number;
   sun?: { sunrise: Date | null; sunset: Date | null } | null;
   now?: Date | null;
   wind?: number;
+  precipMm?: number;
 }) {
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
