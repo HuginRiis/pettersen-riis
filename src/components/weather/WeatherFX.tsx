@@ -944,50 +944,8 @@ export function GlassPaneFX({
         }}
       />
 
-      {/* RAIN: fritt fallende dråper — samme stil som Nedbør-flisen */}
-      {isWet && (
-        <>
-          <RainFX intensity={intensity} />
-          {beads.map((b, i) => (
-            <span
-              key={`b${i}`}
-              className="absolute rounded-full animate-wx-bead"
-              style={{
-                left: `${b.left}%`,
-                top: `${b.top}%`,
-                width: b.size,
-                height: b.size,
-                background:
-                  "radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(200,225,255,0.55) 55%, rgba(160,200,240,0.15) 100%)",
-                boxShadow:
-                  "inset -0.5px -0.5px 1px rgba(0,0,0,0.18), 0 0 1px rgba(255,255,255,0.5)",
-                animationDuration: `${b.dur}s`,
-                animationDelay: `${b.delay}s`,
-              }}
-            />
-          ))}
-          {drips.map((d, i) => (
-            <span
-              key={`d${i}`}
-              className="absolute animate-wx-drip"
-              style={{
-                left: `${d.left}%`,
-                top: 0,
-                width: d.w,
-                height: d.h,
-                borderRadius: 999,
-                background:
-                  "linear-gradient(180deg, rgba(220,235,255,0.15) 0%, rgba(220,235,255,0.55) 60%, rgba(255,255,255,0.95) 100%)",
-                boxShadow:
-                  "inset -0.5px -0.5px 1px rgba(0,0,0,0.2), 0 0 2px rgba(255,255,255,0.4)",
-                opacity: d.op,
-                animationDuration: `${d.dur}s`,
-                animationDelay: `${d.delay}s`,
-              }}
-            />
-          ))}
-        </>
-      )}
+      {/* RAIN: kun fritt fallende dråper — samme stil som Nedbør-flisen */}
+      {isWet && <RainFX intensity={intensity} />}
 
       {/* SNOW */}
       {isSnow &&
