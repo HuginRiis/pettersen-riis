@@ -85,7 +85,7 @@ const RainFX = memo(function RainFX({
   intensity = 0.5,
   wind = 0,
   className = "",
-}: Common & { wind?: number }) {);
+}: Common & { wind?: number }) {
   const _mounted = useMounted();
   const clamped = Math.max(0, Math.min(1, intensity));
   // Vind i m/s → skrå-vinkel opp til ~35°, og horisontal drift under fallet.
