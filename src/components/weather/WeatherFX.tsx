@@ -1037,7 +1037,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
       />
 
       {/* RAIN: kun fritt fallende dråper — samme stil som Nedbør-flisen */}
-      {isWet && <RainFX intensity={intensity} wind={wind} />}
+      {isWet && <FancyBgRainFX precipMm={precipMm} wind={wind} />}
 
       {/* SNOW */}
       {isSnow &&
