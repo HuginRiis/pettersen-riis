@@ -38,7 +38,7 @@ type Common = { intensity?: number; className?: string };
 const wrap = "pointer-events-none absolute inset-0 overflow-hidden";
 
 /* ---------------- INSIDE RAIN (drops inside the content box) ---------------- */
-const InsideRainFX = memo(function InsideRainFX({ intensity = 0.5, className = "" }: Common) {);
+const InsideRainFX = memo(function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const i = Math.max(0, Math.min(1, intensity));
   // 0 dråper når intensitet = 0, ellers eskalerer raskt: 2 → 18
@@ -78,7 +78,7 @@ const InsideRainFX = memo(function InsideRainFX({ intensity = 0.5, className = "
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- RAIN ---------------- */
 const RainFX = memo(function RainFX({
@@ -135,10 +135,10 @@ const RainFX = memo(function RainFX({
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- SNOW ---------------- */
-const SnowFX = memo(function SnowFX({ intensity = 0.5, className = "" }: Common) {);
+const SnowFX = memo(function SnowFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const count = Math.max(8, Math.round(10 + intensity * 18));
   const flakes = useMemo(
@@ -172,10 +172,10 @@ const SnowFX = memo(function SnowFX({ intensity = 0.5, className = "" }: Common)
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- CLOUDS ---------------- */
-const CloudFX = memo(function CloudFX({ intensity = 0.5, className = "" }: Common) {);
+const CloudFX = memo(function CloudFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const count = Math.max(2, Math.round(2 + intensity * 4));
   const clouds = useMemo(
@@ -214,12 +214,12 @@ const CloudFX = memo(function CloudFX({ intensity = 0.5, className = "" }: Commo
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- CLOUD COVER (realistic layered sky) ---------------- */
 type CloudCoverProps = { intensity?: number; rainIntensity?: number; className?: string };
 
-const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity = 0, className = "" }: CloudCoverProps) {);
+const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity = 0, className = "" }: CloudCoverProps) {
   const _mounted = useMounted();
   const i = Math.max(0, Math.min(1, intensity));
   const rain = Math.max(0, Math.min(1, rainIntensity));
@@ -297,10 +297,10 @@ const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity
       )}
     </div>
   );
-}
+});
 
 /* ---------------- WIND ---------------- */
-const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common) {);
+const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const i = Math.max(0, Math.min(1, intensity));
   const count = Math.max(4, Math.round(5 + i * 8));
@@ -391,10 +391,10 @@ const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common)
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- HEATWAVE ---------------- */
-const HeatwaveFX = memo(function HeatwaveFX({ intensity = 0.5, className = "" }: Common) {);
+const HeatwaveFX = memo(function HeatwaveFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const cold = intensity < 0;
   const color = cold ? "rgba(170,210,255,0.55)" : "rgba(255,200,120,0.55)";
@@ -425,10 +425,10 @@ const HeatwaveFX = memo(function HeatwaveFX({ intensity = 0.5, className = "" }:
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- HUMIDITY (rising droplets + steam) ---------------- */
-const HumidityFX = memo(function HumidityFX({ intensity = 0.5, className = "" }: Common) {);
+const HumidityFX = memo(function HumidityFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const i = Math.max(0, Math.min(1, intensity));
   const count = Math.max(4, Math.round(4 + i * 8));
@@ -499,11 +499,11 @@ const HumidityFX = memo(function HumidityFX({ intensity = 0.5, className = "" }:
       ))}
     </div>
   );
-}
+});
 
 
 /* ---------------- PRESSURE (pulse rings) ---------------- */
-const PressureFX = memo(function PressureFX({ intensity = 0.5, className = "" }: Common) {);
+const PressureFX = memo(function PressureFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const rings = [0, 0.6, 1.2];
   const color = intensity > 0.6 ? "rgba(255,180,140,0.45)" : intensity < 0.4 ? "rgba(140,200,255,0.45)" : "rgba(255,255,255,0.4)";
@@ -525,10 +525,10 @@ const PressureFX = memo(function PressureFX({ intensity = 0.5, className = "" }:
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- GUST (flying leaves blowing right) ---------------- */
-const GustFX = memo(function GustFX({ intensity = 0.5, className = "" }: Common) {);
+const GustFX = memo(function GustFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const i = Math.max(0, Math.min(1, intensity));
   // Straight wind streaks — more and faster with higher gusts
@@ -616,11 +616,11 @@ const GustFX = memo(function GustFX({ intensity = 0.5, className = "" }: Common)
       ))}
     </div>
   );
-}
+});
 
 
 /* ---------------- SUN (rays + sparkles) ---------------- */
-const SunFX = memo(function SunFX({ intensity = 0.5, className = "" }: Common) {);
+const SunFX = memo(function SunFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const sparkles = useMemo(
     () =>
@@ -662,10 +662,10 @@ const SunFX = memo(function SunFX({ intensity = 0.5, className = "" }: Common) {
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- MOON (stars) ---------------- */
-const StarFX = memo(function StarFX({ intensity = 0.5, className = "" }: Common) {);
+const StarFX = memo(function StarFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const stars = useMemo(() => {
     const rng = seededRng(42);
@@ -698,10 +698,10 @@ const StarFX = memo(function StarFX({ intensity = 0.5, className = "" }: Common)
       ))}
     </div>
   );
-}
+});
 
 /* ---------------- MOON FX (måne øverst til høyre) ---------------- */
-const MoonFX = memo(function MoonFX({ intensity = 0.5, className = "" }: Common) {);
+const MoonFX = memo(function MoonFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   if (!_mounted) return null;
   return (
@@ -739,7 +739,7 @@ const MoonFX = memo(function MoonFX({ intensity = 0.5, className = "" }: Common)
       </svg>
     </div>
   );
-}
+});
 
 /* ---------------- THUNDER / LIGHTNING ---------------- */
 function makeBoltPath(seed: number, segments: number, jitter: number) {
@@ -767,7 +767,7 @@ function makeBoltPath(seed: number, segments: number, jitter: number) {
   return { main: pts.join(" "), branches };
 }
 
-const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: Common) {);
+const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
   const bolts = useMemo(() => {
     const count = Math.max(2, Math.round(2 + intensity * 3));
@@ -838,7 +838,7 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: C
       ))}
     </div>
   );
-}
+});
 
 
 
@@ -1241,7 +1241,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
       )}
     </div>
   );
-}
+});
 
 /* ============================================================
    TILE SPLASH FX — droplets/snow/leaves that splash against the
@@ -1394,7 +1394,7 @@ const TileSplashFX = memo(function TileSplashFX({
         ))}
     </div>
   );
-}
+});
 
 export function glassKindFromSymbol(symbol: string | null, isDay: boolean): GlassKind {
   if (!symbol) return isDay ? "fair" : "night";
