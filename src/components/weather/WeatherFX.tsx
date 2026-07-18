@@ -137,6 +137,83 @@ const RainFX = memo(function RainFX({
   );
 });
 
+/* ---------------- FANCY BG RAIN (samme stil som favorittflisen) ---------------- */
+const FancyBgRainFX = memo(function FancyBgRainFX({
+  precipMm = 0,
+  wind = 0,
+}: {
+  precipMm?: number;
+  wind?: number;
+}) {
+  const _mounted = useMounted();
+  // Antall skalerer dramatisk med mm/t innenfor gjeldende time.
+  // Tørt/lett drypp (0–0.1 mm): ~30. Kraftig regn (5+ mm/t): ~450.
+  const mm = Math.max(0, precipMm);
+  const dropCount = Math.round(30 + Math.min(mm, 8) * 55);
+  const splashCount = Math.round(10 + Math.min(mm, 6) * 8);
+  // Vind → skrå-vinkel + horisontal drift (samme oppførsel som før)
+  const w = Math.max(0, Math.min(20, wind));
+  const tilt = 8 + (w / 20) * 22; // 8°..30°
+  const drift = -(40 + w * 18); // negativ = drift mot venstre ved fall
+
+  const drops = useMemo(() => {
+    return Array.from({ length: dropCount }).map(() => ({
+      left: Math.random() * 100,
+      delay: -Math.random() * 1.5,
+      dur: 0.55 + Math.random() * 0.45,
+      h: 14 + Math.random() * 22,
+      op: 0.55 + Math.random() * 0.4,
+    }));
+  }, [dropCount]);
+
+  const splashes = useMemo(() => {
+    return Array.from({ length: splashCount }).map(() => ({
+      left: Math.random() * 100,
+      delay: -Math.random() * 1.2,
+      dur: 0.8 + Math.random() * 0.5,
+    }));
+  }, [splashCount]);
+
+  if (!_mounted) return null;
+  return (
+    <div
+      className="wx-bg-rain"
+      aria-hidden
+      style={{
+        ["--wx-bg-rain-rot" as string]: `${tilt}deg`,
+        ["--wx-bg-rain-dx" as string]: `${drift}px`,
+      }}
+    >
+      {drops.map((d, i) => (
+        <span
+          key={i}
+          className="wx-bg-drop"
+          style={{
+            left: `${d.left}%`,
+            height: `${d.h}px`,
+            opacity: d.op,
+            animationDuration: `${d.dur}s`,
+            animationDelay: `${d.delay}s`,
+          }}
+        />
+      ))}
+      <div className="wx-bg-splashes">
+        {splashes.map((s, i) => (
+          <span
+            key={i}
+            className="wx-bg-splash"
+            style={{
+              left: `${s.left}%`,
+              animationDuration: `${s.dur}s`,
+              animationDelay: `${s.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
+
 /* ---------------- SNOW ---------------- */
 const SnowFX = memo(function SnowFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
@@ -858,12 +935,14 @@ const GlassPaneFX = memo(function GlassPaneFX({
   sun,
   now,
   wind = 0,
+  precipMm = 0,
 }: {
   kind: GlassKind;
   intensity?: number;
   sun?: { sunrise: Date | null; sunset: Date | null } | null;
   now?: Date | null;
   wind?: number;
+  precipMm?: number;
 }) {
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
@@ -958,7 +1037,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
       />
 
       {/* RAIN: kun fritt fallende dråper — samme stil som Nedbør-flisen */}
-      {isWet && <RainFX intensity={intensity} wind={wind} />}
+      {isWet && <FancyBgRainFX precipMm={precipMm} wind={wind} />}
 
       {/* SNOW */}
       {isSnow &&
