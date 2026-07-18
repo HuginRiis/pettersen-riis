@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Search, Sparkles, X } from "lucide-react";
 import { searchIndex, type SearchEntry } from "@/lib/search-index";
 import { aiSmartSearch, type SmartSearchResult } from "@/lib/smart-search.functions";
+import { RainOnGlass } from "@/components/RainOnGlass";
 
 export function SmartSearch() {
   const navigate = useNavigate();
