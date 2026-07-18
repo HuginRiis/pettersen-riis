@@ -507,6 +507,30 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   }, []);
 
 
+  // Mål søkeflisens topp-posisjon (viewport-relativ ved scroll=0) slik at
+  // bakgrunns-animasjonen (regn/snø/skyer) kan stoppes akkurat der.
+  // Høyden holdes konstant under scrolling.
+  const searchRef = useRef<HTMLAnchorElement>(null);
+  const [bgHeight, setBgHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const measure = () => {
+      const el = searchRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const top = rect.top + window.scrollY; // absolutt dokument-Y
+      // Kutt litt før selve flisen så dråpene fader ut mot kanten
+      setBgHeight(Math.max(120, Math.round(top - 4)));
+    };
+    measure();
+    const t = setTimeout(measure, 300);
+    window.addEventListener("resize", measure);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
+
   return (
     <PageShell>
       <div
