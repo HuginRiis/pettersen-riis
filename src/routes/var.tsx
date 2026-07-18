@@ -1094,7 +1094,7 @@ function TempUnitSelect() {
 }
 
 function toneCardCn(tone: TileTone, extra = ""): string {
-  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 ${tileToneClasses(tone)} ${extra}`;
+  return `relative overflow-hidden rounded-2xl backdrop-blur-xl shadow-lg shadow-black/10 p-4 [contain:layout_paint_style] ${tileToneClasses(tone)} ${extra}`;
 }
 
 
