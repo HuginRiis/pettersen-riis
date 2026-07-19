@@ -895,7 +895,7 @@ main .container {
 .wx-clouds { position: absolute; inset: 0; overflow: hidden; }
 .wx-cloud {
   position: absolute;
-  left: -35%;
+  left: -55%;
   width: 520px; height: 240px;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 240'><defs><radialGradient id='puff' cx='50%25' cy='38%25' r='58%25'><stop offset='0%25' stop-color='%23ffffff' stop-opacity='1'/><stop offset='45%25' stop-color='%23f4f7fc' stop-opacity='0.95'/><stop offset='78%25' stop-color='%23b8c3d4' stop-opacity='0.55'/><stop offset='100%25' stop-color='%238a97ad' stop-opacity='0'/></radialGradient><radialGradient id='hi' cx='50%25' cy='20%25' r='40%25'><stop offset='0%25' stop-color='%23ffffff' stop-opacity='0.9'/><stop offset='70%25' stop-color='%23ffffff' stop-opacity='0.15'/><stop offset='100%25' stop-color='%23ffffff' stop-opacity='0'/></radialGradient><radialGradient id='shd' cx='50%25' cy='88%25' r='60%25'><stop offset='0%25' stop-color='%232b3a54' stop-opacity='0.42'/><stop offset='60%25' stop-color='%232b3a54' stop-opacity='0.12'/><stop offset='100%25' stop-color='%232b3a54' stop-opacity='0'/></radialGradient><filter id='blur1'><feGaussianBlur stdDeviation='4'/></filter><filter id='blur2'><feGaussianBlur stdDeviation='7'/></filter></defs><g filter='url(%23blur2)' opacity='0.6'><ellipse cx='260' cy='170' rx='230' ry='42' fill='url(%23shd)'/></g><g filter='url(%23blur1)'><ellipse cx='140' cy='150' rx='80' ry='55' fill='url(%23puff)'/><ellipse cx='210' cy='120' rx='105' ry='72' fill='url(%23puff)'/><ellipse cx='300' cy='108' rx='120' ry='80' fill='url(%23puff)'/><ellipse cx='380' cy='128' rx='95' ry='65' fill='url(%23puff)'/><ellipse cx='440' cy='150' rx='72' ry='48' fill='url(%23puff)'/><ellipse cx='245' cy='158' rx='95' ry='38' fill='url(%23puff)'/><ellipse cx='345' cy='158' rx='90' ry='36' fill='url(%23puff)'/></g><g filter='url(%23blur1)' opacity='0.75'><ellipse cx='230' cy='95' rx='90' ry='42' fill='url(%23hi)'/><ellipse cx='330' cy='88' rx='95' ry='40' fill='url(%23hi)'/></g></svg>");
   background-repeat: no-repeat;
@@ -906,8 +906,8 @@ main .container {
   filter: drop-shadow(0 10px 22px rgba(20, 30, 55, 0.15));
 }
 @keyframes wx-cumulus-drift {
-  from { transform: translate3d(0,0,0); }
-  to   { transform: translate3d(160vw,0,0); }
+  from { transform: translate3d(-20vw,0,0); }
+  to   { transform: translate3d(180vw,0,0); }
 }
 
 
