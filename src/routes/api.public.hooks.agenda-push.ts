@@ -234,7 +234,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[flights-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, weatherSummary, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage, flights }), {
+          let loans = { checked: 0, sent: 0, errors: 0 };
+          try {
+            const lnmod = await import("@/lib/loans-push.server");
+            loans = await lnmod.processLoanNotifications();
+          } catch (err) {
+            console.error("[loans-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, weatherSummary, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage, flights, loans }), {
             headers: { "Content-Type": "application/json" },
           });
 

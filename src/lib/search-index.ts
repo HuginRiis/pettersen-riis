@@ -121,6 +121,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["kvitteringer", "lønnsslipp", "payslip", "kvittering", "regning"],
   },
   {
+    title: "Utlån & Lånt",
+    path: "/utlan",
+    section: "Hjemmet",
+    description: "Ting jeg har lånt bort eller lånt inn — med bilde og påminnelse.",
+    keywords: ["utlån", "lånt", "låne", "lån", "bok", "verktøy", "påminnelse"],
+  },
+  {
     title: "Skatte-utregningen",
     path: "/skatte-utregningen",
     section: "Økonomi",

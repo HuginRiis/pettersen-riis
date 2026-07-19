@@ -36,6 +36,7 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/kvitteringer", label: "Kvitteringer" },
+  { to: "/utlan", label: "Utlån & Lånt" },
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },

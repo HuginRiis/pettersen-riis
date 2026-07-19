@@ -62,6 +62,7 @@ import hallStrom from "@/assets/stromkroniken.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
 import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
+import hallUtlan from "@/assets/got-utlan.jpg";
 
 import hallLys from "@/assets/got-lys.jpg";
 import hallVarme from "@/assets/got-varme.jpg";
@@ -338,6 +339,7 @@ function Home() {
           {showHall("/steintavle") && <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
           {showHall("/steintavle-2") && <HallCard to="/steintavle-2" title="Steintavle 2" desc="Stor visning — temperatur, regn og vind på borgen." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
+          {showHall("/utlan") && <HallCard to="/utlan" title="Utlån & Lånt" desc="Ting husets folk har lånt bort eller lånt inn." icon="📦" image={hallUtlan} locked={!isAuthed} />}
           
           {showHall("/push-varslinger") && <HallCard to="/push-varslinger" title="Innstillinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<HallBadgeStack><PushTodayBadge inline /></HallBadgeStack>} />}
         </div>
@@ -666,6 +668,7 @@ function HallCard({
     | "/steintavle"
     | "/steintavle-2"
     | "/kvitteringer"
+    | "/utlan"
     | "/push-varslinger";
 
   title: string;
