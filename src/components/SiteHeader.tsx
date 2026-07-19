@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3 } from "lucide-react";
+  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -49,6 +49,7 @@ type RoutePath =
   | "/steintavle"
   | "/steintavle-2"
   | "/kvitteringer"
+  | "/utlan"
   
   | "/skatte-utregningen"
   | "/gressklipper"
@@ -86,6 +87,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/varme": Flame,
   "/stromkroniken": Zap,
   "/kvitteringer": Receipt,
+  "/utlan": PackageOpen,
   
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
@@ -119,6 +121,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/varme": "#fb923c",
   "/stromkroniken": "#eab308",
   "/kvitteringer": "#94a3b8",
+  "/utlan": "#c084fc",
   
   "/trening": "#ef4444",
   "/varsler": "#dc2626",
@@ -158,6 +161,7 @@ const navLinks: NavLink[] = [
   { to: "/stovsugeren", label: "Støvsugeren" },
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/kvitteringer", label: "Kvitteringer" },
+  { to: "/utlan", label: "Utlån & Lånt" },
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },

@@ -16,6 +16,7 @@ import { Route as VarkartRouteImport } from './routes/varkart'
 import { Route as VarfavoritterRouteImport } from './routes/varfavoritter'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
+import { Route as UtlanRouteImport } from './routes/utlan'
 import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
@@ -93,6 +94,11 @@ const VarRoute = VarRouteImport.update({
 const VakttarnetRoute = VakttarnetRouteImport.update({
   id: '/vakttarnet',
   path: '/vakttarnet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UtlanRoute = UtlanRouteImport.update({
+  id: '/utlan',
+  path: '/utlan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TurerRoute = TurerRouteImport.update({
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
+  '/utlan': typeof UtlanRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varfavoritter': typeof VarfavoritterRoute
@@ -397,6 +404,7 @@ export interface FileRoutesByTo {
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
+  '/utlan': typeof UtlanRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varfavoritter': typeof VarfavoritterRoute
@@ -450,6 +458,7 @@ export interface FileRoutesById {
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
   '/turer': typeof TurerRoute
+  '/utlan': typeof UtlanRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
   '/varfavoritter': typeof VarfavoritterRoute
@@ -504,6 +513,7 @@ export interface FileRouteTypes {
     | '/stromkroniken'
     | '/trening'
     | '/turer'
+    | '/utlan'
     | '/vakttarnet'
     | '/var'
     | '/varfavoritter'
@@ -556,6 +566,7 @@ export interface FileRouteTypes {
     | '/stromkroniken'
     | '/trening'
     | '/turer'
+    | '/utlan'
     | '/vakttarnet'
     | '/var'
     | '/varfavoritter'
@@ -608,6 +619,7 @@ export interface FileRouteTypes {
     | '/stromkroniken'
     | '/trening'
     | '/turer'
+    | '/utlan'
     | '/vakttarnet'
     | '/var'
     | '/varfavoritter'
@@ -661,6 +673,7 @@ export interface RootRouteChildren {
   StromkronikenRoute: typeof StromkronikenRoute
   TreningRoute: typeof TreningRoute
   TurerRoute: typeof TurerRoute
+  UtlanRoute: typeof UtlanRoute
   VakttarnetRoute: typeof VakttarnetRoute
   VarRoute: typeof VarRoute
   VarfavoritterRoute: typeof VarfavoritterRoute
@@ -739,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/vakttarnet'
       fullPath: '/vakttarnet'
       preLoaderRoute: typeof VakttarnetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/utlan': {
+      id: '/utlan'
+      path: '/utlan'
+      fullPath: '/utlan'
+      preLoaderRoute: typeof UtlanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/turer': {
@@ -1069,6 +1089,7 @@ const rootRouteChildren: RootRouteChildren = {
   StromkronikenRoute: StromkronikenRoute,
   TreningRoute: TreningRoute,
   TurerRoute: TurerRoute,
+  UtlanRoute: UtlanRoute,
   VakttarnetRoute: VakttarnetRoute,
   VarRoute: VarRoute,
   VarfavoritterRoute: VarfavoritterRoute,
