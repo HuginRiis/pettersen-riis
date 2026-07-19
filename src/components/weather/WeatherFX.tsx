@@ -1208,28 +1208,26 @@ const GlassPaneFX = memo(function GlassPaneFX({
       )}
 
 
-      {/* CLOUDY / PARTLY: large drifting clouds */}
-      {isCloudy &&
-        clouds.map((c, i) => (
-          <svg
-            key={`c${i}`}
-            viewBox="0 0 64 28"
-            className="absolute animate-wx-cloud"
-            style={{
-              top: `${c.top}%`,
-              width: 260 * c.scale,
-              opacity: c.op,
-              animationDuration: `${c.dur}s`,
-              animationDelay: `${c.delay}s`,
-              filter: "blur(1.5px)",
-            }}
-          >
-            <path
-              d="M10 22 Q4 22 4 16 Q4 10 11 10 Q12 4 20 4 Q28 4 30 10 Q38 8 42 14 Q52 14 52 20 Q52 24 46 24 L12 24 Q10 24 10 22 Z"
-              fill="white"
+      {/* CLOUDY / PARTLY: realistic cumulus with volumetric shading */}
+      {isCloudy && (
+        <div className="wx-clouds absolute inset-0 overflow-hidden pointer-events-none">
+          {clouds.map((c, i) => (
+            <div
+              key={`c${i}`}
+              className="wx-cloud"
+              style={{
+                top: `${c.top}%`,
+                width: `${520 * c.scale}px`,
+                height: `${240 * c.scale}px`,
+                opacity: c.op,
+                animationDuration: `${c.dur}s`,
+                animationDelay: `${c.delay}s`,
+              }}
             />
-          </svg>
-        ))}
+          ))}
+        </div>
+      )}
+
 
       {/* FOG */}
       {isFog && (
