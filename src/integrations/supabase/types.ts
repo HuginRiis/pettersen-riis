@@ -1631,6 +1631,63 @@ export type Database = {
         }
         Relationships: []
       }
+      loans: {
+        Row: {
+          added_by: string
+          created_at: string
+          direction: string
+          expected_return: string | null
+          id: string
+          image_path: string | null
+          image_url: string | null
+          item: string
+          lent_at: string
+          notes: string | null
+          overdue_notified_at: string | null
+          person: string
+          recipient: string
+          reminder_sent_at: string | null
+          returned_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string
+          created_at?: string
+          direction: string
+          expected_return?: string | null
+          id?: string
+          image_path?: string | null
+          image_url?: string | null
+          item: string
+          lent_at?: string
+          notes?: string | null
+          overdue_notified_at?: string | null
+          person: string
+          recipient?: string
+          reminder_sent_at?: string | null
+          returned_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          created_at?: string
+          direction?: string
+          expected_return?: string | null
+          id?: string
+          image_path?: string | null
+          image_url?: string | null
+          item?: string
+          lent_at?: string
+          notes?: string | null
+          overdue_notified_at?: string | null
+          person?: string
+          recipient?: string
+          reminder_sent_at?: string | null
+          returned_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       login_notification_prefs: {
         Row: {
           created_at: string
