@@ -1264,13 +1264,20 @@ const GlassPaneFX = memo(function GlassPaneFX({
                 </defs>
                 <g filter={`url(#wispB${i})`}>
                   <path
-                    d="M10,55 Q80,20 160,45 Q240,70 320,35 Q370,15 395,25 Q360,55 300,60 Q220,68 150,72 Q80,76 10,55 Z"
+                    d="M5,55 Q100,48 200,52 Q300,56 395,50 Q320,60 210,60 Q100,60 5,55 Z"
                     fill={`url(#wispG${i})`}
                   />
                   <path
-                    d="M40,60 Q120,40 200,55 Q280,68 360,50"
-                    stroke="rgba(255,255,255,0.6)"
-                    strokeWidth="4"
+                    d="M20,54 Q120,50 220,54 Q310,57 380,52"
+                    stroke="rgba(255,255,255,0.55)"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M60,58 Q160,55 260,58 Q330,60 370,57"
+                    stroke="rgba(255,255,255,0.35)"
+                    strokeWidth="1.5"
                     fill="none"
                     strokeLinecap="round"
                   />
@@ -1280,11 +1287,12 @@ const GlassPaneFX = memo(function GlassPaneFX({
           ))}
           <style>{`
             @keyframes wxWispDrift {
-              0% { transform: translateX(-6vw); }
-              100% { transform: translateX(10vw); }
+              0% { transform: translateX(-40vw); }
+              100% { transform: translateX(80vw); }
             }
             .wx-wisp-drift { animation-name: wxWispDrift; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
           `}</style>
+
 
         </div>
       )}
