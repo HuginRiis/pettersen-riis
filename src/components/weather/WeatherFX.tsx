@@ -961,8 +961,8 @@ const GlassPaneFX = memo(function GlassPaneFX({
       Array.from({ length: wispCount }).map((_, i) => ({
         top: (i * 97) % 92 + Math.random() * 6,
         left: -30 + Math.random() * 60,
-        w: 320 + Math.random() * 380,
-        h: 34 + Math.random() * 26, // litt fyldigere
+        w: 240 + Math.random() * 280, // litt mindre
+        h: 26 + Math.random() * 20, // litt mindre
         rot: Math.random() * 6 - 3,
         op: 0.55 + Math.random() * 0.3,
         dur: 60 + Math.random() * 60,
@@ -1039,7 +1039,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
         top: 4 + (i * 82) / Math.max(1, cloudCount) + Math.random() * 10,
         delay: -Math.random() * 90,
         dur: 55 + Math.random() * 70,
-        scale: 1.1 + Math.random() * 1.6,
+        scale: 0.75 + Math.random() * 1.1, // litt mindre enn før
         op:
           kind === "cloudy"
             ? 0.28 + Math.random() * 0.22
@@ -1295,8 +1295,8 @@ const GlassPaneFX = memo(function GlassPaneFX({
               className="wx-cloud"
               style={{
                 top: `${c.top}%`,
-                width: `${520 * c.scale}px`,
-                height: `${240 * c.scale}px`,
+                width: `${380 * c.scale}px`,
+                height: `${175 * c.scale}px`,
                 opacity: c.op,
                 animationDuration: `${c.dur}s`,
                 animationDelay: `${c.delay}s`,
