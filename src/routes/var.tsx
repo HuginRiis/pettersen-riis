@@ -3354,11 +3354,9 @@ function SkydekkeSceneFX({
   const baseDur = 26; // sekunder tvers over ved windMult=1
   // Antall skyer skalerer med dekning
   const cloudCount = Math.round(2 + cov * 6); // 2..8
-  // Sol synlig helt opp mot 80 % skydekke (også på delvis skyet). Full styrke
-  // under 30 %, fader lineært ut mot 80 %.
-  const sunOpacity = cov <= 0.3 ? 1 : cov < 0.8 ? 1 - (cov - 0.3) / 0.5 : 0;
   // Skyfarge blir mørkere jo mer regn
   const rainMix = Math.max(rainIntensity, rainProb / 100);
+
   const cloudTop = `hsl(210 15% ${Math.round(96 - rainMix * 40)}%)`;
   const cloudBot = `hsl(215 18% ${Math.round(78 - rainMix * 42)}%)`;
   const cloudShadow = `hsl(220 25% ${Math.round(55 - rainMix * 30)}%)`;
@@ -3395,89 +3393,6 @@ function SkydekkeSceneFX({
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Sol som titter frem kun når det er under 40 % skydekke */}
-      {sunOpacity > 0 && (
-        <div
-          className="absolute"
-          style={{
-            top: "8%",
-            right: "10%",
-            width: 140,
-            height: 140,
-            opacity: sunOpacity,
-            transition: "opacity 800ms ease",
-            pointerEvents: "none",
-          }}
-        >
-          {/* Ytre glød / haze */}
-          <div
-            className="absolute inset-0"
-            style={{
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, rgba(255,246,200,0.55) 18%, rgba(180,210,255,0.25) 42%, rgba(180,210,255,0) 70%)",
-              filter: "blur(2px)",
-              animation: "skyDekkeSunPulse 6s ease-in-out infinite",
-            }}
-          />
-          {/* Solstråler */}
-          <svg
-            viewBox="0 0 200 200"
-            className="absolute inset-0 w-full h-full"
-            style={{ animation: "skyDekkeSunSpin 60s linear infinite" }}
-            aria-hidden
-          >
-            <defs>
-              <radialGradient id="sdSunRayFade" cx="50%" cy="50%" r="50%">
-                <stop offset="30%" stopColor="rgba(255,255,255,0.95)" />
-                <stop offset="70%" stopColor="rgba(255,240,180,0.35)" />
-                <stop offset="100%" stopColor="rgba(255,240,180,0)" />
-              </radialGradient>
-            </defs>
-            <g stroke="url(#sdSunRayFade)" strokeLinecap="round">
-              {Array.from({ length: 16 }).map((_, i) => {
-                const a = (i * Math.PI * 2) / 16;
-                const x1 = 100 + Math.cos(a) * 32;
-                const y1 = 100 + Math.sin(a) * 32;
-                const x2 = 100 + Math.cos(a) * 96;
-                const y2 = 100 + Math.sin(a) * 96;
-                const w = i % 2 === 0 ? 3.2 : 1.4;
-                return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={w} />;
-              })}
-            </g>
-          </svg>
-          {/* Hvit kjerne */}
-          <div
-            className="absolute"
-            style={{
-              top: "50%",
-              left: "50%",
-              width: 58,
-              height: 58,
-              marginLeft: -29,
-              marginTop: -29,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle at 45% 40%, #ffffff 0%, #ffffff 32%, #fff5c8 62%, rgba(255,220,140,0) 100%)",
-              boxShadow: `0 0 30px rgba(255,255,255,${0.9 * sunOpacity}), 0 0 60px rgba(255,220,140,${0.7 * sunOpacity}), 0 0 100px rgba(255,190,90,${0.45 * sunOpacity})`,
-              animation: "skyDekkeSunPulse 4s ease-in-out infinite",
-            }}
-          />
-          {/* Liten lens-flare prikk */}
-          <div
-            className="absolute"
-            style={{
-              top: "78%",
-              left: "18%",
-              width: 14,
-              height: 14,
-              borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(180,210,255,0.6) 0%, rgba(180,210,255,0) 70%)",
-            }}
-          />
-        </div>
-      )}
       {/* Regn */}
       {rainDrops.length > 0 && (
         <div className="absolute inset-0" style={{ opacity: Math.min(1, 0.5 + rainMix * 0.6) }}>
@@ -3539,14 +3454,6 @@ function SkydekkeSceneFX({
           0% { transform: translateY(-10px); opacity: 0; }
           10% { opacity: 1; }
           100% { transform: translateY(220px); opacity: 0; }
-        }
-        @keyframes skyDekkeSunPulse {
-          0%,100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-        @keyframes skyDekkeSunSpin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>
