@@ -960,17 +960,18 @@ const GlassPaneFX = memo(function GlassPaneFX({
     () =>
       Array.from({ length: wispCount }).map((_, i) => ({
         top: (i * 97) % 92 + Math.random() * 6,
-        left: -30 + Math.random() * 60, // start langt til venstre, utenfor viewport
-        w: 260 + Math.random() * 340,
-        h: 18 + Math.random() * 22, // flatere
-        rot: Math.random() * 8 - 4, // nesten horisontalt
-        op: 0.3 + Math.random() * 0.3,
-        dur: 60 + Math.random() * 60, // raskere drift
+        left: -30 + Math.random() * 60,
+        w: 320 + Math.random() * 380,
+        h: 34 + Math.random() * 26, // litt fyldigere
+        rot: Math.random() * 6 - 3,
+        op: 0.55 + Math.random() * 0.3,
+        dur: 60 + Math.random() * 60,
         delay: -Math.random() * 80,
         flip: Math.random() > 0.5 ? -1 : 1,
       })),
     [wispCount],
   );
+
 
 
 
@@ -1245,7 +1246,6 @@ const GlassPaneFX = memo(function GlassPaneFX({
                   width: "100%",
                   height: "100%",
                   transform: `rotate(${w.rot}deg) scaleX(${w.flip})`,
-                  filter: "blur(1.2px)",
                   mixBlendMode: "screen",
                 }}
                 viewBox="0 0 400 100"
@@ -1253,36 +1253,24 @@ const GlassPaneFX = memo(function GlassPaneFX({
                 aria-hidden
               >
                 <defs>
-                  <radialGradient id={`wispG${i}`} cx="50%" cy="50%" r="60%">
-                    <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
-                    <stop offset="45%" stopColor="rgba(255,255,255,0.55)" />
+                  <radialGradient id={`wispG${i}`} cx="50%" cy="55%" r="55%" fx="45%" fy="55%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,1)" />
+                    <stop offset="35%" stopColor="rgba(255,255,255,0.85)" />
+                    <stop offset="70%" stopColor="rgba(255,255,255,0.3)" />
                     <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                   </radialGradient>
-                  <filter id={`wispB${i}`}>
-                    <feGaussianBlur stdDeviation="2.2" />
+                  <filter id={`wispB${i}`} x="-20%" y="-50%" width="140%" height="200%">
+                    <feGaussianBlur stdDeviation="6" />
                   </filter>
                 </defs>
                 <g filter={`url(#wispB${i})`}>
-                  <path
-                    d="M5,55 Q100,48 200,52 Q300,56 395,50 Q320,60 210,60 Q100,60 5,55 Z"
-                    fill={`url(#wispG${i})`}
-                  />
-                  <path
-                    d="M20,54 Q120,50 220,54 Q310,57 380,52"
-                    stroke="rgba(255,255,255,0.55)"
-                    strokeWidth="2.5"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M60,58 Q160,55 260,58 Q330,60 370,57"
-                    stroke="rgba(255,255,255,0.35)"
-                    strokeWidth="1.5"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
+                  <ellipse cx="200" cy="55" rx="180" ry="18" fill={`url(#wispG${i})`} />
+                  <ellipse cx="150" cy="52" rx="90" ry="12" fill="rgba(255,255,255,0.6)" />
+                  <ellipse cx="260" cy="58" rx="70" ry="10" fill="rgba(255,255,255,0.5)" />
+                  <ellipse cx="310" cy="54" rx="45" ry="7" fill="rgba(255,255,255,0.35)" />
                 </g>
               </svg>
+
             </div>
           ))}
           <style>{`
