@@ -960,17 +960,18 @@ const GlassPaneFX = memo(function GlassPaneFX({
     () =>
       Array.from({ length: wispCount }).map((_, i) => ({
         top: (i * 97) % 92 + Math.random() * 6,
-        left: -30 + Math.random() * 60, // start langt til venstre, utenfor viewport
-        w: 260 + Math.random() * 340,
-        h: 18 + Math.random() * 22, // flatere
-        rot: Math.random() * 8 - 4, // nesten horisontalt
-        op: 0.3 + Math.random() * 0.3,
-        dur: 60 + Math.random() * 60, // raskere drift
+        left: -30 + Math.random() * 60,
+        w: 320 + Math.random() * 380,
+        h: 34 + Math.random() * 26, // litt fyldigere
+        rot: Math.random() * 6 - 3,
+        op: 0.55 + Math.random() * 0.3,
+        dur: 60 + Math.random() * 60,
         delay: -Math.random() * 80,
         flip: Math.random() > 0.5 ? -1 : 1,
       })),
     [wispCount],
   );
+
 
 
 
