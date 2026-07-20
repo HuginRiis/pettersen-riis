@@ -1186,9 +1186,9 @@ const GlassPaneFX = memo(function GlassPaneFX({
             }}
           />
           <style>{`
-            @keyframes wxFxSunPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-            @keyframes wxFxSunSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            @keyframes wxFxSunPulse { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.04); filter: brightness(1.06); } }
           `}</style>
+
         </>
       )}
 
