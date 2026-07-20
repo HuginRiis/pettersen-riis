@@ -1098,70 +1098,55 @@ const GlassPaneFX = memo(function GlassPaneFX({
               <div
                 className="absolute"
                 style={{
-                  left: `calc(${leftPct}% - 140px)`,
-                  top: `calc(${topPct}% - 140px)`,
-                  width: 280,
-                  height: 280,
+                  left: `calc(${leftPct}% - 210px)`,
+                  top: `calc(${topPct}% - 210px)`,
+                  width: 420,
+                  height: 420,
                   pointerEvents: "none",
                   transition: "left 800ms ease, top 800ms ease",
                 }}
               >
-            {/* Ytre glød / haze */}
-            <div
-              className="absolute inset-0"
-              style={{
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, rgba(255,246,200,0.55) 18%, rgba(180,210,255,0.25) 42%, rgba(180,210,255,0) 70%)",
-                filter: "blur(3px)",
-                animation: "wxFxSunPulse 6s ease-in-out infinite",
-              }}
-            />
-            {/* Solstråler */}
-            <svg
-              viewBox="0 0 200 200"
-              className="absolute inset-0 w-full h-full"
-              style={{ animation: "wxFxSunSpin 60s linear infinite" }}
-              aria-hidden
-            >
-              <defs>
-                <radialGradient id="wxFxSunRayFade" cx="50%" cy="50%" r="50%">
-                  <stop offset="30%" stopColor="rgba(255,255,255,0.95)" />
-                  <stop offset="70%" stopColor="rgba(255,240,180,0.35)" />
-                  <stop offset="100%" stopColor="rgba(255,240,180,0)" />
-                </radialGradient>
-              </defs>
-              <g stroke="url(#wxFxSunRayFade)" strokeLinecap="round">
-                {Array.from({ length: 16 }).map((_, i) => {
-                  const a = (i * Math.PI * 2) / 16;
-                  const x1 = 100 + Math.cos(a) * 32;
-                  const y1 = 100 + Math.sin(a) * 32;
-                  const x2 = 100 + Math.cos(a) * 96;
-                  const y2 = 100 + Math.sin(a) * 96;
-                  const w = i % 2 === 0 ? 3.2 : 1.4;
-                  return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={w} />;
-                })}
-              </g>
-            </svg>
-            {/* Hvit kjerne */}
-            <div
-              className="absolute"
-              style={{
-                top: "50%",
-                left: "50%",
-                width: 116,
-                height: 116,
-                marginLeft: -58,
-                marginTop: -58,
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle at 45% 40%, #ffffff 0%, #ffffff 32%, #fff5c8 62%, rgba(255,220,140,0) 100%)",
-                boxShadow:
-                  "0 0 40px rgba(255,255,255,0.9), 0 0 90px rgba(255,220,140,0.7), 0 0 160px rgba(255,190,90,0.45)",
-                animation: "wxFxSunPulse 4s ease-in-out infinite",
-              }}
-            />
-          </div>
+                {/* Langt ytre haze — myk, naturlig glød mot himmelen */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(circle at 50% 50%, rgba(255,255,250,0.55) 0%, rgba(255,248,220,0.32) 12%, rgba(255,235,180,0.14) 26%, rgba(210,230,255,0.06) 44%, transparent 64%)",
+                    filter: "blur(24px)",
+                  }}
+                />
+                {/* Mellomglow — varm, litt mer definert */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(circle at 50% 50%, rgba(255,255,245,0.85) 0%, rgba(255,245,200,0.50) 14%, rgba(255,225,150,0.22) 30%, transparent 52%)",
+                    filter: "blur(10px)",
+                    animation: "wxFxSunPulse 10s ease-in-out infinite",
+                  }}
+                />
+                {/* Myk kjerne — ikke skarp kant, nesten som i foto */}
+                <div
+                  className="absolute"
+                  style={{
+                    top: "50%",
+                    left: "50%",
+                    width: 86,
+                    height: 86,
+                    marginLeft: -43,
+                    marginTop: -43,
+                    borderRadius: "50%",
+                    background:
+                      "radial-gradient(circle at 45% 40%, rgba(255,255,255,0.98) 0%, rgba(255,250,225,0.78) 28%, rgba(255,235,170,0.32) 68%, transparent 100%)",
+                    filter: "blur(5px)",
+                    boxShadow:
+                      "0 0 50px rgba(255,250,230,0.85), 0 0 110px rgba(255,230,160,0.55), 0 0 200px rgba(255,205,120,0.28)",
+                  }}
+                />
+              </div>
+
           {/* Lens flare ghosts — langs anti-diagonalen fra sola gjennom senter */}
           <div className="absolute inset-0 pointer-events-none">
             {ghosts.map((g, gi) => {
@@ -1201,9 +1186,9 @@ const GlassPaneFX = memo(function GlassPaneFX({
             }}
           />
           <style>{`
-            @keyframes wxFxSunPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-            @keyframes wxFxSunSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            @keyframes wxFxSunPulse { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.04); filter: brightness(1.06); } }
           `}</style>
+
         </>
       )}
 
