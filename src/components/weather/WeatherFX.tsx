@@ -959,18 +959,19 @@ const GlassPaneFX = memo(function GlassPaneFX({
   const wisps = useMemo(
     () =>
       Array.from({ length: wispCount }).map((_, i) => ({
-        top: (i * 97) % 92 + Math.random() * 6, // spredt over hele høyden
-        left: Math.random() * 100,
-        w: 180 + Math.random() * 260,
-        h: 40 + Math.random() * 60,
-        rot: Math.random() * 40 - 20,
-        op: 0.35 + Math.random() * 0.35,
-        dur: 90 + Math.random() * 120,
-        delay: -Math.random() * 120,
+        top: (i * 97) % 92 + Math.random() * 6,
+        left: -30 + Math.random() * 60, // start langt til venstre, utenfor viewport
+        w: 260 + Math.random() * 340,
+        h: 18 + Math.random() * 22, // flatere
+        rot: Math.random() * 8 - 4, // nesten horisontalt
+        op: 0.3 + Math.random() * 0.3,
+        dur: 60 + Math.random() * 60, // raskere drift
+        delay: -Math.random() * 80,
         flip: Math.random() > 0.5 ? -1 : 1,
       })),
     [wispCount],
   );
+
 
 
   // Client-only sol-posisjon (0..1 sunrise→sunset) — null på SSR og før mount
@@ -1263,13 +1264,20 @@ const GlassPaneFX = memo(function GlassPaneFX({
                 </defs>
                 <g filter={`url(#wispB${i})`}>
                   <path
-                    d="M10,55 Q80,20 160,45 Q240,70 320,35 Q370,15 395,25 Q360,55 300,60 Q220,68 150,72 Q80,76 10,55 Z"
+                    d="M5,55 Q100,48 200,52 Q300,56 395,50 Q320,60 210,60 Q100,60 5,55 Z"
                     fill={`url(#wispG${i})`}
                   />
                   <path
-                    d="M40,60 Q120,40 200,55 Q280,68 360,50"
-                    stroke="rgba(255,255,255,0.6)"
-                    strokeWidth="4"
+                    d="M20,54 Q120,50 220,54 Q310,57 380,52"
+                    stroke="rgba(255,255,255,0.55)"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M60,58 Q160,55 260,58 Q330,60 370,57"
+                    stroke="rgba(255,255,255,0.35)"
+                    strokeWidth="1.5"
                     fill="none"
                     strokeLinecap="round"
                   />
@@ -1279,11 +1287,12 @@ const GlassPaneFX = memo(function GlassPaneFX({
           ))}
           <style>{`
             @keyframes wxWispDrift {
-              0% { transform: translateX(-6vw); }
-              100% { transform: translateX(10vw); }
+              0% { transform: translateX(-40vw); }
+              100% { transform: translateX(80vw); }
             }
             .wx-wisp-drift { animation-name: wxWispDrift; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
           `}</style>
+
 
         </div>
       )}
