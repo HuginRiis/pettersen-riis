@@ -3455,14 +3455,6 @@ function SkydekkeSceneFX({
           10% { opacity: 1; }
           100% { transform: translateY(220px); opacity: 0; }
         }
-        @keyframes skyDekkeSunPulse {
-          0%,100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-        @keyframes skyDekkeSunSpin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
       `}</style>
     </div>
   );
