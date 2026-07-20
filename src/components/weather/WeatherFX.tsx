@@ -1005,19 +1005,27 @@ const GlassPaneFX = memo(function GlassPaneFX({
     [starCount],
   );
 
-  // Drifting clouds for cloudy/fair
-  const cloudCount = isCloudy ? 4 : 0;
+  // Drifting clouds for cloudy/fair — tettere skydekke jo høyere intensitet
+  const cloudCount = isCloudy
+    ? kind === "cloudy"
+      ? Math.round(9 + intensity * 9) // 9–18 skyer ved overskyet
+      : Math.round(4 + intensity * 4) // 4–8 ved delvis
+    : 0;
   const clouds = useMemo(
     () =>
       Array.from({ length: cloudCount }).map((_, i) => ({
-        top: 8 + (i * 70) / Math.max(1, cloudCount) + Math.random() * 8,
-        delay: -Math.random() * 60,
-        dur: 60 + Math.random() * 60,
-        scale: 1.2 + Math.random() * 1.4,
-        op: 0.18 + Math.random() * 0.18,
+        top: 4 + (i * 82) / Math.max(1, cloudCount) + Math.random() * 10,
+        delay: -Math.random() * 90,
+        dur: 55 + Math.random() * 70,
+        scale: 1.1 + Math.random() * 1.6,
+        op:
+          kind === "cloudy"
+            ? 0.28 + Math.random() * 0.22
+            : 0.18 + Math.random() * 0.18,
       })),
-    [cloudCount],
+    [cloudCount, kind],
   );
+
 
   if (!_mounted) return null;
 
