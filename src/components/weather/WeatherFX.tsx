@@ -1221,6 +1221,66 @@ const GlassPaneFX = memo(function GlassPaneFX({
       )}
 
 
+
+      {/* LETT SKYET: cirrus-wisps spredt over hele siden */}
+      {isWispy && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {wisps.map((w, i) => (
+            <svg
+              key={`wisp${i}`}
+              className="absolute wx-wisp-drift"
+              style={{
+                top: `${w.top}%`,
+                left: `${w.left}%`,
+                width: w.w,
+                height: w.h,
+                opacity: w.op,
+                transform: `rotate(${w.rot}deg) scaleX(${w.flip})`,
+                animationDuration: `${w.dur}s`,
+                animationDelay: `${w.delay}s`,
+                filter: "blur(1.2px)",
+                mixBlendMode: "screen",
+              }}
+              viewBox="0 0 400 100"
+              preserveAspectRatio="none"
+              aria-hidden
+            >
+              <defs>
+                <radialGradient id={`wispG${i}`} cx="50%" cy="50%" r="60%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+                  <stop offset="45%" stopColor="rgba(255,255,255,0.55)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                </radialGradient>
+                <filter id={`wispB${i}`}>
+                  <feGaussianBlur stdDeviation="2.2" />
+                </filter>
+              </defs>
+              <g filter={`url(#wispB${i})`}>
+                <path
+                  d="M10,55 Q80,20 160,45 Q240,70 320,35 Q370,15 395,25 Q360,55 300,60 Q220,68 150,72 Q80,76 10,55 Z"
+                  fill={`url(#wispG${i})`}
+                />
+                <path
+                  d="M40,60 Q120,40 200,55 Q280,68 360,50"
+                  stroke="rgba(255,255,255,0.6)"
+                  strokeWidth="4"
+                  fill="none"
+                  strokeLinecap="round"
+                />
+              </g>
+            </svg>
+          ))}
+          <style>{`
+            @keyframes wxWispDrift {
+              0% { transform: translateX(-8vw) rotate(var(--r,0deg)); }
+              100% { transform: translateX(12vw) rotate(var(--r,0deg)); }
+            }
+            .wx-wisp-drift { animation-name: wxWispDrift; animation-timing-function: linear; animation-iteration-count: infinite; }
+          `}</style>
+        </div>
+      )}
+
+
       {/* CLOUDY / PARTLY: realistic cumulus with volumetric shading */}
       {isCloudy && (
         <div className="wx-clouds absolute inset-0 overflow-hidden pointer-events-none">
