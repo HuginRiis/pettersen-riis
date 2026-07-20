@@ -950,8 +950,28 @@ const GlassPaneFX = memo(function GlassPaneFX({
   const isClearDay = kind === "clear" || kind === "fair" || kind === "partly";
   const isNight = kind === "night" || kind === "night-clear";
   const isCloudy = kind === "cloudy" || kind === "partly";
+  const isWispy = kind === "fair" || kind === "partly"; // lett skyet → cirrus-flak
   const isFog = kind === "fog";
   const isThunder = kind === "thunder";
+
+  // Cirrus-wisps spredt over hele siden (lett skyet)
+  const wispCount = isWispy ? (kind === "partly" ? 14 : 10) : 0;
+  const wisps = useMemo(
+    () =>
+      Array.from({ length: wispCount }).map((_, i) => ({
+        top: (i * 97) % 92 + Math.random() * 6, // spredt over hele høyden
+        left: Math.random() * 100,
+        w: 180 + Math.random() * 260,
+        h: 40 + Math.random() * 60,
+        rot: Math.random() * 40 - 20,
+        op: 0.35 + Math.random() * 0.35,
+        dur: 90 + Math.random() * 120,
+        delay: -Math.random() * 120,
+        flip: Math.random() > 0.5 ? -1 : 1,
+      })),
+    [wispCount],
+  );
+
 
   // Client-only sol-posisjon (0..1 sunrise→sunset) — null på SSR og før mount
   // for å unngå hydration-mismatch. Oppdaterer hvert minutt.
