@@ -950,8 +950,28 @@ const GlassPaneFX = memo(function GlassPaneFX({
   const isClearDay = kind === "clear" || kind === "fair" || kind === "partly";
   const isNight = kind === "night" || kind === "night-clear";
   const isCloudy = kind === "cloudy" || kind === "partly";
+  const isWispy = kind === "fair" || kind === "partly"; // lett skyet → cirrus-flak
   const isFog = kind === "fog";
   const isThunder = kind === "thunder";
+
+  // Cirrus-wisps spredt over hele siden (lett skyet)
+  const wispCount = isWispy ? (kind === "partly" ? 14 : 10) : 0;
+  const wisps = useMemo(
+    () =>
+      Array.from({ length: wispCount }).map((_, i) => ({
+        top: (i * 97) % 92 + Math.random() * 6, // spredt over hele høyden
+        left: Math.random() * 100,
+        w: 180 + Math.random() * 260,
+        h: 40 + Math.random() * 60,
+        rot: Math.random() * 40 - 20,
+        op: 0.35 + Math.random() * 0.35,
+        dur: 90 + Math.random() * 120,
+        delay: -Math.random() * 120,
+        flip: Math.random() > 0.5 ? -1 : 1,
+      })),
+    [wispCount],
+  );
+
 
   // Client-only sol-posisjon (0..1 sunrise→sunset) — null på SSR og før mount
   // for å unngå hydration-mismatch. Oppdaterer hvert minutt.
@@ -1198,6 +1218,74 @@ const GlassPaneFX = memo(function GlassPaneFX({
           `}</style>
 
         </>
+      )}
+
+
+
+      {/* LETT SKYET: cirrus-wisps spredt over hele siden */}
+      {isWispy && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {wisps.map((w, i) => (
+            <div
+              key={`wisp${i}`}
+              className="absolute wx-wisp-drift"
+              style={{
+                top: `${w.top}%`,
+                left: `${w.left}%`,
+                width: w.w,
+                height: w.h,
+                opacity: w.op,
+                animationDuration: `${w.dur}s`,
+                animationDelay: `${w.delay}s`,
+              }}
+            >
+              <svg
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  transform: `rotate(${w.rot}deg) scaleX(${w.flip})`,
+                  filter: "blur(1.2px)",
+                  mixBlendMode: "screen",
+                }}
+                viewBox="0 0 400 100"
+                preserveAspectRatio="none"
+                aria-hidden
+              >
+                <defs>
+                  <radialGradient id={`wispG${i}`} cx="50%" cy="50%" r="60%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+                    <stop offset="45%" stopColor="rgba(255,255,255,0.55)" />
+                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                  </radialGradient>
+                  <filter id={`wispB${i}`}>
+                    <feGaussianBlur stdDeviation="2.2" />
+                  </filter>
+                </defs>
+                <g filter={`url(#wispB${i})`}>
+                  <path
+                    d="M10,55 Q80,20 160,45 Q240,70 320,35 Q370,15 395,25 Q360,55 300,60 Q220,68 150,72 Q80,76 10,55 Z"
+                    fill={`url(#wispG${i})`}
+                  />
+                  <path
+                    d="M40,60 Q120,40 200,55 Q280,68 360,50"
+                    stroke="rgba(255,255,255,0.6)"
+                    strokeWidth="4"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                </g>
+              </svg>
+            </div>
+          ))}
+          <style>{`
+            @keyframes wxWispDrift {
+              0% { transform: translateX(-6vw); }
+              100% { transform: translateX(10vw); }
+            }
+            .wx-wisp-drift { animation-name: wxWispDrift; animation-timing-function: linear; animation-iteration-count: infinite; will-change: transform; }
+          `}</style>
+
+        </div>
       )}
 
 
