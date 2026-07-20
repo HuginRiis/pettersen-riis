@@ -3354,11 +3354,9 @@ function SkydekkeSceneFX({
   const baseDur = 26; // sekunder tvers over ved windMult=1
   // Antall skyer skalerer med dekning
   const cloudCount = Math.round(2 + cov * 6); // 2..8
-  // Sol synlig helt opp mot 80 % skydekke (også på delvis skyet). Full styrke
-  // under 30 %, fader lineært ut mot 80 %.
-  const sunOpacity = cov <= 0.3 ? 1 : cov < 0.8 ? 1 - (cov - 0.3) / 0.5 : 0;
   // Skyfarge blir mørkere jo mer regn
   const rainMix = Math.max(rainIntensity, rainProb / 100);
+
   const cloudTop = `hsl(210 15% ${Math.round(96 - rainMix * 40)}%)`;
   const cloudBot = `hsl(215 18% ${Math.round(78 - rainMix * 42)}%)`;
   const cloudShadow = `hsl(220 25% ${Math.round(55 - rainMix * 30)}%)`;
