@@ -95,43 +95,49 @@ async function collectHomey(items: BatteryItem[], errors: string[]) {
   }
 }
 
+function netatmoTypeLabel(type: string): string {
+  switch (type) {
+    case "NAMain": return "hovedmodul";
+    case "NAModule1": return "utemodul";
+    case "NAModule2": return "vindmåler";
+    case "NAModule3": return "regnmåler";
+    case "NAModule4": return "innemodul";
+    default: return type;
+  }
+}
+
 async function collectNetatmo(items: BatteryItem[], errors: string[]) {
   try {
-    const mod = await import("@/lib/netatmo-weather.functions");
-    // getWeatherStation er en server fn — kall den via .server()-hjelpere er tungt;
-    // hent direkte via en enkel intern fetch: bruk cached-versjon via serverFn ved å
-    // kalle handleren gjennom en dedikert helper hvis eksponert. Fallback: importer
-    // en ren funksjon om tilgjengelig.
-    const anyMod = mod as any;
-    const fnCandidate =
-      anyMod.getWeatherStationInternal ??
-      anyMod.getWeatherStation?.__server_fn__ ??
-      null;
-    let result: any = null;
-    if (typeof fnCandidate === "function") {
-      result = await fnCandidate();
-    } else if (typeof anyMod.getWeatherStation === "function") {
-      // createServerFn eksponerer .handler? Prøv å kalle direkte.
-      try {
-        result = await anyMod.getWeatherStation();
-      } catch {
-        result = null;
+    const { data } = await supabaseAdmin
+      .from("netatmo_climate_snapshot" as any)
+      .select("data")
+      .limit(20);
+    if (!data) return;
+    const seen = new Set<string>();
+    for (const row of data as any[]) {
+      const devices = row?.data?.devices;
+      if (!Array.isArray(devices)) continue;
+      for (const dev of devices) {
+        const all = [dev, ...(dev.modules ?? [])];
+        for (const m of all) {
+          if (!m || typeof m._id !== "string") continue;
+          if (typeof m.battery_percent !== "number") continue;
+          if (seen.has(m._id)) continue;
+          seen.add(m._id);
+          const lastSeen = m.last_message ?? m.last_seen ?? m.last_status_store;
+          items.push({
+            id: `netatmo:${m._id}`,
+            source: "netatmo",
+            name: m.module_name ?? m.station_name ?? netatmoTypeLabel(m.type ?? ""),
+            zone: dev.station_name ?? "Netatmo",
+            batteryPct: Math.max(0, Math.min(100, Math.round(m.battery_percent))),
+            batteryState: null,
+            reachable: m.reachable !== false,
+            kind: netatmoTypeLabel(m.type ?? ""),
+            lastSeen: typeof lastSeen === "number" ? new Date(lastSeen * 1000).toISOString() : null,
+          });
+        }
       }
-    }
-    if (!result || result.ok !== true) return;
-    for (const m of result.modules ?? []) {
-      if (typeof m.battery !== "number") continue;
-      items.push({
-        id: `netatmo:${m.id}`,
-        source: "netatmo",
-        name: m.name,
-        zone: "Netatmo",
-        batteryPct: Math.max(0, Math.min(100, Math.round(m.battery))),
-        batteryState: null,
-        reachable: m.reachable !== false,
-        kind: m.type,
-        lastSeen: m.lastSeen ?? null,
-      });
     }
   } catch (err) {
     errors.push(`netatmo: ${(err as Error).message ?? String(err)}`);
