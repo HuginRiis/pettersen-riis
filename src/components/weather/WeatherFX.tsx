@@ -156,15 +156,26 @@ const FancyBgRainFX = memo(function FancyBgRainFX({
   const tilt = 8 + (w / 20) * 22; // 8°..30°
   const drift = -(40 + w * 18); // negativ = drift mot venstre ved fall
 
+  // Utvid spawn-området horisontalt slik at drops dekker hele bredden
+  // også når vinden blåser dem sidelengs. Anslå drift i vw basert på
+  // typisk mobil-viewport (~400px). Legg til buffer på begge sider.
+  const driftVw =
+    typeof window !== "undefined" && window.innerWidth > 0
+      ? (Math.abs(drift) / window.innerWidth) * 100
+      : Math.abs(drift) / 4;
+  const spawnLeft = -20; // start litt utenfor til venstre
+  const spawnRight = 100 + driftVw + 20; // strekk til høyre så høyre kant dekkes
+  const spawnRange = spawnRight - spawnLeft;
+
   const drops = useMemo(() => {
     return Array.from({ length: dropCount }).map(() => ({
-      left: Math.random() * 100,
+      left: spawnLeft + Math.random() * spawnRange,
       delay: -Math.random() * 1.5,
       dur: 0.55 + Math.random() * 0.45,
       h: 14 + Math.random() * 22,
       op: 0.55 + Math.random() * 0.4,
     }));
-  }, [dropCount]);
+  }, [dropCount, spawnLeft, spawnRange]);
 
   const splashes = useMemo(() => {
     return Array.from({ length: splashCount }).map(() => ({
