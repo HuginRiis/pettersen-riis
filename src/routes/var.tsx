@@ -1179,8 +1179,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
     panel === "vaer" ? <CloudFX intensity={0.4} /> :
     panel === "skydekke" ? <CloudCoverFX intensity={Math.min(1, avgCloud / 100)} rainIntensity={rainIntensity} /> :
     panel === "vind" ? <WindFX intensity={Math.min(1, maxWind / 14)} /> :
-    maxThunder < 10 ? null :
-    <ThunderFX intensity={Math.min(1, Math.max(0.3, maxThunder / 60))} />;
+    <ThunderFX intensity={Math.min(1, Math.max(0.12, maxThunder / 60))} />;
 
 
   const active = panels.find((p) => p.key === panel)!;
