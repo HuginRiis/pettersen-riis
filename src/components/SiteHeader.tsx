@@ -50,6 +50,7 @@ type RoutePath =
   | "/steintavle-2"
   | "/kvitteringer"
   | "/utlan"
+  | "/batterier"
   
   | "/skatte-utregningen"
   | "/gressklipper"
@@ -88,6 +89,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/stromkroniken": Zap,
   "/kvitteringer": Receipt,
   "/utlan": PackageOpen,
+  "/batterier": BatteryCharging,
   
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
@@ -122,6 +124,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/stromkroniken": "#eab308",
   "/kvitteringer": "#94a3b8",
   "/utlan": "#c084fc",
+  "/batterier": "#22c55e",
   
   "/trening": "#ef4444",
   "/varsler": "#dc2626",
@@ -162,6 +165,7 @@ const navLinks: NavLink[] = [
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/kvitteringer", label: "Kvitteringer" },
   { to: "/utlan", label: "Utlån & Lånt" },
+  { to: "/batterier", label: "Batterier i huset" },
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
