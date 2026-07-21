@@ -241,7 +241,14 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[loans-push] failed", err);
           }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, weatherSummary, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage, flights, loans }), {
+          let batteries = { checked: 0, sent: 0, errors: 0, skipped: 0, low: 0 };
+          try {
+            const bmod = await import("@/lib/batteries.server");
+            batteries = await bmod.processBatteryNotifications();
+          } catch (err) {
+            console.error("[batteries-push] failed", err);
+          }
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, weatherSummary, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage, flights, loans, batteries }), {
             headers: { "Content-Type": "application/json" },
           });
 

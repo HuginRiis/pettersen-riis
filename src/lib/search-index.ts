@@ -128,6 +128,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["utlån", "lånt", "låne", "lån", "bok", "verktøy", "påminnelse"],
   },
   {
+    title: "Batterier i huset",
+    path: "/batterier",
+    section: "Hjemmet",
+    description: "Alle batteri-nivåer fra Homey, Netatmo og Gardena med varsling.",
+    keywords: ["batteri", "batterier", "batteries", "battery", "homey", "netatmo", "gardena", "lavt"],
+  },
+  {
     title: "Skatte-utregningen",
     path: "/skatte-utregningen",
     section: "Økonomi",
