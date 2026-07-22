@@ -95,54 +95,8 @@ async function collectHomey(items: BatteryItem[], errors: string[]) {
   }
 }
 
-function netatmoTypeLabel(type: string): string {
-  switch (type) {
-    case "NAMain": return "hovedmodul";
-    case "NAModule1": return "utemodul";
-    case "NAModule2": return "vindmåler";
-    case "NAModule3": return "regnmåler";
-    case "NAModule4": return "innemodul";
-    default: return type;
-  }
-}
+// Netatmo er koblet via Homey og dukker opp automatisk i collectHomey().
 
-async function collectNetatmo(items: BatteryItem[], errors: string[]) {
-  try {
-    const { data } = await supabaseAdmin
-      .from("netatmo_climate_snapshot" as any)
-      .select("data")
-      .limit(20);
-    if (!data) return;
-    const seen = new Set<string>();
-    for (const row of data as any[]) {
-      const devices = row?.data?.devices;
-      if (!Array.isArray(devices)) continue;
-      for (const dev of devices) {
-        const all = [dev, ...(dev.modules ?? [])];
-        for (const m of all) {
-          if (!m || typeof m._id !== "string") continue;
-          if (typeof m.battery_percent !== "number") continue;
-          if (seen.has(m._id)) continue;
-          seen.add(m._id);
-          const lastSeen = m.last_message ?? m.last_seen ?? m.last_status_store;
-          items.push({
-            id: `netatmo:${m._id}`,
-            source: "netatmo",
-            name: m.module_name ?? m.station_name ?? netatmoTypeLabel(m.type ?? ""),
-            zone: dev.station_name ?? "Netatmo",
-            batteryPct: Math.max(0, Math.min(100, Math.round(m.battery_percent))),
-            batteryState: null,
-            reachable: m.reachable !== false,
-            kind: netatmoTypeLabel(m.type ?? ""),
-            lastSeen: typeof lastSeen === "number" ? new Date(lastSeen * 1000).toISOString() : null,
-          });
-        }
-      }
-    }
-  } catch (err) {
-    errors.push(`netatmo: ${(err as Error).message ?? String(err)}`);
-  }
-}
 
 async function collectGardena(items: BatteryItem[], errors: string[]) {
   try {
