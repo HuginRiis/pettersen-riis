@@ -2,8 +2,7 @@
  * Batteri-oversikt for hele huset.
  *
  * Kilder:
- *  - Homey (measure_battery-capability på alle enheter)
- *  - Netatmo værstasjon (battery_percent på uteenheter)
+ *  - Homey (measure_battery-capability på alle enheter — inkl. Netatmo som er koblet via Homey)
  *  - Gardena (batteryLevel på klippere og sensorer)
  *
  * Verdier caches i minnet i 2 timer for å skåne APIene.
@@ -18,7 +17,8 @@ const CACHE_TTL_MS = 2 * 60 * 60_000; // 2 timer
 const SETTINGS_KEY = "battery_push";
 const DEFAULT_THRESHOLD = 20;
 
-export type BatterySource = "homey" | "netatmo" | "gardena";
+export type BatterySource = "homey" | "gardena";
+
 
 export type BatteryItem = {
   id: string;
