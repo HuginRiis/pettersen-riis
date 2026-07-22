@@ -37,7 +37,7 @@ export const Route = createFileRoute("/batterier")({
       {
         name: "description",
         content:
-          "Alle batteri-indikatorer fra Homey, Netatmo og Gardena samlet på ett sted. Med varsling når nivået er lavt.",
+          "Alle batteri-indikatorer fra Homey (inkl. Netatmo via Homey) og Gardena samlet på ett sted. Med varsling når nivået er lavt.",
       },
       { property: "og:title", content: "Batterier i huset" },
       {
