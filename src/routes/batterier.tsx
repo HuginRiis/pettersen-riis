@@ -267,7 +267,7 @@ function BatterierRoute() {
       <PageHero
         eyebrow="Kraften i huset"
         title="Batterier i huset"
-        subtitle="Alle batteri-nivåer fra Homey, Netatmo og Gardena. Oppdateres hver andre time."
+        subtitle="Alle batteri-nivåer fra Homey (inkl. Netatmo via Homey) og Gardena. Oppdateres hver andre time."
         image={heroImg}
       >
         <div className="flex flex-wrap items-center gap-2">
