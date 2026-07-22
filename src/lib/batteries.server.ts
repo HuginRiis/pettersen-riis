@@ -145,9 +145,9 @@ export async function getBatteryOverviewCached(opts?: { force?: boolean }): Prom
   const errors: string[] = [];
   await Promise.all([
     collectHomey(items, errors),
-    collectNetatmo(items, errors),
     collectGardena(items, errors),
   ]);
+
   items.sort((a, b) => a.batteryPct - b.batteryPct);
   const data: BatteryOverview = {
     fetchedAt: new Date().toISOString(),
