@@ -350,7 +350,7 @@ function BatterierRoute() {
             {Array.from(bySource.entries()).map(([src, arr]) => (
               <section key={src}>
                 <h2 className="heading-section text-lg mb-3 capitalize">
-                  {src === "homey" ? "Homey" : src === "netatmo" ? "Netatmo" : "Gardena"}
+                  {src === "homey" ? "Homey" : "Gardena"}
                   <span className="ml-2 text-xs text-muted-foreground">({arr.length})</span>
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
