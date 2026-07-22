@@ -37,7 +37,7 @@ export const Route = createFileRoute("/batterier")({
       {
         name: "description",
         content:
-          "Alle batteri-indikatorer fra Homey, Netatmo og Gardena samlet på ett sted. Med varsling når nivået er lavt.",
+          "Alle batteri-indikatorer fra Homey (inkl. Netatmo via Homey) og Gardena samlet på ett sted. Med varsling når nivået er lavt.",
       },
       { property: "og:title", content: "Batterier i huset" },
       {
@@ -267,7 +267,7 @@ function BatterierRoute() {
       <PageHero
         eyebrow="Kraften i huset"
         title="Batterier i huset"
-        subtitle="Alle batteri-nivåer fra Homey, Netatmo og Gardena. Oppdateres hver andre time."
+        subtitle="Alle batteri-nivåer fra Homey (inkl. Netatmo via Homey) og Gardena. Oppdateres hver andre time."
         image={heroImg}
       >
         <div className="flex flex-wrap items-center gap-2">
@@ -350,7 +350,7 @@ function BatterierRoute() {
             {Array.from(bySource.entries()).map(([src, arr]) => (
               <section key={src}>
                 <h2 className="heading-section text-lg mb-3 capitalize">
-                  {src === "homey" ? "Homey" : src === "netatmo" ? "Netatmo" : "Gardena"}
+                  {src === "homey" ? "Homey" : "Gardena"}
                   <span className="ml-2 text-xs text-muted-foreground">({arr.length})</span>
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
