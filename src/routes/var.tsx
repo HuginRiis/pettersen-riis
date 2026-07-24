@@ -1321,7 +1321,10 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
         <div className="flex items-end gap-2 min-w-max pb-1">
           {hours.map((h, i) => {
             const heightPct = Math.max(4, (h.precip / maxP) * 70);
-            const mmLabel = fmtPrecipYr(h.precipMin, h.precipMax);
+            const mmRaw = fmtPrecipYr(h.precipMin, h.precipMax);
+            const mmLabel = mmRaw || "0";
+            const prob = Math.max(0, Math.min(100, h.precipProbability || 0));
+            const probPct = (prob / 100) * 100;
             return (
               <div
                 key={h.time}
@@ -1336,9 +1339,18 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-sky-300 to-sky-200 rounded-md"
                     style={{ height: `${heightPct}%` }}
                   />
+                  {prob > 0 && (
+                    <div
+                      className="absolute left-0 right-0 pointer-events-none"
+                      style={{ bottom: `${probPct}%` }}
+                      title={`Sannsynlighet ${Math.round(prob)}%`}
+                    >
+                      <div className="h-[2px] bg-cyan-300/90 shadow-[0_0_4px_rgba(103,232,249,0.9)]" />
+                    </div>
+                  )}
                 </div>
                 <div className="text-[9px] text-sky-200 tabular-nums mt-1 leading-tight min-h-[10px]">
-                  {mmLabel}
+                  {mmLabel} mm
                 </div>
                 <div className="flex items-center gap-0.5 mt-0.5 text-[10px] text-sky-100 font-medium tabular-nums">
                   <Droplets size={8} />
