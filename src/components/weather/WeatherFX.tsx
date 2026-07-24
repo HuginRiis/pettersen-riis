@@ -1264,21 +1264,26 @@ const GlassPaneFX = memo(function GlassPaneFX({
                 aria-hidden
               >
                 <defs>
-                  <radialGradient id={`wispG${i}`} cx="50%" cy="55%" r="55%" fx="45%" fy="55%">
-                    <stop offset="0%" stopColor="rgba(255,255,255,1)" />
-                    <stop offset="35%" stopColor="rgba(255,255,255,0.85)" />
-                    <stop offset="70%" stopColor="rgba(255,255,255,0.3)" />
+                  <radialGradient id={`wispG${i}`} cx="50%" cy="48%" r="55%" fx="40%" fy="48%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.98)" />
+                    <stop offset="40%" stopColor="rgba(255,255,255,0.75)" />
+                    <stop offset="75%" stopColor="rgba(255,255,255,0.22)" />
                     <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                   </radialGradient>
-                  <filter id={`wispB${i}`} x="-20%" y="-50%" width="140%" height="200%">
-                    <feGaussianBlur stdDeviation="6" />
+                  <filter id={`wispB${i}`} x="-25%" y="-60%" width="150%" height="220%">
+                    <feGaussianBlur stdDeviation="8" />
                   </filter>
                 </defs>
                 <g filter={`url(#wispB${i})`}>
-                  <ellipse cx="200" cy="55" rx="180" ry="18" fill={`url(#wispG${i})`} />
-                  <ellipse cx="150" cy="52" rx="90" ry="12" fill="rgba(255,255,255,0.6)" />
-                  <ellipse cx="260" cy="58" rx="70" ry="10" fill="rgba(255,255,255,0.5)" />
-                  <ellipse cx="310" cy="54" rx="45" ry="7" fill="rgba(255,255,255,0.35)" />
+                  {/* hovedsky — tynn, langstrakt, nesten som en skysegment */}
+                  <ellipse cx="200" cy="55" rx="170" ry="10" fill={`url(#wispG${i})`} />
+                  <ellipse cx="130" cy="52" rx="75" ry="8" fill="rgba(255,255,255,0.55)" />
+                  <ellipse cx="270" cy="56" rx="60" ry="7" fill="rgba(255,255,255,0.45)" />
+                  <ellipse cx="330" cy="53" rx="38" ry="5" fill="rgba(255,255,255,0.30)" />
+                  <ellipse cx="70" cy="56" rx="40" ry="5" fill="rgba(255,255,255,0.25)" />
+                  {/* små, uregelmessige utvekster for mer sky-likhet */}
+                  <ellipse cx="220" cy="50" rx="28" ry="4" fill="rgba(255,255,255,0.35)" />
+                  <ellipse cx="175" cy="59" rx="22" ry="3" fill="rgba(255,255,255,0.25)" />
                 </g>
               </svg>
 
