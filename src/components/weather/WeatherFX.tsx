@@ -961,12 +961,12 @@ const GlassPaneFX = memo(function GlassPaneFX({
   const isClearDay = kind === "clear" || kind === "fair" || kind === "partly";
   const isNight = kind === "night" || kind === "night-clear";
   const isCloudy = kind === "cloudy" || kind === "partly";
-  const isWispy = kind === "fair" || kind === "partly"; // lett skyet → cirrus-flak
+  const isWispy = kind === "fair"; // kun lettskyet får tynne cirrus-flak
   const isFog = kind === "fog";
   const isThunder = kind === "thunder";
 
   // Cirrus-wisps spredt over hele siden (lett skyet)
-  const wispCount = isWispy ? (kind === "partly" ? 14 : 10) : 0;
+  const wispCount = isWispy ? 12 : 0;
   const wisps = useMemo(
     () =>
       Array.from({ length: wispCount }).map((_, i) => ({
