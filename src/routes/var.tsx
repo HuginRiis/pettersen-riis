@@ -1357,9 +1357,6 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
                     </div>
                   )}
                 </div>
-                <div className="text-[9px] text-sky-200 tabular-nums mt-1 leading-tight min-h-[10px]">
-                  {mmLabel} mm
-                </div>
                 <div className="flex items-center gap-0.5 mt-0.5 text-[10px] text-sky-100 font-medium tabular-nums">
                   <Droplets size={8} />
                   {Math.round(h.precipProbability)}%
@@ -2139,6 +2136,21 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
                 <span className="text-sky-200/90">{b.precip.toFixed(1)}</span>
               ) : (
                 <span className="text-white/25">·</span>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-[3px] -mt-0.5">
+          {buckets.map((b, i) => (
+            <div
+              key={i}
+              className="flex-1 text-center tabular-nums leading-none"
+              style={{ fontSize: 7 }}
+            >
+              {b.prob >= 5 ? (
+                <span className="text-sky-300 font-medium">{Math.round(b.prob)}%</span>
+              ) : (
+                <span className="text-white/20">·</span>
               )}
             </div>
           ))}
