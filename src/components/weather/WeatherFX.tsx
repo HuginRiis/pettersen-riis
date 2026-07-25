@@ -858,7 +858,9 @@ function makeBoltPath(seed: number, segments: number, jitter: number) {
 const ThunderFX = memo(function ThunderFX({ intensity = 0.5, fullScreen = false, className = "" }: Common & { fullScreen?: boolean }) {
   const _mounted = useMounted();
   const bolts = useMemo(() => {
-    const count = Math.max(2, Math.round(2 + intensity * 3));
+    const count = fullScreen
+      ? Math.max(3, Math.round(2 + intensity * 6))
+      : Math.max(2, Math.round(2 + intensity * 3));
     return Array.from({ length: count }).map((_, i) => {
       const seed = (i + 1) * 9173 + Math.floor(Math.random() * 99991);
       const { main, branches } = makeBoltPath(seed, 9 + Math.floor(Math.random() * 4), 6);
@@ -867,8 +869,8 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, fullScreen = false,
       const delay = 1.4 + i * (1.8 + Math.random() * 1.6);
       return {
         left: 6 + (i / Math.max(1, count - 1)) * 84 + (Math.random() * 8 - 4),
-        top: 2 + Math.random() * 10,
-        scale: 0.85 + Math.random() * 0.7,
+        top: fullScreen ? 2 + Math.random() * 24 : 2 + Math.random() * 10,
+        scale: fullScreen ? 1.2 + Math.random() * 1.0 : 0.85 + Math.random() * 0.7,
         delay,
         dur,
         hue: 50 + Math.random() * 10,
@@ -876,7 +878,7 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, fullScreen = false,
         branches,
       };
     });
-  }, [intensity]);
+  }, [intensity, fullScreen]);
 
   if (!_mounted) return null;
 
