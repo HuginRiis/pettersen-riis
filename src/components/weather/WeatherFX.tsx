@@ -958,6 +958,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
   now,
   wind = 0,
   precipMm = 0,
+  thunderRisk = 0,
 }: {
   kind: GlassKind;
   intensity?: number;
@@ -965,6 +966,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
   now?: Date | null;
   wind?: number;
   precipMm?: number;
+  thunderRisk?: number;
 }) {
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
