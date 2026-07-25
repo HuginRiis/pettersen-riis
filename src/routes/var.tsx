@@ -1357,6 +1357,9 @@ function NedborPanel({ hours, maxP }: { hours: Hour[]; maxP: number }) {
                     </div>
                   )}
                 </div>
+                <div className="text-[10px] text-sky-100 font-medium tabular-nums mt-0.5 leading-tight min-h-[12px]">
+                  {mmLabel}
+                </div>
                 <div className="flex items-center gap-0.5 mt-0.5 text-[10px] text-sky-100 font-medium tabular-nums">
                   <Droplets size={8} />
                   {Math.round(h.precipProbability)}%
