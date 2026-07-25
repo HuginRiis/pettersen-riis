@@ -891,6 +891,15 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, fullScreen = false,
             "linear-gradient(to bottom, rgba(15,15,30,0.55), rgba(15,15,30,0))",
         }}
       />
+      {fullScreen && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 20%, rgba(8,8,18,0.35) 0%, rgba(0,0,0,0.12) 45%, transparent 75%)",
+          }}
+        />
+      )}
       {bolts.map((b, i) => (
         <div
           key={`sky-${i}`}
@@ -912,8 +921,8 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, fullScreen = false,
           style={{
             left: `${b.left}%`,
             top: `${b.top}%`,
-            width: 18 * b.scale,
-            height: 70 * b.scale,
+            width: fullScreen ? 24 * b.scale : 18 * b.scale,
+            height: fullScreen ? 360 * b.scale : 70 * b.scale,
             opacity: 0,
             animation: `wx-bolt-strike ${b.dur}s linear ${b.delay}s infinite both`,
             filter: `drop-shadow(0 0 8px hsla(${b.hue},100%,80%,0.95)) drop-shadow(0 0 16px hsla(${b.hue},100%,70%,0.6))`,
