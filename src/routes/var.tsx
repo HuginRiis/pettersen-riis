@@ -2078,6 +2078,20 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
                     }}
                   />
                 )}
+                {b.prob >= 5 && (
+                  <div
+                    className="absolute left-0.5 right-0.5 rounded-full pointer-events-none"
+                    style={{
+                      bottom: `${Math.min(100, b.prob)}%`,
+                      height: 2,
+                      marginBottom: -1,
+                      background: "linear-gradient(90deg, rgba(56,189,248,0.2) 0%, rgba(255,255,255,0.95) 50%, rgba(56,189,248,0.2) 100%)",
+                      boxShadow: "0 0 5px rgba(56,189,248,0.8), 0 0 10px rgba(56,189,248,0.35)",
+                      zIndex: 3,
+                    }}
+                    aria-hidden
+                  />
+                )}
                 {barDropCount > 0 && (
                   <div className="wx-daily-fx absolute inset-0 pointer-events-none" aria-hidden>
                     {Array.from({ length: barDropCount }, (_, di) => {
