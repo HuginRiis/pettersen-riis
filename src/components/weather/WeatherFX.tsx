@@ -1423,6 +1423,21 @@ const GlassPaneFX = memo(function GlassPaneFX({
           <ThunderFX intensity={Math.max(0.7, intensity)} />
         </>
       )}
+
+      {/* THUNDER RISK OVERLAY: ≥ 9 % sjanse for lyn/torden neste 24 t */}
+      {thunderRisk >= 9 && !isThunder && (
+        <>
+          <div
+            className="absolute inset-0 animate-wx-flash"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.25) 30%, transparent 60%)",
+              animationDuration: "7s",
+            }}
+          />
+          <ThunderFX intensity={Math.min(1, Math.max(0.12, thunderRisk / 100))} fullScreen />
+        </>
+      )}
     </div>
   );
 });
