@@ -4186,6 +4186,7 @@ function parseForecast(data: any, opts: { showThunderProbability?: boolean } = {
       humidity: inst.relative_humidity ?? 0,
       cloud: inst.cloud_area_fraction ?? 0,
       thunder: hasThunderSymbol ? (thunderProbability ?? 60) : (opts.showThunderProbability ? (thunderProbability ?? 0) : 0),
+      thunderRaw: thunderProbability ?? 0,
       symbol,
     });
     const existing = dayMap.get(date);
