@@ -2089,6 +2089,9 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
               : `rgba(186, 230, 253, ${probAlpha + 0.08})`;
             const intense = b.precip >= 2;
             const isNow = isToday && now != null && i === now.bucket;
+            // Små regndråper inne i baren når det regner i bøtta.
+            const barDropCount = b.precip <= 0 ? 0 : b.precip < 0.5 ? 2 : b.precip < 2 ? 3 : b.precip < 6 ? 4 : 5;
+            const barDropDur = b.precip < 0.5 ? 1.4 : b.precip < 2 ? 1.0 : b.precip < 6 ? 0.75 : 0.55;
             return (
               <div
                 key={i}
@@ -2111,9 +2114,41 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
                     }}
                   />
                 )}
+                {barDropCount > 0 && (
+                  <div className="wx-daily-fx absolute inset-0 pointer-events-none" aria-hidden>
+                    {Array.from({ length: barDropCount }, (_, di) => {
+                      const seed = (day.date.charCodeAt(8) * 131 + day.date.charCodeAt(9) * 17 + i * 977 + di * 2654435761) >>> 0;
+                      const r1 = (seed % 1000) / 1000;
+                      const r2 = ((seed >>> 7) % 1000) / 1000;
+                      const r3 = ((seed >>> 13) % 1000) / 1000;
+                      const leftPct = 10 + r1 * 80;
+                      const dur = (barDropDur * (0.75 + r2 * 0.55)).toFixed(2);
+                      const delay = (r3 * barDropDur * 1.4).toFixed(2);
+                      const len = (intense ? 7 : 5) + r2 * 3;
+                      return (
+                        <span
+                          key={di}
+                          className="absolute rounded-full"
+                          style={{
+                            left: `${leftPct.toFixed(1)}%`,
+                            top: 0,
+                            width: 1.2,
+                            height: `${len.toFixed(1)}px`,
+                            background: "linear-gradient(to bottom, rgba(224,242,254,0) 0%, rgba(186,230,253,0.95) 60%, #ffffff 100%)",
+                            opacity: 0.85,
+                            animation: `dailyBarRain ${dur}s linear ${delay}s infinite`,
+                            filter: "drop-shadow(0 0 1.5px rgba(186,230,253,0.85))",
+                            zIndex: 2,
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
+          <style>{`@keyframes dailyBarRain { 0% { transform: translateY(-6px); opacity: 0; } 15% { opacity: 0.9; } 85% { opacity: 0.9; } 100% { transform: translateY(36px); opacity: 0; } }`}</style>
         </div>
         <div className="flex gap-[3px]">
           {buckets.map((b, i) => (
