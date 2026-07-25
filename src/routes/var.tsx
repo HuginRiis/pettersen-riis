@@ -144,6 +144,7 @@ type Hour = {
   humidity: number;
   cloud: number;
   thunder: number;
+  thunderRaw: number; // rå probability_of_thunder, uavhengig av MET-symbol
   symbol: string | null;
 };
 
