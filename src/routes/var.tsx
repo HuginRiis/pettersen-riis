@@ -2088,7 +2088,7 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
                       const leftPct = 10 + r1 * 80;
                       const dur = (barDropDur * (0.75 + r2 * 0.55)).toFixed(2);
                       const delay = (r3 * barDropDur * 1.4).toFixed(2);
-                      const len = (intense ? 7 : 5) + r2 * 3;
+                      const len = (intense ? 2.3 : 1.7) + r2 * 1;
                       return (
                         <span
                           key={di}
@@ -2096,12 +2096,12 @@ function DailyRainRow({ day, hours, index }: { day: ForecastDay; hours: Hour[]; 
                           style={{
                             left: `${leftPct.toFixed(1)}%`,
                             top: 0,
-                            width: 1.2,
+                            width: 0.4,
                             height: `${len.toFixed(1)}px`,
                             background: "linear-gradient(to bottom, rgba(224,242,254,0) 0%, rgba(186,230,253,0.95) 60%, #ffffff 100%)",
-                            opacity: 0.85,
+                            opacity: 0.9,
                             animation: `dailyBarRain ${dur}s linear ${delay}s infinite`,
-                            filter: "drop-shadow(0 0 1.5px rgba(186,230,253,0.85))",
+                            filter: "drop-shadow(0 0 1px rgba(186,230,253,0.85))",
                             zIndex: 2,
                           }}
                         />
