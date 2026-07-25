@@ -855,7 +855,7 @@ function makeBoltPath(seed: number, segments: number, jitter: number) {
   return { main: pts.join(" "), branches };
 }
 
-const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: Common) {
+const ThunderFX = memo(function ThunderFX({ intensity = 0.5, fullScreen = false, className = "" }: Common & { fullScreen?: boolean }) {
   const _mounted = useMounted();
   const bolts = useMemo(() => {
     const count = Math.max(2, Math.round(2 + intensity * 3));
