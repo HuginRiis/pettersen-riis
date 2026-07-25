@@ -144,6 +144,7 @@ type Hour = {
   humidity: number;
   cloud: number;
   thunder: number;
+  thunderRaw: number; // rå probability_of_thunder, uavhengig av MET-symbol
   symbol: string | null;
 };
 
@@ -486,6 +487,13 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { tone } = useTileTone();
   const { flags: animFlags } = useAnimToggles();
 
+  // Sjanse for lyn/torden de neste 24 timene — brukes til bakgrunnsanimasjon
+  const thunderRisk = useMemo(() => {
+    if (!skienHours) return 0;
+    const cutoff = now.getTime() + 24 * 60 * 60 * 1000;
+    return Math.max(0, ...skienHours.filter((h) => new Date(h.time).getTime() <= cutoff).map((h) => h.thunderRaw ?? 0));
+  }, [skienHours, now]);
+
 
   // Scroll-drevet inn/ut-fading på sammendragsboksen (replaces hero shrink)
   const heroRef = useRef<HTMLDivElement>(null);
@@ -516,7 +524,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
         }}
       >
-        {animFlags.bg && <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} wind={currentHour?.wind ?? 0} precipMm={currentHour?.precip ?? 0} />}
+        {animFlags.bg && <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} wind={currentHour?.wind ?? 0} precipMm={currentHour?.precip ?? 0} thunderRisk={thunderRisk} />}
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
@@ -4185,6 +4193,7 @@ function parseForecast(data: any, opts: { showThunderProbability?: boolean } = {
       humidity: inst.relative_humidity ?? 0,
       cloud: inst.cloud_area_fraction ?? 0,
       thunder: hasThunderSymbol ? (thunderProbability ?? 60) : (opts.showThunderProbability ? (thunderProbability ?? 0) : 0),
+      thunderRaw: thunderProbability ?? 0,
       symbol,
     });
     const existing = dayMap.get(date);

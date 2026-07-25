@@ -855,10 +855,12 @@ function makeBoltPath(seed: number, segments: number, jitter: number) {
   return { main: pts.join(" "), branches };
 }
 
-const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: Common) {
+const ThunderFX = memo(function ThunderFX({ intensity = 0.5, fullScreen = false, className = "" }: Common & { fullScreen?: boolean }) {
   const _mounted = useMounted();
   const bolts = useMemo(() => {
-    const count = Math.max(2, Math.round(2 + intensity * 3));
+    const count = fullScreen
+      ? Math.max(3, Math.round(2 + intensity * 6))
+      : Math.max(2, Math.round(2 + intensity * 3));
     return Array.from({ length: count }).map((_, i) => {
       const seed = (i + 1) * 9173 + Math.floor(Math.random() * 99991);
       const { main, branches } = makeBoltPath(seed, 9 + Math.floor(Math.random() * 4), 6);
@@ -867,8 +869,8 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: C
       const delay = 1.4 + i * (1.8 + Math.random() * 1.6);
       return {
         left: 6 + (i / Math.max(1, count - 1)) * 84 + (Math.random() * 8 - 4),
-        top: 2 + Math.random() * 10,
-        scale: 0.85 + Math.random() * 0.7,
+        top: fullScreen ? 2 + Math.random() * 24 : 2 + Math.random() * 10,
+        scale: fullScreen ? 1.2 + Math.random() * 1.0 : 0.85 + Math.random() * 0.7,
         delay,
         dur,
         hue: 50 + Math.random() * 10,
@@ -876,7 +878,7 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: C
         branches,
       };
     });
-  }, [intensity]);
+  }, [intensity, fullScreen]);
 
   if (!_mounted) return null;
 
@@ -889,6 +891,15 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: C
             "linear-gradient(to bottom, rgba(15,15,30,0.55), rgba(15,15,30,0))",
         }}
       />
+      {fullScreen && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at 50% 20%, rgba(8,8,18,0.35) 0%, rgba(0,0,0,0.12) 45%, transparent 75%)",
+          }}
+        />
+      )}
       {bolts.map((b, i) => (
         <div
           key={`sky-${i}`}
@@ -910,8 +921,8 @@ const ThunderFX = memo(function ThunderFX({ intensity = 0.5, className = "" }: C
           style={{
             left: `${b.left}%`,
             top: `${b.top}%`,
-            width: 18 * b.scale,
-            height: 70 * b.scale,
+            width: fullScreen ? 24 * b.scale : 18 * b.scale,
+            height: fullScreen ? 360 * b.scale : 70 * b.scale,
             opacity: 0,
             animation: `wx-bolt-strike ${b.dur}s linear ${b.delay}s infinite both`,
             filter: `drop-shadow(0 0 8px hsla(${b.hue},100%,80%,0.95)) drop-shadow(0 0 16px hsla(${b.hue},100%,70%,0.6))`,
@@ -947,6 +958,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
   now,
   wind = 0,
   precipMm = 0,
+  thunderRisk = 0,
 }: {
   kind: GlassKind;
   intensity?: number;
@@ -954,6 +966,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
   now?: Date | null;
   wind?: number;
   precipMm?: number;
+  thunderRisk?: number;
 }) {
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
@@ -1408,6 +1421,21 @@ const GlassPaneFX = memo(function GlassPaneFX({
             }}
           />
           <ThunderFX intensity={Math.max(0.7, intensity)} />
+        </>
+      )}
+
+      {/* THUNDER RISK OVERLAY: ≥ 9 % sjanse for lyn/torden neste 24 t */}
+      {thunderRisk >= 9 && !isThunder && (
+        <>
+          <div
+            className="absolute inset-0 animate-wx-flash"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 30%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.25) 30%, transparent 60%)",
+              animationDuration: "7s",
+            }}
+          />
+          <ThunderFX intensity={Math.min(1, Math.max(0.12, thunderRisk / 100))} fullScreen />
         </>
       )}
     </div>
