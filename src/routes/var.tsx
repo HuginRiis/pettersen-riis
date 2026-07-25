@@ -487,6 +487,13 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { tone } = useTileTone();
   const { flags: animFlags } = useAnimToggles();
 
+  // Sjanse for lyn/torden de neste 24 timene — brukes til bakgrunnsanimasjon
+  const thunderRisk = useMemo(() => {
+    if (!skienHours) return 0;
+    const cutoff = now.getTime() + 24 * 60 * 60 * 1000;
+    return Math.max(0, ...skienHours.filter((h) => new Date(h.time).getTime() <= cutoff).map((h) => h.thunderRaw ?? 0));
+  }, [skienHours, now]);
+
 
   // Scroll-drevet inn/ut-fading på sammendragsboksen (replaces hero shrink)
   const heroRef = useRef<HTMLDivElement>(null);
