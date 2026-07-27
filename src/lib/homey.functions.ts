@@ -861,7 +861,20 @@ export const setHomeAlarmState = createServerFn({ method: "POST" })
         homeySnapshotCache = null;
 
         const changedAt = new Date().toISOString();
+        // Logg tilstandsendringen server-side (RLS lar ikke klienten skrive).
+        try {
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          await (supabaseAdmin.from("home_alarm_log") as any).insert({
+            state: data.state,
+            who: data.who,
+            source: "borgen-app",
+            changed_at: changedAt,
+          });
+        } catch {
+          // ignorer logg-feil
+        }
         return { ok: true, state: data.state, who: data.who, changedAt };
+
       } catch (e: any) {
         return { ok: false, error: e?.message ?? "Klarte ikke endre alarm" };
       }
