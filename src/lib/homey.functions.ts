@@ -15,6 +15,11 @@ const loadApiLog = createIsomorphicFn()
   );
 const { withApiLog } = await loadApiLog();
 
+const loadHouseAuth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"))
+  .client((): Promise<typeof import("@/lib/house-auth.server")> => Promise.resolve({ requireHouseAuth: async () => {}, isHouseAuthenticated: async () => false } as unknown as typeof import("@/lib/house-auth.server")));
+const { requireHouseAuth } = await loadHouseAuth();
+
 // Server-only loader — createIsomorphicFn strips the .server() body from the
 // client bundle, so the static import below never leaks into client code.
 const loadConnModule = createIsomorphicFn()
