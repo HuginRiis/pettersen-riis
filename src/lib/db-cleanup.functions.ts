@@ -86,6 +86,7 @@ export type DbCleanupEstimate = {
 
 export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
   async (): Promise<DbCleanupEstimate> => {
+    await requireHouseAuth();
     const sb = supabaseAdmin as any;
 
     // Hent total DB-størrelse + bredt 30-dagers estimat.
