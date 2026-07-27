@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
+import { insertAgendaMessage, deleteAgendaMessage } from "@/lib/agenda-write.functions";
 import heroImg from "@/assets/got-agenda.jpg";
 import { Trash2, Plus, Bell, BellOff, Clock, ChevronDown } from "lucide-react";
 import { getPushPublicKey } from "@/lib/agenda-push";
