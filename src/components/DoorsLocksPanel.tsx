@@ -369,14 +369,10 @@ function HomeAlarmPanel() {
     try {
       const res = await setAlarm({ data: { state: next, who } });
       if (res.ok) {
-        // Logg lokalt i Supabase (server-funksjonen bekrefter Homey-bytte)
-        await supabase.from("home_alarm_log").insert({
-          state: res.state,
-          who: res.who,
-          source: "borgen-app",
-        });
+        // Logging skjer nå server-side i setHomeAlarmState (krever husets sesjon).
         await loadLog();
         await loadStatus();
+
       } else {
         setAlarmStateLocal({ status: "error", message: res.error });
       }

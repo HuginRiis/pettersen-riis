@@ -112,24 +112,21 @@ export async function subscribePush(
   const p256dh = json.keys?.p256dh!;
   const auth = json.keys?.auth!;
 
-  // Upsert via endpoint (unique)
-  const { error } = await supabase
-    .from("push_subscriptions")
-    .upsert(
-      {
-        endpoint,
-        p256dh,
-        auth,
-        who,
-        user_agent: navigator.userAgent,
-        last_used_at: new Date().toISOString(),
-      },
-      { onConflict: "endpoint" }
-    );
-
-  if (error) return { ok: false, error: error.message };
+  // Upsert via server-funksjon (krever husets sesjon).
+  const { upsertPushSubscription } = await import("@/lib/push-write.functions");
+  const res = await upsertPushSubscription({
+    data: {
+      endpoint,
+      p256dh,
+      auth,
+      who,
+      user_agent: navigator.userAgent,
+    },
+  });
+  if (!res.ok) return { ok: false, error: res.error };
   setStoredWho(who);
   return { ok: true };
+
 }
 
 export async function unsubscribePush(): Promise<{ ok: boolean; error?: string }> {
@@ -141,7 +138,8 @@ export async function unsubscribePush(): Promise<{ ok: boolean; error?: string }
     if (!sub) return { ok: true };
     const endpoint = sub.endpoint;
     await sub.unsubscribe();
-    await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+    const { deletePushSubscription } = await import("@/lib/push-write.functions");
+    await deletePushSubscription({ data: { endpoint } });
     return { ok: true };
   } catch (e) {
     return { ok: false, error: String(e) };
@@ -155,14 +153,13 @@ export async function updateSubscriptionWho(who: Who): Promise<{ ok: boolean; er
     if (!reg) return { ok: false, error: "Ingen service worker" };
     const sub = await reg.pushManager.getSubscription();
     if (!sub) return { ok: false, error: "Ikke abonnert" };
-    const { error } = await supabase
-      .from("push_subscriptions")
-      .update({ who, last_used_at: new Date().toISOString() })
-      .eq("endpoint", sub.endpoint);
-    if (error) return { ok: false, error: error.message };
+    const { updatePushSubscriptionWho } = await import("@/lib/push-write.functions");
+    const res = await updatePushSubscriptionWho({ data: { endpoint: sub.endpoint, who } });
+    if (!res.ok) return { ok: false, error: res.error };
     setStoredWho(who);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: String(e) };
   }
 }
+
