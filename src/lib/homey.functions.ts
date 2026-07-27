@@ -1937,6 +1937,7 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -2037,6 +2038,7 @@ export const setLockState = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -2182,6 +2184,7 @@ export const setRoborockHomeyCapability = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
