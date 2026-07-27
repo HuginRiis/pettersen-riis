@@ -220,6 +220,7 @@ export const runDbCleanup = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }): Promise<{ deletedPerTable: Record<string, number>; totalDeleted: number }> => {
+    await requireHouseAuth();
     const sb = supabaseAdmin as any;
     const cutoff30 = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
     const deletedPerTable: Record<string, number> = {};
