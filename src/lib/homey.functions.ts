@@ -818,6 +818,7 @@ export const setHomeAlarmState = createServerFn({ method: "POST" })
       | { ok: false; error: string }
       | { ok: true; state: HomeAlarmState; who: string; changedAt: string }
     > => {
+      await requireHouseAuth();
       let conn: HomeyConnection | null;
       try {
         conn = await getValidConnection();
