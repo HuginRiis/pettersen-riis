@@ -45,6 +45,7 @@ const profileSchema = z.enum(PROFILES).default("arne");
 export const listTaxYear = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ year: z.number().int(), profile: profileSchema }).parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const [months, settings] = await Promise.all([
       supabaseAdmin
         .from("tax_monthly")
@@ -73,6 +74,7 @@ export type MonthlyAgg = { year: number; month: number; lonn: number; skatt: num
 export const listMonthlyRange = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ years: z.array(z.number().int()).min(1).max(10), profile: profileSchema }).parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { data: rows, error } = await supabaseAdmin
       .from("tax_monthly")
       .select("year,month,lonn,skatt,ekstra")
@@ -285,6 +287,7 @@ export const calculateNorwegianTax = createServerFn({ method: "POST" })
 export const listTaxYears = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ profile: profileSchema }).parse(d ?? { profile: "arne" }))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { data: rows, error } = await supabaseAdmin
       .from("tax_year_settings")
       .select("year")
@@ -312,6 +315,7 @@ export type PayslipFile = {
 export const listPayslipFiles = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ profile: profileSchema }).parse(d ?? { profile: "arne" }))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { data: rows, error } = await supabaseAdmin
       .from("payslip_files")
       .select("id,year,month,employer,file_path,file_url,original_name,mime_type,size_bytes,uploaded_at,extracted_text,extracted_at")
@@ -326,6 +330,7 @@ export const listPayslipFiles = createServerFn({ method: "GET" })
 export const extractPayslipText = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid(), force: z.boolean().optional() }).parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { data: row, error: selErr } = await supabaseAdmin
       .from("payslip_files")
       .select("id,file_path,file_url,mime_type,extracted_text")
@@ -425,6 +430,7 @@ const savePayslipFileSchema = z.object({
 export const savePayslipFile = createServerFn({ method: "POST" })
   .inputValidator((d) => savePayslipFileSchema.parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const safeName = data.fileName.replace(/[^a-zA-Z0-9._-]+/g, "_");
     const path = `${data.profile}/${data.year}/${Date.now()}-${safeName}`;
     const buf = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
@@ -451,6 +457,7 @@ export const savePayslipFile = createServerFn({ method: "POST" })
 export const deletePayslipFile = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { data: row, error: selErr } = await supabaseAdmin
       .from("payslip_files").select("file_path").eq("id", data.id).maybeSingle();
     if (selErr) throw new Error(selErr.message);
@@ -477,6 +484,7 @@ const upsertMonthSchema = z.object({
 export const upsertTaxMonth = createServerFn({ method: "POST" })
   .inputValidator((d) => upsertMonthSchema.parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { error } = await supabaseAdmin
       .from("tax_monthly")
       .upsert(
@@ -507,6 +515,7 @@ const deleteMonthSchema = z.object({
 export const deleteTaxMonth = createServerFn({ method: "POST" })
   .inputValidator((d) => deleteMonthSchema.parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { error } = await supabaseAdmin
       .from("tax_monthly")
       .delete()
@@ -528,6 +537,7 @@ const upsertSettingsSchema = z.object({
 export const upsertTaxSettings = createServerFn({ method: "POST" })
   .inputValidator((d) => upsertSettingsSchema.parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const { error } = await supabaseAdmin
       .from("tax_year_settings")
       .upsert(
@@ -559,6 +569,7 @@ const NB_MONTHS: Record<string, number> = {
 export const parsePayslip = createServerFn({ method: "POST" })
   .inputValidator((d) => parsePayslipSchema.parse(d))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
 
