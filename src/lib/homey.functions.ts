@@ -1495,6 +1495,7 @@ export const getBorgenLightsStatus = createServerFn({ method: "GET" }).handler(
 export const setAllOutdoorLights = createServerFn({ method: "POST" })
   .inputValidator((input: { on: boolean }) => input)
   .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
