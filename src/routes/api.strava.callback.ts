@@ -33,6 +33,10 @@ export const Route = createFileRoute("/api/strava/callback")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const { isHouseAuthenticated } = await import("@/lib/house-auth.server");
+        if (!(await isHouseAuthenticated())) {
+          return errorPage("Du må logge inn på huset før du kobler til Strava.", 401);
+        }
         const url = new URL(request.url);
         const code = url.searchParams.get("code");
         const state = url.searchParams.get("state");
