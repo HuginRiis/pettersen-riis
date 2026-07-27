@@ -17,6 +17,10 @@ const __load_ai_usage_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/lib/ai-usage.server")> => import("@/lib/ai-usage.server"))
   .client((): Promise<typeof import("@/lib/ai-usage.server")> => Promise.resolve({} as unknown as typeof import("@/lib/ai-usage.server")));
 const { logAiSearch, isHouseAuthenticated } = await __load_ai_usage_server();
+const __load_house_auth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"))
+  .client((): Promise<typeof import("@/lib/house-auth.server")> => Promise.resolve({ requireHouseAuth: async () => {}, isHouseAuthenticated: async () => false } as unknown as typeof import("@/lib/house-auth.server")));
+const { requireHouseAuth } = await __load_house_auth();
 export type TaxMonth = {
   id: string;
   year: number;
