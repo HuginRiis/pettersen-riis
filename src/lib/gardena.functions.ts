@@ -39,6 +39,7 @@ export const controlGardenaMower = createServerFn({ method: "POST" })
     seconds: typeof data?.seconds === "number" ? data.seconds : undefined,
   }))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     if (!data.serviceId || !data.command) {
       return { ok: false, error: "Mangler serviceId eller command" };
     }
