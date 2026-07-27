@@ -9,6 +9,11 @@ const __load_store = createIsomorphicFn()
   .client((): Promise<typeof import("@/lib/gardena-snapshot-store.server")> => Promise.resolve({} as unknown as typeof import("@/lib/gardena-snapshot-store.server")));
 const { loadStoredGardenaSnapshot, saveGardenaSnapshot } = await __load_store();
 
+const __load_auth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"))
+  .client((): Promise<typeof import("@/lib/house-auth.server")> => Promise.resolve({ requireHouseAuth: async () => {}, isHouseAuthenticated: async () => false } as unknown as typeof import("@/lib/house-auth.server")));
+const { requireHouseAuth } = await __load_auth();
+
 export const getGardenaSnapshot = createServerFn({ method: "GET" }).handler(async () => {
   const snap = await fetchGardenaSnapshot();
   // Lagre i delt server-cache slik at andre lesere slipper å treffe API-et.
@@ -34,6 +39,7 @@ export const controlGardenaMower = createServerFn({ method: "POST" })
     seconds: typeof data?.seconds === "number" ? data.seconds : undefined,
   }))
   .handler(async ({ data }) => {
+    await requireHouseAuth();
     if (!data.serviceId || !data.command) {
       return { ok: false, error: "Mangler serviceId eller command" };
     }

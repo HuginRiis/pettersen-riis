@@ -33,6 +33,10 @@ export const Route = createFileRoute("/api/homey/callback")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const { isHouseAuthenticated } = await import("@/lib/house-auth.server");
+        if (!(await isHouseAuthenticated())) {
+          return errorPage("Du må logge inn på huset før du kobler til Homey.", 401);
+        }
         const clientId = process.env.HOMEY_CLIENT_ID;
         const clientSecret = process.env.HOMEY_CLIENT_SECRET;
         if (!clientId || !clientSecret) {

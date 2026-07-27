@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PageShell, PageHero } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
+import { insertAgendaMessage, deleteAgendaMessage } from "@/lib/agenda-write.functions";
 import heroImg from "@/assets/got-agenda.jpg";
 import { Trash2, Plus, Bell, BellOff, Clock, ChevronDown } from "lucide-react";
 import { getPushPublicKey } from "@/lib/agenda-push";
@@ -86,16 +87,18 @@ function AgendaPage() {
     e.preventDefault();
     if (!subject.trim()) return;
     setSubmitting(true);
-    const { error } = await supabase.from("agenda_messages").insert({
-      subject: subject.trim(),
-      body: body.trim() || null,
-      event_date: date,
-      event_time: time || null,
-      who,
-      notify_minutes_before: notifyMin,
-    });
+    const res = await insertAgendaMessage({
+      data: {
+        subject: subject.trim(),
+        body: body.trim() || null,
+        event_date: date,
+        event_time: time || null,
+        who,
+        notify_minutes_before: notifyMin,
+      },
+    }).catch((e: any) => ({ ok: false, error: e?.message ?? "Feil" }));
     setSubmitting(false);
-    if (!error) {
+    if (res?.ok) {
       setSubject("");
       setBody("");
       setDate(today);
@@ -107,9 +110,10 @@ function AgendaPage() {
   }
 
   async function remove(id: string) {
-    await supabase.from("agenda_messages").delete().eq("id", id);
-    setItems((prev) => prev.filter((m) => m.id !== id));
+    const res = await deleteAgendaMessage({ data: { id } }).catch(() => ({ ok: false }));
+    if (res?.ok) setItems((prev) => prev.filter((m) => m.id !== id));
   }
+
 
   // Group by date
   const grouped = items.reduce<Record<string, Msg[]>>((acc, m) => {

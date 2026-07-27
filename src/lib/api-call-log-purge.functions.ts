@@ -10,12 +10,25 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
+const __loadAuth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> =>
+    import("@/lib/house-auth.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/lib/house-auth.server")> =>
+      Promise.resolve({
+        requireHouseAuth: async () => {},
+        isHouseAuthenticated: async () => false,
+      } as unknown as typeof import("@/lib/house-auth.server")),
+  );
+const { requireHouseAuth } = await __loadAuth();
 
 export const purgeApiCallLog = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z.object({ olderThanDays: z.number().min(1).max(365) }).parse(data),
   )
   .handler(async ({ data }): Promise<{ deleted: number; cutoff: string }> => {
+    await requireHouseAuth();
     const cutoff = new Date(
       Date.now() - data.olderThanDays * 24 * 3600 * 1000,
     ).toISOString();

@@ -15,6 +15,11 @@ const loadApiLog = createIsomorphicFn()
   );
 const { withApiLog } = await loadApiLog();
 
+const loadHouseAuth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"))
+  .client((): Promise<typeof import("@/lib/house-auth.server")> => Promise.resolve({ requireHouseAuth: async () => {}, isHouseAuthenticated: async () => false } as unknown as typeof import("@/lib/house-auth.server")));
+const { requireHouseAuth } = await loadHouseAuth();
+
 // Server-only loader — createIsomorphicFn strips the .server() body from the
 // client bundle, so the static import below never leaks into client code.
 const loadConnModule = createIsomorphicFn()
@@ -687,6 +692,7 @@ export async function listHomeyInsightsLogs(deviceId: string): Promise<any> {
 }
 
 export const disconnectHomey = createServerFn({ method: "POST" }).handler(async () => {
+  await requireHouseAuth();
   await (await loadConnModule()).deleteHomeyConnection();
   homeyTargetCache = null;
   clearHomeySessionCaches();
@@ -812,6 +818,7 @@ export const setHomeAlarmState = createServerFn({ method: "POST" })
       | { ok: false; error: string }
       | { ok: true; state: HomeAlarmState; who: string; changedAt: string }
     > => {
+      await requireHouseAuth();
       let conn: HomeyConnection | null;
       try {
         conn = await getValidConnection();
@@ -1488,6 +1495,7 @@ export const getBorgenLightsStatus = createServerFn({ method: "GET" }).handler(
 export const setAllOutdoorLights = createServerFn({ method: "POST" })
   .inputValidator((input: { on: boolean }) => input)
   .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -1621,6 +1629,7 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
 export const setLivingRoomLights = createServerFn({ method: "POST" })
   .inputValidator((input: { on: boolean }) => input)
   .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -1928,6 +1937,7 @@ export const setLivingRoomDeviceCapability = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -2028,6 +2038,7 @@ export const setLockState = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
@@ -2173,6 +2184,7 @@ export const setRoborockHomeyCapability = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();

@@ -9,6 +9,18 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
+const __loadAuth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> =>
+    import("@/lib/house-auth.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/lib/house-auth.server")> =>
+      Promise.resolve({
+        requireHouseAuth: async () => {},
+        isHouseAuthenticated: async () => false,
+      } as unknown as typeof import("@/lib/house-auth.server")),
+  );
+const { requireHouseAuth } = await __loadAuth();
 
 type Candidate = {
   table: string;
@@ -74,6 +86,7 @@ export type DbCleanupEstimate = {
 
 export const getDbCleanupEstimate = createServerFn({ method: "GET" }).handler(
   async (): Promise<DbCleanupEstimate> => {
+    await requireHouseAuth();
     const sb = supabaseAdmin as any;
 
     // Hent total DB-størrelse + bredt 30-dagers estimat.
@@ -207,6 +220,7 @@ export const runDbCleanup = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }): Promise<{ deletedPerTable: Record<string, number>; totalDeleted: number }> => {
+    await requireHouseAuth();
     const sb = supabaseAdmin as any;
     const cutoff30 = new Date(Date.now() - 30 * 24 * 3600_000).toISOString();
     const deletedPerTable: Record<string, number> = {};
@@ -280,6 +294,7 @@ export const runDbCleanup = createServerFn({ method: "POST" })
  */
 export const reclaimDbSpace = createServerFn({ method: "POST" }).handler(
   async (): Promise<{ scheduledCount: number; scheduled: string[]; message: string }> => {
+    await requireHouseAuth();
     const sb = supabaseAdmin as any;
     const { data, error } = await sb.rpc("reclaim_space");
     if (error) throw new Error(error.message);

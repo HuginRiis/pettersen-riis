@@ -13,6 +13,10 @@ const __load_api_call_log_server = createIsomorphicFn()
   .server((): Promise<typeof import("@/lib/api-call-log.server")> => import("@/lib/api-call-log.server"))
   .client((): Promise<typeof import("@/lib/api-call-log.server")> => Promise.resolve({} as unknown as typeof import("@/lib/api-call-log.server")));
 const { recordApiCall } = await __load_api_call_log_server();
+const __load_house_auth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"))
+  .client((): Promise<typeof import("@/lib/house-auth.server")> => Promise.resolve({ requireHouseAuth: async () => {}, isHouseAuthenticated: async () => false } as unknown as typeof import("@/lib/house-auth.server")));
+const { requireHouseAuth } = await __load_house_auth();
 function currentMonth(): string {
   const d = new Date();
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -29,6 +33,7 @@ export type AiBudgetActual = {
 
 export const getAiBudgetActual = createServerFn({ method: "GET" }).handler(
   async (): Promise<AiBudgetActual> => {
+    await requireHouseAuth();
     const started = Date.now();
     const month = currentMonth();
     const { data, error } = await (supabaseAdmin.from("ai_budget_actual") as any)
@@ -67,6 +72,7 @@ export const setAiBudgetActual = createServerFn({ method: "POST" })
     }).parse,
   )
   .handler(async ({ data }): Promise<AiBudgetActual> => {
+    await requireHouseAuth();
     const started = Date.now();
     const month = currentMonth();
     const payload: any = {
