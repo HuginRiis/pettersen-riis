@@ -1629,6 +1629,7 @@ export const getLivingRoomLightsState = createServerFn({ method: "GET" }).handle
 export const setLivingRoomLights = createServerFn({ method: "POST" })
   .inputValidator((input: { on: boolean }) => input)
   .handler(async ({ data }): Promise<{ ok: boolean; toggled: number; error?: string }> => {
+    await requireHouseAuth();
     let conn: HomeyConnection | null;
     try {
       conn = await getValidConnection();
