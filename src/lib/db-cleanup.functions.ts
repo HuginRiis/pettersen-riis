@@ -294,6 +294,7 @@ export const runDbCleanup = createServerFn({ method: "POST" })
  */
 export const reclaimDbSpace = createServerFn({ method: "POST" }).handler(
   async (): Promise<{ scheduledCount: number; scheduled: string[]; message: string }> => {
+    await requireHouseAuth();
     const sb = supabaseAdmin as any;
     const { data, error } = await sb.rpc("reclaim_space");
     if (error) throw new Error(error.message);
