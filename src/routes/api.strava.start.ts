@@ -8,6 +8,10 @@ export const Route = createFileRoute("/api/strava/start")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const { isHouseAuthenticated } = await import("@/lib/house-auth.server");
+        if (!(await isHouseAuthenticated())) {
+          return new Response("Du må logge inn på huset først.", { status: 401 });
+        }
         const url = new URL(request.url);
         const ownerParam = url.searchParams.get("owner");
         const owner: StravaOwner = isStravaOwner(ownerParam) ? ownerParam : "arne";
