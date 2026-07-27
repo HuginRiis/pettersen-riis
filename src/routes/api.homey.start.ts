@@ -8,6 +8,10 @@ export const Route = createFileRoute("/api/homey/start")({
   server: {
     handlers: {
       GET: async () => {
+        const { isHouseAuthenticated } = await import("@/lib/house-auth.server");
+        if (!(await isHouseAuthenticated())) {
+          return new Response("Du må logge inn på huset først.", { status: 401 });
+        }
         const clientId = process.env.HOMEY_CLIENT_ID;
         if (!clientId) {
           return new Response("HOMEY_CLIENT_ID mangler", { status: 500 });
