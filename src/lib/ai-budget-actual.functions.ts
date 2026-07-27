@@ -72,6 +72,7 @@ export const setAiBudgetActual = createServerFn({ method: "POST" })
     }).parse,
   )
   .handler(async ({ data }): Promise<AiBudgetActual> => {
+    await requireHouseAuth();
     const started = Date.now();
     const month = currentMonth();
     const payload: any = {
