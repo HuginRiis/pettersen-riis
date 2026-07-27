@@ -33,6 +33,7 @@ export type AiBudgetActual = {
 
 export const getAiBudgetActual = createServerFn({ method: "GET" }).handler(
   async (): Promise<AiBudgetActual> => {
+    await requireHouseAuth();
     const started = Date.now();
     const month = currentMonth();
     const { data, error } = await (supabaseAdmin.from("ai_budget_actual") as any)
