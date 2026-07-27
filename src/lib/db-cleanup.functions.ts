@@ -9,6 +9,18 @@ const __loadAdmin = createIsomorphicFn()
       Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
+const __loadAuth = createIsomorphicFn()
+  .server((): Promise<typeof import("@/lib/house-auth.server")> =>
+    import("@/lib/house-auth.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/lib/house-auth.server")> =>
+      Promise.resolve({
+        requireHouseAuth: async () => {},
+        isHouseAuthenticated: async () => false,
+      } as unknown as typeof import("@/lib/house-auth.server")),
+  );
+const { requireHouseAuth } = await __loadAuth();
 
 type Candidate = {
   table: string;
