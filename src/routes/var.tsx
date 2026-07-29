@@ -487,6 +487,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { color: tileColor } = useTileColor();
   const { tone } = useTileTone();
   const { flags: animFlags } = useAnimToggles();
+  const [thunderThreshold] = useThunderThreshold();
 
   // Sjanse for lyn/torden de neste 24 timene — brukes til bakgrunnsanimasjon
   const thunderRisk = useMemo(() => {
