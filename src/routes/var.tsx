@@ -1051,6 +1051,30 @@ function WeatherMenuButton({
   );
 }
 
+function ThunderThresholdSlider() {
+  const [value, setValue] = useThunderThreshold();
+  return (
+    <div className="flex flex-col gap-1 px-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-white/70 inline-flex items-center gap-1"><Zap size={12} /> Lyn-terskel</span>
+        <span className="text-[11px] text-white/80 tabular-nums">{value}%</span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={99}
+        step={1}
+        value={value}
+        onChange={(e) => setValue(Number(e.target.value))}
+        className="w-full accent-amber-300"
+      />
+      <span className="text-[10px] text-white/50 leading-tight">
+        Skjuler lyn i bakgrunnen når sjansen for torden neste 24 t er under denne verdien.
+      </span>
+    </div>
+  );
+}
+
 function WindUnitSelect() {
   const [unit, setUnit] = useWindUnit();
   return (
