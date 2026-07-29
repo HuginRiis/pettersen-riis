@@ -1014,6 +1014,8 @@ function WeatherMenuButton({
             </button>
           </div>
 
+          <ThunderThresholdSlider />
+
           <WindUnitSelect />
           <TempUnitSelect />
 
