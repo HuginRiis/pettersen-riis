@@ -33,6 +33,7 @@ import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as PlanterRouteImport } from './routes/planter'
 import { Route as NsmSikkerhetRouteImport } from './routes/nsm-sikkerhet'
 import { Route as LysRouteImport } from './routes/lys'
+import { Route as LinketurRouteImport } from './routes/linketur'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as IphoneAppRouteImport } from './routes/iphone-app'
 import { Route as HyttaRouteImport } from './routes/hytta'
@@ -180,6 +181,11 @@ const NsmSikkerhetRoute = NsmSikkerhetRouteImport.update({
 const LysRoute = LysRouteImport.update({
   id: '/lys',
   path: '/lys',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LinketurRoute = LinketurRouteImport.update({
+  id: '/linketur',
+  path: '/linketur',
   getParentRoute: () => rootRouteImport,
 } as any)
 const KvitteringerRoute = KvitteringerRouteImport.update({
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/hytta': typeof HyttaRoute
   '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
+  '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
   '/nsm-sikkerhet': typeof NsmSikkerhetRoute
   '/planter': typeof PlanterRoute
@@ -396,6 +403,7 @@ export interface FileRoutesByTo {
   '/hytta': typeof HyttaRoute
   '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
+  '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
   '/nsm-sikkerhet': typeof NsmSikkerhetRoute
   '/planter': typeof PlanterRoute
@@ -451,6 +459,7 @@ export interface FileRoutesById {
   '/hytta': typeof HyttaRoute
   '/iphone-app': typeof IphoneAppRoute
   '/kvitteringer': typeof KvitteringerRoute
+  '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
   '/nsm-sikkerhet': typeof NsmSikkerhetRoute
   '/planter': typeof PlanterRoute
@@ -507,6 +516,7 @@ export interface FileRouteTypes {
     | '/hytta'
     | '/iphone-app'
     | '/kvitteringer'
+    | '/linketur'
     | '/lys'
     | '/nsm-sikkerhet'
     | '/planter'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/hytta'
     | '/iphone-app'
     | '/kvitteringer'
+    | '/linketur'
     | '/lys'
     | '/nsm-sikkerhet'
     | '/planter'
@@ -615,6 +626,7 @@ export interface FileRouteTypes {
     | '/hytta'
     | '/iphone-app'
     | '/kvitteringer'
+    | '/linketur'
     | '/lys'
     | '/nsm-sikkerhet'
     | '/planter'
@@ -670,6 +682,7 @@ export interface RootRouteChildren {
   HyttaRoute: typeof HyttaRoute
   IphoneAppRoute: typeof IphoneAppRoute
   KvitteringerRoute: typeof KvitteringerRoute
+  LinketurRoute: typeof LinketurRoute
   LysRoute: typeof LysRoute
   NsmSikkerhetRoute: typeof NsmSikkerhetRoute
   PlanterRoute: typeof PlanterRoute
@@ -886,6 +899,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LysRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/linketur': {
+      id: '/linketur'
+      path: '/linketur'
+      fullPath: '/linketur'
+      preLoaderRoute: typeof LinketurRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kvitteringer': {
       id: '/kvitteringer'
       path: '/kvitteringer'
@@ -1094,6 +1114,7 @@ const rootRouteChildren: RootRouteChildren = {
   HyttaRoute: HyttaRoute,
   IphoneAppRoute: IphoneAppRoute,
   KvitteringerRoute: KvitteringerRoute,
+  LinketurRoute: LinketurRoute,
   LysRoute: LysRoute,
   NsmSikkerhetRoute: NsmSikkerhetRoute,
   PlanterRoute: PlanterRoute,
