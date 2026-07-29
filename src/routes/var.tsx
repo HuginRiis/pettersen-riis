@@ -9,6 +9,7 @@ import { getNetatmoWeatherStation, type WeatherModule } from "@/lib/netatmo-weat
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
+import { useThunderThreshold } from "@/hooks/use-thunder-threshold";
 import { reverseGeocode } from "@/lib/user-locations.functions";
 import type { ActiveLocation } from "@/components/LocationPicker";
 import {
@@ -486,6 +487,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
   const { color: tileColor } = useTileColor();
   const { tone } = useTileTone();
   const { flags: animFlags } = useAnimToggles();
+  const [thunderThreshold] = useThunderThreshold();
 
   // Sjanse for lyn/torden de neste 24 timene — brukes til bakgrunnsanimasjon
   const thunderRisk = useMemo(() => {
@@ -524,7 +526,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           ...(tileColor ? { ["--tile-color-bg" as string]: tileColor } : {}),
         }}
       >
-        {animFlags.bg && <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} wind={currentHour?.wind ?? 0} precipMm={currentHour?.precip ?? 0} thunderRisk={thunderRisk} />}
+        {animFlags.bg && <GlassPaneFX kind={glassKind} intensity={glassIntensity} sun={sun} now={now} wind={currentHour?.wind ?? 0} precipMm={currentHour?.precip ?? 0} thunderRisk={thunderRisk} thunderThreshold={thunderThreshold} />}
         <div className="max-w-3xl mx-auto px-4 pt-8 pb-16 space-y-4 text-white relative z-10">
 
           {/* Innstillinger er flyttet til menyknappen nederst til høyre */}
@@ -1012,6 +1014,8 @@ function WeatherMenuButton({
             </button>
           </div>
 
+          <ThunderThresholdSlider />
+
           <WindUnitSelect />
           <TempUnitSelect />
 
@@ -1043,6 +1047,30 @@ function WeatherMenuButton({
           </Link>
         </div>
       )}
+    </div>
+  );
+}
+
+function ThunderThresholdSlider() {
+  const [value, setValue] = useThunderThreshold();
+  return (
+    <div className="flex flex-col gap-1 px-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-white/70 inline-flex items-center gap-1"><Zap size={12} /> Lyn-terskel</span>
+        <span className="text-[11px] text-white/80 tabular-nums">{value}%</span>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={99}
+        step={1}
+        value={value}
+        onChange={(e) => setValue(Number(e.target.value))}
+        className="w-full accent-amber-300"
+      />
+      <span className="text-[10px] text-white/50 leading-tight">
+        Skjuler lyn i bakgrunnen når sjansen for torden neste 24 t er under denne verdien.
+      </span>
     </div>
   );
 }

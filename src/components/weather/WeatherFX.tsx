@@ -959,6 +959,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
   wind = 0,
   precipMm = 0,
   thunderRisk = 0,
+  thunderThreshold = 9,
 }: {
   kind: GlassKind;
   intensity?: number;
@@ -967,6 +968,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
   wind?: number;
   precipMm?: number;
   thunderRisk?: number;
+  thunderThreshold?: number;
 }) {
   const _mounted = useMounted();
   const isWet = kind === "rain" || kind === "sleet" || kind === "thunder";
@@ -1409,8 +1411,8 @@ const GlassPaneFX = memo(function GlassPaneFX({
         </>
       )}
 
-      {/* THUNDER: full-screen flash + faktiske lyn-slag */}
-      {isThunder && (
+      {/* THUNDER: full-screen flash + faktiske lyn-slag (kun over terskel) */}
+      {isThunder && thunderRisk >= thunderThreshold && (
         <>
           <div
             className="absolute inset-0 animate-wx-flash"
@@ -1424,8 +1426,8 @@ const GlassPaneFX = memo(function GlassPaneFX({
         </>
       )}
 
-      {/* THUNDER RISK OVERLAY: ≥ 9 % sjanse for lyn/torden neste 24 t */}
-      {thunderRisk >= 9 && !isThunder && (
+      {/* THUNDER RISK OVERLAY: konfigurerbar terskel for lyn/torden neste 24 t */}
+      {thunderRisk >= thunderThreshold && !isThunder && (
         <>
           <div
             className="absolute inset-0 animate-wx-flash"
