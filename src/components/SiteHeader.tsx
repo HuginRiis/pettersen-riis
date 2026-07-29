@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging } from "lucide-react";
+  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2 } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -51,6 +51,7 @@ type RoutePath =
   | "/kvitteringer"
   | "/utlan"
   | "/batterier"
+  | "/linketur"
   
   | "/skatte-utregningen"
   | "/gressklipper"
@@ -90,6 +91,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/kvitteringer": Receipt,
   "/utlan": PackageOpen,
   "/batterier": BatteryCharging,
+  "/linketur": Gamepad2,
   
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
@@ -125,6 +127,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/kvitteringer": "#94a3b8",
   "/utlan": "#c084fc",
   "/batterier": "#22c55e",
+  "/linketur": "#f472b6",
   
   "/trening": "#ef4444",
   "/varsler": "#dc2626",
@@ -166,6 +169,7 @@ const navLinks: NavLink[] = [
   { to: "/kvitteringer", label: "Kvitteringer" },
   { to: "/utlan", label: "Utlån & Lånt" },
   { to: "/batterier", label: "Batterier i huset" },
+  { to: "/linketur", label: "Linketur" },
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
