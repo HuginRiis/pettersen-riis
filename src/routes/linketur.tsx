@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import heroImg from "@/assets/got-linketur.jpg";
+import { SteamSearch } from "@/components/linketur/SteamSearch";
 import {
   LAN_GAMES,
   LAN_MODE_LABEL,
