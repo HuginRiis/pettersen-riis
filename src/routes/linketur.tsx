@@ -239,7 +239,8 @@ function LinketurRoute() {
           )}
         </section>
 
-        <SteamSearch />
+
+
 
 
 
