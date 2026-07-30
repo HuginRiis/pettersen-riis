@@ -17,6 +17,15 @@ const EXPLANATIONS: Record<string, string> = {
   "pulsvariasjon (hrv)": "Høyere HRV antyder god restitusjon og lavt stressnivå.",
   "pulsoksygen (spo₂)": "Oksygenmetning i blodet — friske verdier ligger 95–100 %.",
   "respirasjon": "Pust per minutt under søvn — 12–20 er normalt.",
+  "lett søvn": "Størstedelen av natten. For mye lett søvn kan bety urolig søvn.",
+  "våken": "Tid våken etter innsovning — lavt er best.",
+  "urolige øyeblikk": "Antall bevegelser/oppvåkninger Garmin registrerte i løpet av natten.",
+  "snittpuls natt": "Gjennomsnittlig puls gjennom natten — lavere tyder på god restitusjon.",
+  "body battery-endring": "Hvor mye energi du ladet opp gjennom natten (+ er bra).",
+  "laveste spo₂": "Laveste oksygenmetning målt i løpet av natten — under 90 % kan være verdt å følge med på.",
+  "laveste respirasjon": "Laveste pust per minutt gjennom natten.",
+  "høyeste respirasjon": "Høyeste pust per minutt gjennom natten.",
+  "søvnstress": "Garmins stressnivå gjennom natten — lavere er bedre.",
   "body battery (topp)": "Garmins «energinivå». Høyere topp = bedre lading gjennom døgnet.",
   "stress (snitt)": "Lavere er bedre. Under 25 regnes som hvilende.",
   "intensitetsminutter": "WHO anbefaler minst 150 min/uke moderat aktivitet.",
@@ -36,11 +45,20 @@ type Sleep = {
   day: string;
   total_seconds: number | null;
   deep_seconds: number | null;
+  light_seconds: number | null;
+  awake_seconds: number | null;
   rem_seconds: number | null;
   sleep_score: number | null;
   hrv_avg: number | null;
   average_spo2: number | null;
   average_respiration: number | null;
+  restless_moments: number | null;
+  body_battery_change: number | null;
+  night_hr_avg: number | null;
+  lowest_spo2: number | null;
+  lowest_respiration: number | null;
+  highest_respiration: number | null;
+  sleep_stress: number | null;
 };
 type Overview = { daily: Daily[]; sleep: Sleep[] };
 
@@ -126,6 +144,15 @@ function aggSleep(rows: Sleep[]): Partial<Sleep> {
     hrv_avg: avg(rows.map((r) => r.hrv_avg)),
     average_spo2: avg(rows.map((r) => r.average_spo2)),
     average_respiration: avg(rows.map((r) => r.average_respiration)),
+    light_seconds: sum(rows.map((r) => r.light_seconds)),
+    awake_seconds: sum(rows.map((r) => r.awake_seconds)),
+    restless_moments: avg(rows.map((r) => r.restless_moments)),
+    body_battery_change: avg(rows.map((r) => r.body_battery_change)),
+    night_hr_avg: avg(rows.map((r) => r.night_hr_avg)),
+    lowest_spo2: avg(rows.map((r) => r.lowest_spo2)),
+    lowest_respiration: avg(rows.map((r) => r.lowest_respiration)),
+    highest_respiration: avg(rows.map((r) => r.highest_respiration)),
+    sleep_stress: avg(rows.map((r) => r.sleep_stress)),
   };
 }
 
@@ -175,11 +202,20 @@ export function GarminCompare() {
     { label: "Søvn (totalt)", arne: aSleep.total_seconds ?? null, rebekka: rSleep.total_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
     { label: "Dyp søvn", arne: aSleep.deep_seconds ?? null, rebekka: rSleep.deep_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
     { label: "REM-søvn", arne: aSleep.rem_seconds ?? null, rebekka: rSleep.rem_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: true },
+    { label: "Lett søvn", arne: aSleep.light_seconds ?? null, rebekka: rSleep.light_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: null },
+    { label: "Våken", arne: aSleep.awake_seconds ?? null, rebekka: rSleep.awake_seconds ?? null, fmt: (n) => hoursMin(n), fmtDiff: (n) => hoursMin(Math.abs(n)), higherIsBetter: false },
     { label: "Søvnscore", arne: aSleep.sleep_score ?? null, rebekka: rSleep.sleep_score ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
+    { label: "Urolige øyeblikk", arne: aSleep.restless_moments ?? null, rebekka: rSleep.restless_moments ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
+    { label: "Snittpuls natt", arne: aSleep.night_hr_avg ?? null, rebekka: rSleep.night_hr_avg ?? null, fmt: (n) => fmtNum(n, 0, " bpm"), higherIsBetter: false },
     { label: "Hvilepuls", arne: a.resting_heart_rate ?? null, rebekka: r.resting_heart_rate ?? null, fmt: (n) => fmtNum(n, 0, " bpm"), higherIsBetter: false },
+    { label: "Body Battery-endring", arne: aSleep.body_battery_change ?? null, rebekka: rSleep.body_battery_change ?? null, fmt: (n) => (n == null ? "—" : `${n > 0 ? "+" : ""}${fmtNum(n)}`), higherIsBetter: true },
     { label: "Pulsvariasjon (HRV)", arne: aSleep.hrv_avg ?? null, rebekka: rSleep.hrv_avg ?? null, fmt: (n) => fmtNum(n, 0, " ms"), higherIsBetter: true },
     { label: "Pulsoksygen (SpO₂)", arne: aSleep.average_spo2 ?? null, rebekka: rSleep.average_spo2 ?? null, fmt: (n) => fmtNum(n, 0, " %"), higherIsBetter: true },
+    { label: "Laveste SpO₂", arne: aSleep.lowest_spo2 ?? null, rebekka: rSleep.lowest_spo2 ?? null, fmt: (n) => fmtNum(n, 0, " %"), higherIsBetter: true },
     { label: "Respirasjon", arne: aSleep.average_respiration ?? null, rebekka: rSleep.average_respiration ?? null, fmt: (n) => fmtNum(n, 1, " /min"), higherIsBetter: null },
+    { label: "Laveste respirasjon", arne: aSleep.lowest_respiration ?? null, rebekka: rSleep.lowest_respiration ?? null, fmt: (n) => fmtNum(n, 0, " /min"), higherIsBetter: null },
+    { label: "Høyeste respirasjon", arne: aSleep.highest_respiration ?? null, rebekka: rSleep.highest_respiration ?? null, fmt: (n) => fmtNum(n, 0, " /min"), higherIsBetter: false },
+    { label: "Søvnstress", arne: aSleep.sleep_stress ?? null, rebekka: rSleep.sleep_stress ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
     { label: "Body Battery (topp)", arne: a.body_battery_high ?? null, rebekka: r.body_battery_high ?? null, fmt: (n) => fmtNum(n), higherIsBetter: true },
     { label: "Stress (snitt)", arne: a.stress_average ?? null, rebekka: r.stress_average ?? null, fmt: (n) => fmtNum(n), higherIsBetter: false },
     { label: "Intensitetsminutter", arne: a._intensity, rebekka: r._intensity, fmt: (n) => fmtNum(n, 0, " min"), higherIsBetter: true },

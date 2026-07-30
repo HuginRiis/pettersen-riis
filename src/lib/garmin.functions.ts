@@ -57,12 +57,39 @@ export const getGarminOverview = createServerFn({ method: "GET" })
       .order("start_time_local", { ascending: false })
       .limit(20);
 
-    const { data: sleep } = await supabaseAdmin
-      .from("garmin_sleep")
-      .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg")
+    const { data: sleepRaw } = await (supabaseAdmin.from("garmin_sleep") as any)
+      .select(
+        "day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, " +
+          "restless_moments:raw->restlessMomentsCount, body_battery_change:raw->bodyBatteryChange, " +
+          "night_hr_avg:raw->wellnessSpO2SleepSummaryDTO->averageSpO2HR, lowest_spo2:raw->wellnessSpO2SleepSummaryDTO->lowestSPO2, " +
+          "lowest_respiration:raw->dailySleepDTO->lowestRespirationValue, highest_respiration:raw->dailySleepDTO->highestRespirationValue, " +
+          "sleep_stress:raw->dailySleepDTO->avgSleepStress",
+      )
       .eq("owner", owner)
       .gte("day", sinceIso)
       .order("day", { ascending: true });
+
+    const num = (v: unknown): number | null =>
+      v == null || v === "" || Number.isNaN(Number(v)) ? null : Number(v);
+    const sleep = ((sleepRaw ?? []) as any[]).map((r) => ({
+      day: String(r.day),
+      total_seconds: num(r.total_seconds),
+      deep_seconds: num(r.deep_seconds),
+      light_seconds: num(r.light_seconds),
+      rem_seconds: num(r.rem_seconds),
+      awake_seconds: num(r.awake_seconds),
+      sleep_score: num(r.sleep_score),
+      average_spo2: num(r.average_spo2),
+      average_respiration: num(r.average_respiration),
+      hrv_avg: num(r.hrv_avg),
+      restless_moments: num(r.restless_moments),
+      body_battery_change: num(r.body_battery_change),
+      night_hr_avg: num(r.night_hr_avg),
+      lowest_spo2: num(r.lowest_spo2),
+      lowest_respiration: num(r.lowest_respiration),
+      highest_respiration: num(r.highest_respiration),
+      sleep_stress: num(r.sleep_stress),
+    }));
 
     const intradaySince = new Date();
     intradaySince.setDate(intradaySince.getDate() - 7);
