@@ -105,6 +105,8 @@ function LinketurRoute() {
       </PageHero>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
+        <SteamSearch />
+
         {pick && (
           <section className="relative overflow-hidden rounded-xl border border-primary/40 bg-card p-5">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-2xl" />
@@ -239,7 +241,8 @@ function LinketurRoute() {
           )}
         </section>
 
-        <SteamSearch />
+
+
 
 
 

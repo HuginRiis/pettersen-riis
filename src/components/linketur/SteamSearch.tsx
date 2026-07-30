@@ -2,29 +2,39 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, ExternalLink, Users, Monitor, Star } from "lucide-react";
-import { searchSteamGames, type SteamGame } from "@/lib/steam-search.functions";
+import {
+  Search,
+  Loader2,
+  ExternalLink,
+  Users,
+  Monitor,
+  Star,
+  Sparkles,
+} from "lucide-react";
+import { aiSteamSearch, type SteamGame } from "@/lib/steam-search.functions";
 
-const TYPE_FILTERS: { id: string; label: string; genres: string[] }[] = [
-  { id: "racing", label: "Bilspill", genres: ["Racing"] },
-  { id: "sim", label: "Simulator", genres: ["Simulation"] },
-  { id: "shooter", label: "Skytespill", genres: ["Action", "Free to Play"] },
-  { id: "strategy", label: "Strategi", genres: ["Strategy"] },
-  { id: "sport", label: "Sport", genres: ["Sports"] },
-  { id: "rpg", label: "Rollespill", genres: ["RPG"] },
-  { id: "adventure", label: "Eventyr", genres: ["Adventure"] },
-  { id: "indie", label: "Indie", genres: ["Indie", "Casual"] },
+const TYPE_FILTERS: { id: string; label: string }[] = [
+  { id: "racing", label: "Bilspill" },
+  { id: "sim", label: "Simulator" },
+  { id: "shooter", label: "Skytespill" },
+  { id: "strategy", label: "Strategi" },
+  { id: "sport", label: "Sport" },
+  { id: "rpg", label: "Rollespill" },
+  { id: "adventure", label: "Eventyr" },
+  { id: "indie", label: "Indie" },
 ];
 
 export function SteamSearch() {
-  const runSearch = useServerFn(searchSteamGames);
+  const runSearch = useServerFn(aiSteamSearch);
   const [term, setTerm] = useState("");
+  const [players, setPlayers] = useState(6);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [games, setGames] = useState<SteamGame[] | null>(null);
+  const [summary, setSummary] = useState("");
+  const [terms, setTerms] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
-  const [coopOnly, setCoopOnly] = useState(false);
-  const [windowsOnly, setWindowsOnly] = useState(true);
+  const [coopOnly, setCoopOnly] = useState(true);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +42,12 @@ export function SteamSearch() {
     setLoading(true);
     setError(null);
     try {
-      const res = await runSearch({ data: { term: term.trim() } });
+      const res = await runSearch({
+        data: { query: term.trim(), players, categories: types, coopOnly },
+      });
       setGames(res.games);
+      setSummary(res.summary ?? "");
+      setTerms(res.terms ?? []);
       if (res.error) setError(res.error);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Søket feilet");
@@ -45,24 +59,15 @@ export function SteamSearch() {
   const toggleType = (id: string) =>
     setTypes((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
-  const activeGenres = TYPE_FILTERS.filter((t) => types.includes(t.id)).flatMap((t) => t.genres);
-
-  const filtered = (games ?? []).filter((g) => {
-    if (windowsOnly && !g.windows) return false;
-    if (coopOnly && !(g.coop || g.lan)) return false;
-    if (activeGenres.length > 0 && !g.genres.some((x) => activeGenres.includes(x))) return false;
-    return true;
-  });
-
   return (
-    <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+    <section className="rounded-xl border border-primary/40 bg-card p-5 space-y-4">
       <div>
         <h2 className="text-xl text-foreground inline-flex items-center gap-2">
-          <Search size={18} className="text-primary" /> Søk i hele Steam-katalogen
+          <Sparkles size={18} className="text-primary" /> AI-søk i Steam
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Søker direkte i Steam sitt katalog-API — alle Windows-spill gjennom tidene. Filtrer på type
-          spill og co-op.
+          Skriv hva dere har lyst på — AI-en oversetter det til gode Steam-søk, finner spill som
+          funker på Windows, og anslår hvor mange som kan spille.
         </p>
       </div>
 
@@ -75,71 +80,83 @@ export function SteamSearch() {
           <Input
             value={term}
             onChange={(e) => setTerm(e.target.value)}
-            placeholder="F.eks. rally, tank, zombie, golf…"
+            placeholder="F.eks. «kaotisk bilspill vi kan spille åtte stykker»"
             className="pl-9"
-            aria-label="Søk i Steam"
+            aria-label="AI-søk i Steam"
           />
         </div>
         <Button type="submit" disabled={loading || term.trim().length < 2} className="gap-2">
-          {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} Søk
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} Søk
         </Button>
       </form>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {TYPE_FILTERS.map((t) => {
-          const on = types.includes(t.id);
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => toggleType(t.id)}
-              aria-pressed={on}
-              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                on
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "border-border text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t.label}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => setCoopOnly((v) => !v)}
-          aria-pressed={coopOnly}
-          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-            coopOnly
-              ? "bg-emerald-500 text-background border-emerald-500"
-              : "border-border text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Kun co-op / LAN
-        </button>
-        <button
-          type="button"
-          onClick={() => setWindowsOnly((v) => !v)}
-          aria-pressed={windowsOnly}
-          className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-            windowsOnly
-              ? "bg-sky-500 text-background border-sky-500"
-              : "border-border text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Kun Windows
-        </button>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+            <span className="inline-flex items-center gap-1.5">
+              <Users size={13} /> Antall spillere
+            </span>
+            <span className="text-foreground font-medium">{players}</span>
+          </div>
+          <input
+            type="range"
+            min={1}
+            max={32}
+            value={players}
+            onChange={(e) => setPlayers(Number(e.target.value))}
+            className="w-full accent-primary"
+            aria-label="Antall spillere i Steam-søket"
+          />
+        </div>
+        <div className="flex flex-wrap items-start gap-2">
+          {TYPE_FILTERS.map((t) => {
+            const on = types.includes(t.id);
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => toggleType(t.id)}
+                aria-pressed={on}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  on
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setCoopOnly((v) => !v)}
+            aria-pressed={coopOnly}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              coopOnly
+                ? "bg-emerald-500 text-background border-emerald-500"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Kun flerspiller / co-op
+          </button>
+        </div>
       </div>
 
       {error && <div className="text-xs text-destructive">{error}</div>}
 
-      {games && (
-        <div className="text-xs text-muted-foreground">
-          {filtered.length} treff{games.length !== filtered.length ? ` (av ${games.length})` : ""}
+      {summary && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-foreground/90">
+          <span className="text-primary">AI:</span> {summary}
+          {terms.length > 0 && (
+            <span className="ml-2 text-muted-foreground">
+              (søkte på: {terms.join(", ")})
+            </span>
+          )}
         </div>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((g) => (
+        {(games ?? []).map((g) => (
           <a
             key={g.appid}
             href={g.url}
@@ -160,7 +177,13 @@ export function SteamSearch() {
                 <div className="text-sm text-foreground">{g.name}</div>
                 <ExternalLink size={13} className="mt-0.5 shrink-0 text-muted-foreground" />
               </div>
+              {g.aiNote && <p className="text-[11px] text-primary">{g.aiNote}</p>}
               <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                {g.playersLabel && (
+                  <span className="inline-flex items-center gap-0.5 text-foreground/90">
+                    <Users size={11} /> {g.playersLabel}
+                  </span>
+                )}
                 {g.releaseYear && <span>{g.releaseYear}</span>}
                 {g.price && <span className="text-foreground/80">{g.price}</span>}
                 {g.metascore && (
@@ -185,11 +208,6 @@ export function SteamSearch() {
                     Co-op
                   </span>
                 )}
-                {g.multiplayer && (
-                  <span className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-foreground/80">
-                    <Users size={10} /> Flerspiller
-                  </span>
-                )}
                 {g.genres.slice(0, 3).map((x) => (
                   <span
                     key={x}
@@ -204,9 +222,9 @@ export function SteamSearch() {
         ))}
       </div>
 
-      {games && filtered.length === 0 && !loading && (
+      {games && games.length === 0 && !loading && (
         <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-          Ingen treff med disse filtrene. Prøv et annet søkeord eller færre filtre.
+          Ingen treff. Prøv å beskrive det litt annerledes eller skru av filtrene.
         </div>
       )}
     </section>
