@@ -239,6 +239,10 @@ function LinketurRoute() {
           )}
         </section>
 
+        <SteamSearch />
+
+
+
         {/* Verktøykasse */}
         <section className="space-y-3">
           <h2 className="text-xl text-foreground inline-flex items-center gap-2">
