@@ -59,7 +59,13 @@ export const getGarminOverview = createServerFn({ method: "GET" })
 
     const { data: sleep } = await supabaseAdmin
       .from("garmin_sleep")
-      .select("day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg")
+      .select(
+        "day, total_seconds, deep_seconds, light_seconds, rem_seconds, awake_seconds, sleep_score, average_spo2, average_respiration, hrv_avg, " +
+          "restless_moments:raw->restlessMomentsCount, body_battery_change:raw->bodyBatteryChange, " +
+          "night_hr_avg:raw->wellnessSpO2SleepSummaryDTO->averageSpO2HR, lowest_spo2:raw->wellnessSpO2SleepSummaryDTO->lowestSPO2, " +
+          "lowest_respiration:raw->dailySleepDTO->lowestRespirationValue, highest_respiration:raw->dailySleepDTO->highestRespirationValue, " +
+          "sleep_stress:raw->dailySleepDTO->avgSleepStress",
+      )
       .eq("owner", owner)
       .gte("day", sinceIso)
       .order("day", { ascending: true });
