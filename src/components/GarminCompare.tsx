@@ -135,6 +135,15 @@ function aggSleep(rows: Sleep[]): Partial<Sleep> {
     hrv_avg: avg(rows.map((r) => r.hrv_avg)),
     average_spo2: avg(rows.map((r) => r.average_spo2)),
     average_respiration: avg(rows.map((r) => r.average_respiration)),
+    light_seconds: sum(rows.map((r) => r.light_seconds)),
+    awake_seconds: sum(rows.map((r) => r.awake_seconds)),
+    restless_moments: avg(rows.map((r) => r.restless_moments)),
+    body_battery_change: avg(rows.map((r) => r.body_battery_change)),
+    night_hr_avg: avg(rows.map((r) => r.night_hr_avg)),
+    lowest_spo2: avg(rows.map((r) => r.lowest_spo2)),
+    lowest_respiration: avg(rows.map((r) => r.lowest_respiration)),
+    highest_respiration: avg(rows.map((r) => r.highest_respiration)),
+    sleep_stress: avg(rows.map((r) => r.sleep_stress)),
   };
 }
 
