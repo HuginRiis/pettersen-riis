@@ -14,7 +14,7 @@ import { reverseGeocode } from "@/lib/user-locations.functions";
 import type { ActiveLocation } from "@/components/LocationPicker";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
-  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
+  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX, usePerfScale,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
