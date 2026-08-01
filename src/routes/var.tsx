@@ -1281,9 +1281,9 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
         <style>{`
           @keyframes panelFlyRight { 0% { opacity:0; transform: translateX(120%) rotate(6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
           @keyframes panelFlyLeft  { 0% { opacity:0; transform: translateX(-120%) rotate(-6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
-          @keyframes panelFlyUp    { 0% { opacity:0; transform: translateY(80%) scale(.92); filter: blur(6px); } 100% { opacity:1; transform: translateY(0) scale(1); filter: blur(0); } }
-          @keyframes panelFlyZoom  { 0% { opacity:0; transform: scale(.6) rotate(-3deg); filter: blur(8px); } 100% { opacity:1; transform: scale(1) rotate(0); filter: blur(0); } }
-          @keyframes hourPop { 0% { opacity:0; transform: translateY(14px) scale(.7); filter: blur(4px); } 60% { opacity:1; transform: translateY(-2px) scale(1.05); filter: blur(0); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+          @keyframes panelFlyUp    { 0% { opacity:0; transform: translateY(80%) scale(.92); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+          @keyframes panelFlyZoom  { 0% { opacity:0; transform: scale(.6) rotate(-3deg); } 100% { opacity:1; transform: scale(1) rotate(0); } }
+          @keyframes hourPop { 0% { opacity:0; transform: translateY(14px) scale(.7); } 60% { opacity:1; transform: translateY(-2px) scale(1.05); } 100% { opacity:1; transform: translateY(0) scale(1); } }
           @keyframes hourSlide { 0% { opacity:0; transform: translateX(24px); } 100% { opacity:1; transform: translateX(0); } }
           @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
           @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
@@ -1298,7 +1298,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
               panel === "skydekke"? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
               panel === "vind"    ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
                                     "panelFlyZoom 0.6s cubic-bezier(.2,.8,.2,1) both",
-            willChange: "transform, opacity, filter",
+            willChange: "transform, opacity",
           }}
         >
           {panel === "nedbor" && <NedborPanel hours={nextHours} maxP={maxRain} />}
