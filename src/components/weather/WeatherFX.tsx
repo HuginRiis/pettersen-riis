@@ -1652,7 +1652,9 @@ export function glassKindFromSymbol(symbol: string | null, isDay: boolean): Glas
 
 
 export {
+  usePerfScale,
   InsideRainFX,
+
   RainFX,
   SnowFX,
   CloudFX,
