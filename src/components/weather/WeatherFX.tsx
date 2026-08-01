@@ -35,7 +35,36 @@ function seededRng(seed: number) {
 
 type Common = { intensity?: number; className?: string };
 
-const wrap = "pointer-events-none absolute inset-0 overflow-hidden";
+/**
+ * Ytelses-nivå: mobil / svake enheter / redusert bevegelse får færre
+ * partikler og mindre blur, slik at animasjonene holder 60 fps.
+ * 1 = full effekt, 0.55 = mobil, 0.35 = svak enhet.
+ */
+function usePerfScale() {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const small = window.matchMedia("(max-width: 768px)").matches;
+    const weak =
+      (nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    if (reduced || weak) setScale(0.35);
+    else if (small) setScale(0.55);
+    else setScale(1);
+  }, []);
+  return scale;
+}
+
+/** GPU-hint: hold laget cachet som tekstur så blur ikke re-rasteriseres per frame. */
+const gpuLayer: React.CSSProperties = {
+  willChange: "transform",
+  transform: "translateZ(0)",
+  backfaceVisibility: "hidden",
+};
+
+const wrap =
+  "pointer-events-none absolute inset-0 overflow-hidden [contain:paint] [transform:translateZ(0)]";
+
 
 /* ---------------- INSIDE RAIN (drops inside the content box) ---------------- */
 const InsideRainFX = memo(function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
