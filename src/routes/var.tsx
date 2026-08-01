@@ -3457,7 +3457,7 @@ function SkydekkeSceneFX({
     return arr.sort((a, b) => a.scale - b.scale);
   }, [cloudCount, cov, windMult]);
 
-  const rainDropCount = rainMix > 0.1 ? Math.round(20 + rainMix * 70) : 0;
+  const rainDropCount = rainMix > 0.1 ? Math.max(8, Math.round((20 + rainMix * 70) * perf)) : 0;
   const rainDrops = useMemo(() => {
     return Array.from({ length: rainDropCount }).map((_, i) => {
       const left = (i / Math.max(1, rainDropCount)) * 100 + ((i * 37) % 5);
@@ -3469,7 +3469,10 @@ function SkydekkeSceneFX({
   }, [rainDropCount]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{ contain: "paint", transform: "translateZ(0)" }}
+    >
       {/* Regn */}
       {rainDrops.length > 0 && (
         <div className="absolute inset-0" style={{ opacity: Math.min(1, 0.5 + rainMix * 0.6) }}>
@@ -3485,6 +3488,8 @@ function SkydekkeSceneFX({
                 background: "linear-gradient(180deg, rgba(210,230,255,0) 0%, rgba(210,230,255,0.85) 100%)",
                 animation: `skyDekkeRain ${d.dur}s linear ${d.delay}s infinite`,
                 borderRadius: 2,
+                willChange: "transform, opacity",
+                backfaceVisibility: "hidden",
               }}
             />
           ))}
@@ -3502,9 +3507,11 @@ function SkydekkeSceneFX({
             opacity: c.opacity,
             animation: `skyDekkeDrift ${c.dur}s linear ${c.delay}s infinite`,
             zIndex: c.z,
-            filter: `drop-shadow(0 4px 6px rgba(15,25,45,${0.08 + rainMix * 0.2}))`,
+            willChange: "transform",
+            backfaceVisibility: "hidden",
           }}
         >
+
           <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden>
             <defs>
               <linearGradient id={`sd-cg-${i}-${Math.round(rainMix * 100)}`} x1="0" y1="0" x2="0" y2="1">
