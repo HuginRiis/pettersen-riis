@@ -3422,7 +3422,9 @@ function SkydekkeSceneFX({
   rainIntensity: number;
   rainProb: number;
 }) {
+  const perf = usePerfScale();
   // 0..1 dekning
+
   const cov = Math.max(0, Math.min(1, cloud / 100));
   // Vind → farts-multiplikator (1 = normal, opp mot 4x ved storm)
   const windMult = Math.min(4, Math.max(0.6, 1 + wind / 6));
