@@ -35,7 +35,36 @@ function seededRng(seed: number) {
 
 type Common = { intensity?: number; className?: string };
 
-const wrap = "pointer-events-none absolute inset-0 overflow-hidden";
+/**
+ * Ytelses-nivå: mobil / svake enheter / redusert bevegelse får færre
+ * partikler og mindre blur, slik at animasjonene holder 60 fps.
+ * 1 = full effekt, 0.55 = mobil, 0.35 = svak enhet.
+ */
+function usePerfScale() {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const small = window.matchMedia("(max-width: 768px)").matches;
+    const weak =
+      (nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    if (reduced || weak) setScale(0.35);
+    else if (small) setScale(0.55);
+    else setScale(1);
+  }, []);
+  return scale;
+}
+
+/** GPU-hint: hold laget cachet som tekstur så blur ikke re-rasteriseres per frame. */
+const gpuLayer: React.CSSProperties = {
+  willChange: "transform",
+  transform: "translateZ(0)",
+  backfaceVisibility: "hidden",
+};
+
+const wrap =
+  "pointer-events-none absolute inset-0 overflow-hidden [contain:paint] [transform:translateZ(0)]";
+
 
 /* ---------------- INSIDE RAIN (drops inside the content box) ---------------- */
 const InsideRainFX = memo(function InsideRainFX({ intensity = 0.5, className = "" }: Common) {
@@ -87,6 +116,7 @@ const RainFX = memo(function RainFX({
   className = "",
 }: Common & { wind?: number }) {
   const _mounted = useMounted();
+  const perf = usePerfScale();
   const clamped = Math.max(0, Math.min(1, intensity));
   // Vind i m/s → skrå-vinkel opp til ~35°, og horisontal drift under fallet.
   const w = Math.max(0, Math.min(20, wind));
@@ -94,8 +124,8 @@ const RainFX = memo(function RainFX({
   const drift = 40 + w * 22; // px horisontal forskyvning under fallet
   const drops = useMemo(() => {
     // Synlig selv når det er tørt: 26–34 dråper totalt gir ~10–14 synlige på én gang.
-    // Øker raskt til ~55–65 når regnet kommer.
-    const count = Math.round(26 + Math.random() * 8 + clamped * 30);
+    // Øker raskt til ~55–65 når regnet kommer. Skaleres ned på mobil/svake enheter.
+    const count = Math.max(10, Math.round((26 + Math.random() * 8 + clamped * 30) * perf));
 
     return Array.from({ length: count }).map(() => ({
       left: Math.random() * 100,
@@ -106,7 +136,8 @@ const RainFX = memo(function RainFX({
       w: 0.5 + Math.random() * 0.8,
       op: 0.55 + clamped * 0.35 + Math.random() * 0.25,
     }));
-  }, [clamped]);
+  }, [clamped, perf]);
+
   if (!_mounted) return null;
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
@@ -309,10 +340,12 @@ type CloudCoverProps = { intensity?: number; rainIntensity?: number; className?:
 
 const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity = 0, className = "" }: CloudCoverProps) {
   const _mounted = useMounted();
+  const perf = usePerfScale();
   const i = Math.max(0, Math.min(1, intensity));
   const rain = Math.max(0, Math.min(1, rainIntensity));
   // 0 = blå klar himmel, 1 = mørk, tett dekke. Regn gjør skyene mørkere.
-  const count = Math.round(8 + i * 18 + rain * 4);
+  // Færre, større skyer = samme visuelle dekning, langt billigere å tegne.
+  const count = Math.max(4, Math.round((6 + i * 8 + rain * 2) * perf));
   const blobs = useMemo(
     () =>
       Array.from({ length: count }).map((_, k) => {
@@ -325,11 +358,12 @@ const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity
         return {
           top: baseTop + Math.random() * (fullCover ? 48 : 28),
           left: Math.random() * 140 - 20,
-          width: (fullCover ? 240 : 140) + Math.random() * (fullCover ? 380 : 220) + layer * 90,
-          height: (fullCover ? 130 : 60) + Math.random() * (fullCover ? 160 : 80) + layer * 50,
+          width: (fullCover ? 260 : 160) + Math.random() * (fullCover ? 380 : 220) + layer * 90,
+          height: (fullCover ? 140 : 70) + Math.random() * (fullCover ? 160 : 80) + layer * 50,
           dur: 50 + Math.random() * 70 - layer * 8,
           delay: -Math.random() * 80,
-          blur: (fullCover ? 8 : 14) + layer * 6 + Math.random() * 8,
+          // Blur er dyrt per frame — hold den lav, radial-gradienten gir myke kanter uansett
+          blur: Math.min(10, (fullCover ? 4 : 6) + layer * 2 + Math.random() * 3),
           // mørkere skyer jo høyere intensitet, regn og jo lenger fram
           darkness: Math.min(0.95, 0.12 + i * (0.5 + layer * 0.12) + rain * 0.35 + Math.random() * 0.1),
           op: Math.min(1, 0.45 + i * 0.45 + layer * 0.05 + rain * 0.15),
@@ -341,6 +375,8 @@ const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity
   // himmelfarge bak skyene: klarblå → mørk grå/blå. Regn trekker mot blygrå.
   const skyTop = `rgba(${Math.round(120 - i * 100 - rain * 60)}, ${Math.round(170 - i * 140 - rain * 50)}, ${Math.round(220 - i * 170 - rain * 40)}, ${0.35 + i * 0.45 + rain * 0.2})`;
   const skyBot = `rgba(${Math.round(80 - i * 70 - rain * 50)}, ${Math.round(110 - i * 95 - rain * 40)}, ${Math.round(160 - i * 135 - rain * 30)}, ${0.25 + i * 0.5 + rain * 0.25})`;
+
+  if (!_mounted) return null;
 
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
@@ -354,12 +390,12 @@ const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity
         const darkL = Math.round(255 - b.darkness * 235);
         const lightCol = `rgb(${lightL},${lightL},${Math.min(255, lightL + 8)})`;
         const darkCol = `rgb(${darkL},${darkL},${Math.min(255, darkL + 12)})`;
-        if (!_mounted) return null;
         return (
           <div
             key={k}
             className="absolute rounded-full animate-wx-cloud"
             style={{
+              ...gpuLayer,
               top: `${b.top}%`,
               left: `${b.left}%`,
               width: b.width,
@@ -369,11 +405,11 @@ const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity
               filter: `blur(${b.blur}px)`,
               animationDuration: `${b.dur}s`,
               animationDelay: `${b.delay}s`,
-              mixBlendMode: "normal",
             }}
           />
         );
       })}
+
       {/* mørk underbelysning / tak ved tungt dekke og regn */}
       {(i > 0.6 || rain > 0.3) && (
         <div
@@ -390,8 +426,9 @@ const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity
 /* ---------------- WIND ---------------- */
 const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
+  const perf = usePerfScale();
   const i = Math.max(0, Math.min(1, intensity));
-  const count = Math.max(4, Math.round(5 + i * 8));
+  const count = Math.max(4, Math.round((5 + i * 8) * perf));
   // Calmer baseline: low wind drifts gently, storm wind zips fast
   const baseDur = 3.8;
   const speedMult = 0.6 + i * 1.8; // 0.6x at calm → 2.4x at storm
@@ -411,7 +448,7 @@ const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common)
 
 
   // Leaves — blown left → right by the wind (borrowed from GustFX)
-  const leafCount = Math.max(3, Math.round(3 + i * 14));
+  const leafCount = Math.max(3, Math.round((3 + i * 14) * perf));
   const leafDur = 3.2 - i * 1.8; // 3.2s → 1.4s
   const leaves = useMemo(() => {
     const rng = seededRng(Math.floor(i * 100000) + 1);
@@ -449,9 +486,9 @@ const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common)
             animationDuration: `${l.dur}s`,
             animationDelay: `${l.delay}s`,
             animationFillMode: "backwards",
-            transform: `rotate(${l.angle}deg)`,
             borderRadius: 1,
-            filter: "blur(0.3px)",
+            willChange: "transform, opacity",
+            backfaceVisibility: "hidden",
           }}
         />
       ))}
@@ -473,10 +510,12 @@ const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common)
             ["--lx" as any]: `${lf.lx}px`,
             ["--ly" as any]: `${lf.ly}px`,
             ["--lr" as any]: `${lf.lr}deg`,
-            boxShadow: "0 0 1px rgba(0,0,0,0.2)",
+            willChange: "transform, opacity",
+            backfaceVisibility: "hidden",
           }}
         />
       ))}
+
     </div>
   );
 });
@@ -1613,7 +1652,9 @@ export function glassKindFromSymbol(symbol: string | null, isDay: boolean): Glas
 
 
 export {
+  usePerfScale,
   InsideRainFX,
+
   RainFX,
   SnowFX,
   CloudFX,

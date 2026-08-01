@@ -14,7 +14,7 @@ import { reverseGeocode } from "@/lib/user-locations.functions";
 import type { ActiveLocation } from "@/components/LocationPicker";
 import {
   RainFX, SnowFX, CloudFX, WindFX, HeatwaveFX, HumidityFX, PressureFX, GustFX, SunFX, StarFX, MoonFX, ThunderFX,
-  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX,
+  GlassPaneFX, glassKindFromSymbol, type GlassKind, TileSplashFX, CloudCoverFX, usePerfScale,
 } from "@/components/weather/WeatherFX";
 import { SpaceWeatherCard } from "@/components/weather/SpaceWeatherCard";
 import { AirPollutionCard } from "@/components/weather/AirPollutionCard";
@@ -1281,9 +1281,9 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
         <style>{`
           @keyframes panelFlyRight { 0% { opacity:0; transform: translateX(120%) rotate(6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
           @keyframes panelFlyLeft  { 0% { opacity:0; transform: translateX(-120%) rotate(-6deg) scale(.9); } 60% { opacity:1; } 100% { opacity:1; transform: translateX(0) rotate(0) scale(1); } }
-          @keyframes panelFlyUp    { 0% { opacity:0; transform: translateY(80%) scale(.92); filter: blur(6px); } 100% { opacity:1; transform: translateY(0) scale(1); filter: blur(0); } }
-          @keyframes panelFlyZoom  { 0% { opacity:0; transform: scale(.6) rotate(-3deg); filter: blur(8px); } 100% { opacity:1; transform: scale(1) rotate(0); filter: blur(0); } }
-          @keyframes hourPop { 0% { opacity:0; transform: translateY(14px) scale(.7); filter: blur(4px); } 60% { opacity:1; transform: translateY(-2px) scale(1.05); filter: blur(0); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+          @keyframes panelFlyUp    { 0% { opacity:0; transform: translateY(80%) scale(.92); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+          @keyframes panelFlyZoom  { 0% { opacity:0; transform: scale(.6) rotate(-3deg); } 100% { opacity:1; transform: scale(1) rotate(0); } }
+          @keyframes hourPop { 0% { opacity:0; transform: translateY(14px) scale(.7); } 60% { opacity:1; transform: translateY(-2px) scale(1.05); } 100% { opacity:1; transform: translateY(0) scale(1); } }
           @keyframes hourSlide { 0% { opacity:0; transform: translateX(24px); } 100% { opacity:1; transform: translateX(0); } }
           @keyframes hourDrop { 0% { opacity:0; transform: translateY(-18px) rotate(-8deg); } 70% { opacity:1; transform: translateY(2px) rotate(2deg); } 100% { opacity:1; transform: translateY(0) rotate(0); } }
           @keyframes pathDraw { 0% { stroke-dashoffset: 1200; opacity:0; } 30% { opacity:1; } 100% { stroke-dashoffset: 0; opacity:1; } }
@@ -1298,7 +1298,7 @@ function RotatingForecastCard({ hours, soundEnabled }: { hours: Hour[] | null; s
               panel === "skydekke"? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
               panel === "vind"    ? "panelFlyUp 0.55s cubic-bezier(.2,.8,.2,1) both" :
                                     "panelFlyZoom 0.6s cubic-bezier(.2,.8,.2,1) both",
-            willChange: "transform, opacity, filter",
+            willChange: "transform, opacity",
           }}
         >
           {panel === "nedbor" && <NedborPanel hours={nextHours} maxP={maxRain} />}
@@ -3422,7 +3422,9 @@ function SkydekkeSceneFX({
   rainIntensity: number;
   rainProb: number;
 }) {
+  const perf = usePerfScale();
   // 0..1 dekning
+
   const cov = Math.max(0, Math.min(1, cloud / 100));
   // Vind → farts-multiplikator (1 = normal, opp mot 4x ved storm)
   const windMult = Math.min(4, Math.max(0.6, 1 + wind / 6));
@@ -3455,7 +3457,7 @@ function SkydekkeSceneFX({
     return arr.sort((a, b) => a.scale - b.scale);
   }, [cloudCount, cov, windMult]);
 
-  const rainDropCount = rainMix > 0.1 ? Math.round(20 + rainMix * 70) : 0;
+  const rainDropCount = rainMix > 0.1 ? Math.max(8, Math.round((20 + rainMix * 70) * perf)) : 0;
   const rainDrops = useMemo(() => {
     return Array.from({ length: rainDropCount }).map((_, i) => {
       const left = (i / Math.max(1, rainDropCount)) * 100 + ((i * 37) % 5);
@@ -3467,7 +3469,10 @@ function SkydekkeSceneFX({
   }, [rainDropCount]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{ contain: "paint", transform: "translateZ(0)" }}
+    >
       {/* Regn */}
       {rainDrops.length > 0 && (
         <div className="absolute inset-0" style={{ opacity: Math.min(1, 0.5 + rainMix * 0.6) }}>
@@ -3483,6 +3488,8 @@ function SkydekkeSceneFX({
                 background: "linear-gradient(180deg, rgba(210,230,255,0) 0%, rgba(210,230,255,0.85) 100%)",
                 animation: `skyDekkeRain ${d.dur}s linear ${d.delay}s infinite`,
                 borderRadius: 2,
+                willChange: "transform, opacity",
+                backfaceVisibility: "hidden",
               }}
             />
           ))}
@@ -3500,9 +3507,11 @@ function SkydekkeSceneFX({
             opacity: c.opacity,
             animation: `skyDekkeDrift ${c.dur}s linear ${c.delay}s infinite`,
             zIndex: c.z,
-            filter: `drop-shadow(0 4px 6px rgba(15,25,45,${0.08 + rainMix * 0.2}))`,
+            willChange: "transform",
+            backfaceVisibility: "hidden",
           }}
         >
+
           <svg width="120" height="60" viewBox="0 0 120 60" aria-hidden>
             <defs>
               <linearGradient id={`sd-cg-${i}-${Math.round(rainMix * 100)}`} x1="0" y1="0" x2="0" y2="1">
