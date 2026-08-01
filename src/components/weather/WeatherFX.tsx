@@ -424,8 +424,9 @@ const CloudCoverFX = memo(function CloudCoverFX({ intensity = 0.5, rainIntensity
 /* ---------------- WIND ---------------- */
 const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common) {
   const _mounted = useMounted();
+  const perf = usePerfScale();
   const i = Math.max(0, Math.min(1, intensity));
-  const count = Math.max(4, Math.round(5 + i * 8));
+  const count = Math.max(4, Math.round((5 + i * 8) * perf));
   // Calmer baseline: low wind drifts gently, storm wind zips fast
   const baseDur = 3.8;
   const speedMult = 0.6 + i * 1.8; // 0.6x at calm → 2.4x at storm
@@ -445,7 +446,7 @@ const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common)
 
 
   // Leaves — blown left → right by the wind (borrowed from GustFX)
-  const leafCount = Math.max(3, Math.round(3 + i * 14));
+  const leafCount = Math.max(3, Math.round((3 + i * 14) * perf));
   const leafDur = 3.2 - i * 1.8; // 3.2s → 1.4s
   const leaves = useMemo(() => {
     const rng = seededRng(Math.floor(i * 100000) + 1);
@@ -483,9 +484,9 @@ const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common)
             animationDuration: `${l.dur}s`,
             animationDelay: `${l.delay}s`,
             animationFillMode: "backwards",
-            transform: `rotate(${l.angle}deg)`,
             borderRadius: 1,
-            filter: "blur(0.3px)",
+            willChange: "transform, opacity",
+            backfaceVisibility: "hidden",
           }}
         />
       ))}
@@ -507,10 +508,12 @@ const WindFX = memo(function WindFX({ intensity = 0.5, className = "" }: Common)
             ["--lx" as any]: `${lf.lx}px`,
             ["--ly" as any]: `${lf.ly}px`,
             ["--lr" as any]: `${lf.lr}deg`,
-            boxShadow: "0 0 1px rgba(0,0,0,0.2)",
+            willChange: "transform, opacity",
+            backfaceVisibility: "hidden",
           }}
         />
       ))}
+
     </div>
   );
 });
