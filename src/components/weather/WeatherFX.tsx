@@ -116,6 +116,7 @@ const RainFX = memo(function RainFX({
   className = "",
 }: Common & { wind?: number }) {
   const _mounted = useMounted();
+  const perf = usePerfScale();
   const clamped = Math.max(0, Math.min(1, intensity));
   // Vind i m/s → skrå-vinkel opp til ~35°, og horisontal drift under fallet.
   const w = Math.max(0, Math.min(20, wind));
@@ -123,8 +124,8 @@ const RainFX = memo(function RainFX({
   const drift = 40 + w * 22; // px horisontal forskyvning under fallet
   const drops = useMemo(() => {
     // Synlig selv når det er tørt: 26–34 dråper totalt gir ~10–14 synlige på én gang.
-    // Øker raskt til ~55–65 når regnet kommer.
-    const count = Math.round(26 + Math.random() * 8 + clamped * 30);
+    // Øker raskt til ~55–65 når regnet kommer. Skaleres ned på mobil/svake enheter.
+    const count = Math.max(10, Math.round((26 + Math.random() * 8 + clamped * 30) * perf));
 
     return Array.from({ length: count }).map(() => ({
       left: Math.random() * 100,
@@ -135,7 +136,8 @@ const RainFX = memo(function RainFX({
       w: 0.5 + Math.random() * 0.8,
       op: 0.55 + clamped * 0.35 + Math.random() * 0.25,
     }));
-  }, [clamped]);
+  }, [clamped, perf]);
+
   if (!_mounted) return null;
   return (
     <div className={`${wrap} ${className}`} aria-hidden>
