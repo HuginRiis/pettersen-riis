@@ -32,12 +32,12 @@ import hyttaAutumn from "@/assets/hytta-autumn.jpg";
 
 export const LINKETUR_CABINS: LinketurCabin[] = [
   {
-    id: "numedal",
-    name: "Hytta i Numedal",
-    place: "Numedal",
+    id: "var",
+    name: "Hyttetur vår",
+    place: "Hydrostranda",
     code: "1234",
+    number: "",
     image: hyttaImg,
-    info: "Hovedbasen for linketur. God plass til seks mann, stort bord i stua som tar alle riggene, og strøm nok til at ingen sikring ryker (så lenge vaffeljernet står av).",
     facts: [
       { label: "Soveplasser", value: "6" },
       { label: "Nett", value: "4G-ruter + eget LAN" },
@@ -47,15 +47,15 @@ export const LINKETUR_CABINS: LinketurCabin[] = [
   },
   {
     id: "host",
-    name: "Høsthytta",
-    place: "Telemark",
+    name: "Hyttetur høst",
+    place: "Hydrostranda",
     code: "4321",
+    number: "",
     image: hyttaAutumn,
-    info: "Reservehytta når Numedal er opptatt. Litt trangere, men bedre peis og kortere vei til butikken. Nett er tregere, så tunge nedlastinger tas før avreise.",
     facts: [
       { label: "Soveplasser", value: "5 + sofa" },
-      { label: "Nett", value: "Tregt 4G — last ned hjemme" },
-      { label: "Strøm", value: "1 kurs — pass på ovner" },
+      { label: "Nett", value: "Tregt 4G" },
+      { label: "Strøm", value: "1 kurs" },
       { label: "Nøkkelboks", value: "Under trappa" },
     ],
   },
