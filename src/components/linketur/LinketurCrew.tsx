@@ -30,7 +30,12 @@ type CabinEdit = {
   number?: string;
   facts?: { label: string; value: string }[];
 };
-type CrewEdit = { pc?: string; photo?: string; pcPhoto?: string };
+type CrewEdit = {
+  pc?: string;
+  photo?: string;
+  pcPhoto?: string;
+  specs?: Partial<{ cpu: string; gpu: string; ram: string; disk: string; skjerm: string }>;
+};
 
 async function fileToDataUrl(file: File): Promise<string> {
   const small = await compressImageToWebp(file, { maxDim: 640, quality: 0.7 });
