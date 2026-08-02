@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import heroImg from "@/assets/got-linketur.jpg";
 import { SteamSearch } from "@/components/linketur/SteamSearch";
+import { LinketurCrew } from "@/components/linketur/LinketurCrew";
 import {
   LAN_GAMES,
   LAN_MODE_LABEL,
@@ -105,6 +106,8 @@ function LinketurRoute() {
       </PageHero>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
+        <LinketurCrew />
+
         <SteamSearch />
 
         {pick && (
