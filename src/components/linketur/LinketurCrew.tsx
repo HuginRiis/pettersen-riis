@@ -255,15 +255,29 @@ export function LinketurCrew() {
                 </div>
 
                 <dl className="mt-3 space-y-1.5 text-xs">
-                  <SpecRow icon={<Cpu size={12} />} label="CPU" value={m.specs.cpu} />
-                  <SpecRow icon={<Gamepad2 size={12} />} label="GPU" value={m.specs.gpu} />
-                  <SpecRow icon={<MemoryStick size={12} />} label="RAM" value={m.specs.ram} />
-                  <SpecRow icon={<HardDrive size={12} />} label="Disk" value={m.specs.disk} />
-                  <SpecRow
-                    icon={<MonitorSmartphone size={12} />}
-                    label="Skjerm"
-                    value={m.specs.skjerm}
-                  />
+                  {(
+                    [
+                      ["cpu", "CPU", <Cpu size={12} key="c" />],
+                      ["gpu", "GPU", <Gamepad2 size={12} key="g" />],
+                      ["ram", "RAM", <MemoryStick size={12} key="r" />],
+                      ["disk", "Disk", <HardDrive size={12} key="d" />],
+                      ["skjerm", "Skjerm", <MonitorSmartphone size={12} key="s" />],
+                    ] as const
+                  ).map(([key, label, icon]) => {
+                    const value = e.specs?.[key] ?? m.specs[key];
+                    return editing ? (
+                      <EditField
+                        key={key}
+                        label={label}
+                        value={value}
+                        onChange={(v) =>
+                          patchCrew(m.name, { specs: { ...e.specs, [key]: v } })
+                        }
+                      />
+                    ) : (
+                      <SpecRow key={key} icon={icon} label={label} value={value} />
+                    );
+                  })}
                 </dl>
                 {m.note && <p className="mt-3 text-[11px] text-muted-foreground">{m.note}</p>}
               </div>
