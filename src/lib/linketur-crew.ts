@@ -6,8 +6,9 @@ export type LinketurCabin = {
   name: string;
   place: string;
   code: string;
+  /** Hyttenummer på Hydrostranda */
+  number: string;
   image: string;
-  info: string;
   facts: { label: string; value: string }[];
 };
 
