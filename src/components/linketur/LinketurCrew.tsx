@@ -37,8 +37,17 @@ type CrewEdit = {
   pc?: string;
   photo?: string;
   pcPhoto?: string;
+  carPhoto?: string;
   specs?: Partial<{ cpu: string; gpu: string; ram: string; disk: string; skjerm: string }>;
+  porsche?: string;
+  porscheColor?: string;
+  cable?: string;
+  cableColor?: string;
+  drikke?: string;
+  hjemsted?: string;
+  info?: string;
 };
+
 
 async function fileToDataUrl(file: File): Promise<string> {
   const small = await compressImageToWebp(file, { maxDim: 640, quality: 0.7 });
