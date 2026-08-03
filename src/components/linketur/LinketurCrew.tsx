@@ -23,7 +23,11 @@ import {
   ImagePlus,
   X,
   Map as MapIcon,
+  Info,
+  Car,
+  Cable,
 } from "lucide-react";
+
 import kartAsset from "@/assets/hydrostranda-kart.jpg.asset.json";
 
 
