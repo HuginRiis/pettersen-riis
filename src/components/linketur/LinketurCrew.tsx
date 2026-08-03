@@ -72,6 +72,8 @@ export function LinketurCrew() {
     {},
   );
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [openPerson, setOpenPerson] = useState<string | null>(null);
+
 
   const patchCabin = (id: string, patch: CabinEdit) =>
     setCabinEdits((p) => ({ ...p, [id]: { ...p[id], ...patch } }));
