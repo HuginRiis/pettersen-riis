@@ -17,6 +17,8 @@ import {
 import heroImg from "@/assets/got-linketur.jpg";
 import { SteamSearch } from "@/components/linketur/SteamSearch";
 import { LinketurCrew } from "@/components/linketur/LinketurCrew";
+import { NewestLanGames } from "@/components/linketur/NewestLanGames";
+
 import {
   LAN_GAMES,
   LAN_MODE_LABEL,
