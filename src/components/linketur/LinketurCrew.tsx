@@ -631,3 +631,43 @@ function SpecRow({
     </div>
   );
 }
+
+function ColorField({
+  icon,
+  label,
+  text,
+  color,
+  onText,
+  onColor,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  text: string;
+  color: string;
+  onText: (v: string) => void;
+  onColor: (v: string) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-2">
+      <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+        {icon} {label}
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => onColor(e.target.value)}
+          aria-label={`Farge for ${label}`}
+          className="h-7 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent"
+        />
+        <input
+          value={text}
+          onChange={(e) => onText(e.target.value)}
+          placeholder="Modell / farge"
+          aria-label={label}
+          className="min-w-0 flex-1 rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-primary/60"
+        />
+      </div>
+    </div>
+  );
+}
