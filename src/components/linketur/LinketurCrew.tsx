@@ -22,7 +22,10 @@ import {
   Check,
   ImagePlus,
   X,
+  Map as MapIcon,
 } from "lucide-react";
+import kartAsset from "@/assets/hydrostranda-kart.jpg.asset.json";
+
 
 type CabinEdit = {
   name?: string;
