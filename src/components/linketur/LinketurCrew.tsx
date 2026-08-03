@@ -370,6 +370,137 @@ export function LinketurCrew() {
         </div>
       </section>
 
+      {openPerson &&
+        (() => {
+          const m = LINKETUR_CREW.find((x) => x.name === openPerson);
+          if (!m) return null;
+          const e = crewEdits[m.name] ?? {};
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/90 p-4 backdrop-blur"
+              role="dialog"
+              aria-label={`Info om ${m.name}`}
+              onClick={() => setOpenPerson(null)}
+            >
+              <div
+                onClick={(ev) => ev.stopPropagation()}
+                className="my-8 w-full max-w-lg space-y-4 rounded-2xl border border-border bg-card p-5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-xl text-foreground">{m.name}</h3>
+                    <div className="text-xs text-primary">{m.role}</div>
+                  </div>
+                  <button
+                    onClick={() => setOpenPerson(null)}
+                    aria-label="Lukk"
+                    className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <PhotoSlot
+                    src={e.photo}
+                    alt={`Bilde av ${m.name}`}
+                    label="Person"
+                    editing
+                    onPick={(src) => patchCrew(m.name, { photo: src })}
+                    onClear={() => patchCrew(m.name, { photo: undefined })}
+                    onOpen={setLightbox}
+                  />
+                  <PhotoSlot
+                    src={e.pcPhoto}
+                    alt={`PC-en til ${m.name}`}
+                    label="PC"
+                    editing
+                    onPick={(src) => patchCrew(m.name, { pcPhoto: src })}
+                    onClear={() => patchCrew(m.name, { pcPhoto: undefined })}
+                    onOpen={setLightbox}
+                  />
+                  <PhotoSlot
+                    src={e.carPhoto}
+                    alt={`Bilen til ${m.name}`}
+                    label="Bil"
+                    editing
+                    onPick={(src) => patchCrew(m.name, { carPhoto: src })}
+                    onClear={() => patchCrew(m.name, { carPhoto: undefined })}
+                    onOpen={setLightbox}
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ColorField
+                    icon={<Car size={13} className="text-primary" />}
+                    label="Porsche"
+                    text={e.porsche ?? ""}
+                    color={e.porscheColor ?? "#d1d5db"}
+                    onText={(v) => patchCrew(m.name, { porsche: v })}
+                    onColor={(v) => patchCrew(m.name, { porscheColor: v })}
+                  />
+                  <ColorField
+                    icon={<Cable size={13} className="text-primary" />}
+                    label="Nettverkskabel"
+                    text={e.cable ?? ""}
+                    color={e.cableColor ?? "#22c55e"}
+                    onText={(v) => patchCrew(m.name, { cable: v })}
+                    onColor={(v) => patchCrew(m.name, { cableColor: v })}
+                  />
+                  <EditField
+                    label="Hjemsted"
+                    value={e.hjemsted ?? ""}
+                    onChange={(v) => patchCrew(m.name, { hjemsted: v })}
+                  />
+                  <EditField
+                    label="Fast drikke"
+                    value={e.drikke ?? ""}
+                    onChange={(v) => patchCrew(m.name, { drikke: v })}
+                  />
+                </div>
+
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Diverse info
+                  </span>
+                  <textarea
+                    value={e.info ?? ""}
+                    onChange={(ev) => patchCrew(m.name, { info: ev.target.value })}
+                    rows={4}
+                    placeholder="Alt annet verdt å vite…"
+                    className="mt-0.5 w-full rounded-md border border-border bg-background/60 px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary/60"
+                  />
+                </label>
+
+                <dl className="grid gap-1.5 rounded-lg border border-border bg-background/40 p-3 text-xs">
+                  {(
+                    [
+                      ["cpu", "CPU"],
+                      ["gpu", "GPU"],
+                      ["ram", "RAM"],
+                      ["disk", "Disk"],
+                      ["skjerm", "Skjerm"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <div key={key} className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">{label}</dt>
+                      <dd className="truncate text-foreground">
+                        {e.specs?.[key] ?? m.specs[key]}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+
+                {m.note && <p className="text-[11px] text-muted-foreground">{m.note}</p>}
+                <p className="text-[10px] text-muted-foreground">
+                  Alt du skriver her lagres automatisk i nettleseren din.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+
       {lightbox && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 p-4 backdrop-blur"
