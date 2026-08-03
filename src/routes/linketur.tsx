@@ -108,7 +108,10 @@ function LinketurRoute() {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <LinketurCrew />
 
+        <NewestLanGames />
+
         <SteamSearch />
+
 
         {pick && (
           <section className="relative overflow-hidden rounded-xl border border-primary/40 bg-card p-5">
