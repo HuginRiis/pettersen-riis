@@ -246,7 +246,15 @@ export function LinketurCrew() {
                 className="rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/50"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="text-base text-foreground">{m.name}</h3>
+                  <button
+                    onClick={() => setOpenPerson(m.name)}
+                    className="group inline-flex items-center gap-1.5 text-base text-foreground hover:text-primary"
+                    aria-label={`Mer info om ${m.name}`}
+                  >
+                    <h3 className="text-base">{m.name}</h3>
+                    <Info size={13} className="text-muted-foreground group-hover:text-primary" />
+                  </button>
+
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">
                       {m.role}
