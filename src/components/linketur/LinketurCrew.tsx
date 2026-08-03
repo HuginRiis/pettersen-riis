@@ -23,7 +23,11 @@ import {
   ImagePlus,
   X,
   Map as MapIcon,
+  Info,
+  Car,
+  Cable,
 } from "lucide-react";
+
 import kartAsset from "@/assets/hydrostranda-kart.jpg.asset.json";
 
 
@@ -37,8 +41,17 @@ type CrewEdit = {
   pc?: string;
   photo?: string;
   pcPhoto?: string;
+  carPhoto?: string;
   specs?: Partial<{ cpu: string; gpu: string; ram: string; disk: string; skjerm: string }>;
+  porsche?: string;
+  porscheColor?: string;
+  cable?: string;
+  cableColor?: string;
+  drikke?: string;
+  hjemsted?: string;
+  info?: string;
 };
+
 
 async function fileToDataUrl(file: File): Promise<string> {
   const small = await compressImageToWebp(file, { maxDim: 640, quality: 0.7 });
@@ -63,6 +76,8 @@ export function LinketurCrew() {
     {},
   );
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+  const [openPerson, setOpenPerson] = useState<string | null>(null);
+
 
   const patchCabin = (id: string, patch: CabinEdit) =>
     setCabinEdits((p) => ({ ...p, [id]: { ...p[id], ...patch } }));
@@ -235,7 +250,15 @@ export function LinketurCrew() {
                 className="rounded-xl border border-border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/50"
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="text-base text-foreground">{m.name}</h3>
+                  <button
+                    onClick={() => setOpenPerson(m.name)}
+                    className="group inline-flex items-center gap-1.5 text-base text-foreground hover:text-primary"
+                    aria-label={`Mer info om ${m.name}`}
+                  >
+                    <h3 className="text-base">{m.name}</h3>
+                    <Info size={13} className="text-muted-foreground group-hover:text-primary" />
+                  </button>
+
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">
                       {m.role}
@@ -346,6 +369,137 @@ export function LinketurCrew() {
           })}
         </div>
       </section>
+
+      {openPerson &&
+        (() => {
+          const m = LINKETUR_CREW.find((x) => x.name === openPerson);
+          if (!m) return null;
+          const e = crewEdits[m.name] ?? {};
+          return (
+            <div
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-background/90 p-4 backdrop-blur"
+              role="dialog"
+              aria-label={`Info om ${m.name}`}
+              onClick={() => setOpenPerson(null)}
+            >
+              <div
+                onClick={(ev) => ev.stopPropagation()}
+                className="my-8 w-full max-w-lg space-y-4 rounded-2xl border border-border bg-card p-5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-xl text-foreground">{m.name}</h3>
+                    <div className="text-xs text-primary">{m.role}</div>
+                  </div>
+                  <button
+                    onClick={() => setOpenPerson(null)}
+                    aria-label="Lukk"
+                    className="rounded-lg border border-border p-1.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <PhotoSlot
+                    src={e.photo}
+                    alt={`Bilde av ${m.name}`}
+                    label="Person"
+                    editing
+                    onPick={(src) => patchCrew(m.name, { photo: src })}
+                    onClear={() => patchCrew(m.name, { photo: undefined })}
+                    onOpen={setLightbox}
+                  />
+                  <PhotoSlot
+                    src={e.pcPhoto}
+                    alt={`PC-en til ${m.name}`}
+                    label="PC"
+                    editing
+                    onPick={(src) => patchCrew(m.name, { pcPhoto: src })}
+                    onClear={() => patchCrew(m.name, { pcPhoto: undefined })}
+                    onOpen={setLightbox}
+                  />
+                  <PhotoSlot
+                    src={e.carPhoto}
+                    alt={`Bilen til ${m.name}`}
+                    label="Bil"
+                    editing
+                    onPick={(src) => patchCrew(m.name, { carPhoto: src })}
+                    onClear={() => patchCrew(m.name, { carPhoto: undefined })}
+                    onOpen={setLightbox}
+                  />
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ColorField
+                    icon={<Car size={13} className="text-primary" />}
+                    label="Porsche"
+                    text={e.porsche ?? ""}
+                    color={e.porscheColor ?? "#d1d5db"}
+                    onText={(v) => patchCrew(m.name, { porsche: v })}
+                    onColor={(v) => patchCrew(m.name, { porscheColor: v })}
+                  />
+                  <ColorField
+                    icon={<Cable size={13} className="text-primary" />}
+                    label="Nettverkskabel"
+                    text={e.cable ?? ""}
+                    color={e.cableColor ?? "#22c55e"}
+                    onText={(v) => patchCrew(m.name, { cable: v })}
+                    onColor={(v) => patchCrew(m.name, { cableColor: v })}
+                  />
+                  <EditField
+                    label="Hjemsted"
+                    value={e.hjemsted ?? ""}
+                    onChange={(v) => patchCrew(m.name, { hjemsted: v })}
+                  />
+                  <EditField
+                    label="Fast drikke"
+                    value={e.drikke ?? ""}
+                    onChange={(v) => patchCrew(m.name, { drikke: v })}
+                  />
+                </div>
+
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Diverse info
+                  </span>
+                  <textarea
+                    value={e.info ?? ""}
+                    onChange={(ev) => patchCrew(m.name, { info: ev.target.value })}
+                    rows={4}
+                    placeholder="Alt annet verdt å vite…"
+                    className="mt-0.5 w-full rounded-md border border-border bg-background/60 px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary/60"
+                  />
+                </label>
+
+                <dl className="grid gap-1.5 rounded-lg border border-border bg-background/40 p-3 text-xs">
+                  {(
+                    [
+                      ["cpu", "CPU"],
+                      ["gpu", "GPU"],
+                      ["ram", "RAM"],
+                      ["disk", "Disk"],
+                      ["skjerm", "Skjerm"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <div key={key} className="flex justify-between gap-3">
+                      <dt className="text-muted-foreground">{label}</dt>
+                      <dd className="truncate text-foreground">
+                        {e.specs?.[key] ?? m.specs[key]}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+
+                {m.note && <p className="text-[11px] text-muted-foreground">{m.note}</p>}
+                <p className="text-[10px] text-muted-foreground">
+                  Alt du skriver her lagres automatisk i nettleseren din.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
 
       {lightbox && (
         <div
@@ -474,6 +628,46 @@ function SpecRow({
         {icon} {label}
       </dt>
       <dd className="text-foreground/90">{value}</dd>
+    </div>
+  );
+}
+
+function ColorField({
+  icon,
+  label,
+  text,
+  color,
+  onText,
+  onColor,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  text: string;
+  color: string;
+  onText: (v: string) => void;
+  onColor: (v: string) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-2">
+      <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+        {icon} {label}
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => onColor(e.target.value)}
+          aria-label={`Farge for ${label}`}
+          className="h-7 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent"
+        />
+        <input
+          value={text}
+          onChange={(e) => onText(e.target.value)}
+          placeholder="Modell / farge"
+          aria-label={label}
+          className="min-w-0 flex-1 rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-primary/60"
+        />
+      </div>
     </div>
   );
 }

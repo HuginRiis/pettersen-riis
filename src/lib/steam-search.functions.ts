@@ -246,3 +246,47 @@ Sorter etter hvor godt de passer ønsket. Ta med maks 12. "players" = typisk ant
       return { games: games.slice(0, 12), terms, summary };
     },
   );
+
+// De nyeste LAN-/flerspillervennlige Steam-slippene. Brukes som daglig forslagsliste.
+export const newestLanGames = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ games: SteamGame[]; fetchedAt: string }> => {
+    let items: StoreSearchItem[] = [];
+    try {
+      const res = await fetch(
+        "https://store.steampowered.com/api/featuredcategories?cc=no&l=english",
+        { headers: { "User-Agent": "Mozilla/5.0" } },
+      );
+      if (res.ok) {
+        const json = (await res.json()) as Record<string, { items?: any[] }>;
+        const raw = [
+          ...(json["new_releases"]?.items ?? []),
+          ...(json["top_sellers"]?.items ?? []),
+        ];
+        const seen = new Set<number>();
+        for (const r of raw) {
+          const id = Number(r?.id);
+          if (!Number.isFinite(id) || seen.has(id)) continue;
+          seen.add(id);
+          items.push({
+            id,
+            name: String(r?.name ?? ""),
+            tiny_image: r?.header_image ?? r?.small_capsule_image,
+            price: r?.final_price != null ? { final: r.final_price, currency: r.currency } : undefined,
+            platforms: { windows: r?.windows_available !== false },
+          });
+        }
+      }
+    } catch {
+      items = [];
+    }
+
+    const detailed = await Promise.all(items.slice(0, 40).map(appDetails));
+    const playable = detailed.filter((g) => g.windows);
+    const lanFirst = playable.filter((g) => g.lan || g.coop || g.multiplayer);
+    const games = (lanFirst.length >= 8 ? lanFirst : playable)
+      .sort((a, b) => (b.releaseYear ?? 0) - (a.releaseYear ?? 0))
+      .slice(0, 20);
+
+    return { games, fetchedAt: new Date().toISOString() };
+  },
+);
