@@ -22,7 +22,10 @@ import {
   Check,
   ImagePlus,
   X,
+  Map as MapIcon,
 } from "lucide-react";
+import kartAsset from "@/assets/hydrostranda-kart.jpg.asset.json";
+
 
 type CabinEdit = {
   name?: string;
@@ -189,7 +192,32 @@ export function LinketurCrew() {
             );
           })}
         </div>
+
+        <div className="rounded-xl border border-border bg-card p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-2 text-sm text-foreground">
+              <MapIcon size={15} className="text-primary" /> Kart over Hydrostranda
+            </span>
+            <span className="text-[11px] text-muted-foreground">Klikk for å forstørre</span>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              setLightbox({ src: kartAsset.url, alt: "Kart over feriestedet Hydrostranda" })
+            }
+            className="block w-full overflow-hidden rounded-lg border border-border bg-white"
+            aria-label="Åpne kart over Hydrostranda i stor visning"
+          >
+            <img
+              src={kartAsset.url}
+              alt="Kart over feriestedet Hydrostranda med hyttenumre, camping, brygge og fasiliteter"
+              loading="lazy"
+              className="h-auto w-full object-contain"
+            />
+          </button>
+        </div>
       </section>
+
 
       {/* Gjengen + PC-er */}
       <section className="space-y-3">
