@@ -13,10 +13,11 @@ import {
   Flame,
   Network,
   Sparkles,
+  Home,
 } from "lucide-react";
 import heroImg from "@/assets/got-linketur.jpg";
 import { SteamSearch } from "@/components/linketur/SteamSearch";
-import { LinketurCrew } from "@/components/linketur/LinketurCrew";
+import { LinketurCrew, LinketurKart } from "@/components/linketur/LinketurCrew";
 import { NewestLanGames } from "@/components/linketur/NewestLanGames";
 
 import {
@@ -53,7 +54,15 @@ export const Route = createFileRoute("/linketur")({
 
 const MODES: LanMode[] = ["ekte-lan", "vpn", "server", "online"];
 
+type TabId = "spill" | "personer" | "hytter";
+const TABS: { id: TabId; label: string; icon: typeof Gamepad2 }[] = [
+  { id: "spill", label: "Spill", icon: Gamepad2 },
+  { id: "personer", label: "Personer", icon: Users },
+  { id: "hytter", label: "Hyttene", icon: Home },
+];
+
 function LinketurRoute() {
+  const [tab, setTab] = useState<TabId>("spill");
   const [q, setQ] = useState("");
   const [players, setPlayers] = useState(4);
   const [genre, setGenre] = useState<string>("alle");
@@ -108,11 +117,44 @@ function LinketurRoute() {
       </PageHero>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <LinketurCrew />
+        <LinketurKart />
+
+        <div
+          role="tablist"
+          aria-label="Linketur-seksjoner"
+          className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-2"
+        >
+          {TABS.map((t) => {
+            const on = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setTab(t.id)}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors ${
+                  on
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <t.icon size={15} /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {tab === "hytter" && <LinketurCrew section="hytter" />}
+        {tab === "personer" && <LinketurCrew section="personer" />}
+
+        {tab === "spill" && (
+          <>
+        <LinketurCrew section="spill" />
 
         <NewestLanGames />
 
         <SteamSearch />
+
 
 
         {pick && (
@@ -269,6 +311,8 @@ function LinketurRoute() {
             ))}
           </div>
         </section>
+          </>
+        )}
       </div>
     </PageShell>
   );
