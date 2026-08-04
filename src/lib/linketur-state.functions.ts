@@ -14,8 +14,8 @@ export const getLinketurState = createServerFn({ method: "GET" })
   .inputValidator((input: { key: string }) => ({ key: parseKey(input?.key) }))
   .handler(async ({ data }) => {
     await requireHouseAuth();
-    const value = (await readLinketurState(data.key)) as Record<string, unknown> | null;
-    return { value };
+    const value = await readLinketurState(data.key);
+    return { json: value === null ? null : JSON.stringify(value) };
   });
 
 export const setLinketurState = createServerFn({ method: "POST" })
