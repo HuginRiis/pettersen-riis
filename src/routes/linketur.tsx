@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import heroImg from "@/assets/got-linketur.jpg";
 import { SteamSearch } from "@/components/linketur/SteamSearch";
-import { LinketurCrew } from "@/components/linketur/LinketurCrew";
+import { LinketurCrew, LinketurKart } from "@/components/linketur/LinketurCrew";
 import { NewestLanGames } from "@/components/linketur/NewestLanGames";
 
 import {
