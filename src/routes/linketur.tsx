@@ -13,6 +13,7 @@ import {
   Flame,
   Network,
   Sparkles,
+  Home,
 } from "lucide-react";
 import heroImg from "@/assets/got-linketur.jpg";
 import { SteamSearch } from "@/components/linketur/SteamSearch";
