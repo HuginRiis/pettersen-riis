@@ -108,11 +108,44 @@ function LinketurRoute() {
       </PageHero>
 
       <div className="container mx-auto px-4 py-8 space-y-8">
-        <LinketurCrew />
+        <LinketurKart />
+
+        <div
+          role="tablist"
+          aria-label="Linketur-seksjoner"
+          className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-2"
+        >
+          {TABS.map((t) => {
+            const on = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setTab(t.id)}
+                className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors ${
+                  on
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <t.icon size={15} /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {tab === "hytter" && <LinketurCrew section="hytter" />}
+        {tab === "personer" && <LinketurCrew section="personer" />}
+
+        {tab === "spill" && (
+          <>
+        <LinketurCrew section="spill" />
 
         <NewestLanGames />
 
         <SteamSearch />
+
 
 
         {pick && (
