@@ -748,7 +748,8 @@ function PhotoSlot({
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (!src) {
-    if (!editing) return null;
+    if (!editing && !showEmpty) return null;
+
     return (
       <>
         <button
