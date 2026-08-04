@@ -53,7 +53,15 @@ export const Route = createFileRoute("/linketur")({
 
 const MODES: LanMode[] = ["ekte-lan", "vpn", "server", "online"];
 
+type TabId = "spill" | "personer" | "hytter";
+const TABS: { id: TabId; label: string; icon: typeof Gamepad2 }[] = [
+  { id: "spill", label: "Spill", icon: Gamepad2 },
+  { id: "personer", label: "Personer", icon: Users },
+  { id: "hytter", label: "Hyttene", icon: Home },
+];
+
 function LinketurRoute() {
+  const [tab, setTab] = useState<TabId>("spill");
   const [q, setQ] = useState("");
   const [players, setPlayers] = useState(4);
   const [genre, setGenre] = useState<string>("alle");
