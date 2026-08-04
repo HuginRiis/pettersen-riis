@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { LAN_MODE_LABEL, LAN_MODE_COLOR } from "@/lib/lan-games";
-import { usePersistedState } from "@/hooks/use-persisted-state";
+import { useSharedLinketurState } from "@/hooks/use-linketur-state";
 import { compressImageToWebp } from "@/lib/image-compress";
 import { LINKETUR_CABINS, LINKETUR_CREW, CREW_GAMES } from "@/lib/linketur-crew";
 import {
@@ -81,14 +81,16 @@ export function LinketurCrew({ section = "hytter" }: { section?: LinketurSection
   const [showCode, setShowCode] = useState<Record<string, boolean>>({});
   const [editCabin, setEditCabin] = useState<Record<string, boolean>>({});
   const [editCrew, setEditCrew] = useState<Record<string, boolean>>({});
-  const [cabinEdits, setCabinEdits] = usePersistedState<Record<string, CabinEdit>>(
-    "linketur:cabins",
+  const [cabinEdits, setCabinEdits, cabinSync] = useSharedLinketurState<Record<string, CabinEdit>>(
+    "cabins",
     {},
   );
-  const [crewEdits, setCrewEdits] = usePersistedState<Record<string, CrewEdit>>(
-    "linketur:crew",
+  const [crewEdits, setCrewEdits, crewSync] = useSharedLinketurState<Record<string, CrewEdit>>(
+    "crew",
     {},
   );
+  const syncError = cabinSync.error ?? crewSync.error;
+  const syncing = cabinSync.saving || crewSync.saving;
   const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
   const [openPerson, setOpenPerson] = useState<string | null>(null);
 
@@ -99,6 +101,17 @@ export function LinketurCrew({ section = "hytter" }: { section?: LinketurSection
 
   return (
     <div className="space-y-8">
+      {(syncError || syncing) && (
+        <div
+          className={`rounded-lg border px-3 py-2 text-xs ${
+            syncError
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-border bg-card text-muted-foreground"
+          }`}
+        >
+          {syncError ? `Deles ikke: ${syncError}` : "Lagrer til huset…"}
+        </div>
+      )}
       {/* Hyttene */}
       {section === "hytter" && (
         <section className="space-y-3">
