@@ -271,24 +271,37 @@ export function LinketurCrew({ section = "hytter" }: { section?: LinketurSection
                   </div>
 
                   <div className="mt-2 flex items-center gap-2">
-                    <PhotoSlot
-                      src={e.photo}
-                      alt={`Bilde av ${m.name}`}
-                      label="Person"
-                      editing={editing}
-                      onPick={(src) => patchCrew(m.name, { photo: src })}
-                      onClear={() => patchCrew(m.name, { photo: undefined })}
-                      onOpen={setLightbox}
-                    />
-                    <PhotoSlot
-                      src={e.pcPhoto}
-                      alt={`Bilde av PC-en til ${m.name}`}
-                      label="PC"
-                      editing={editing}
-                      onPick={(src) => patchCrew(m.name, { pcPhoto: src })}
-                      onClear={() => patchCrew(m.name, { pcPhoto: undefined })}
-                      onOpen={setLightbox}
-                    />
+                    <div className="flex flex-col items-center gap-0.5">
+                      <PhotoSlot
+                        src={e.photo}
+                        alt={`Bilde av ${m.name}`}
+                        label="Person"
+                        editing={editing}
+                        showEmpty
+                        onPick={(src) => patchCrew(m.name, { photo: src })}
+                        onClear={() => patchCrew(m.name, { photo: undefined })}
+                        onOpen={setLightbox}
+                      />
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                        Person
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <PhotoSlot
+                        src={e.pcPhoto}
+                        alt={`Bilde av PC-en til ${m.name}`}
+                        label="PC"
+                        editing={editing}
+                        showEmpty
+                        onPick={(src) => patchCrew(m.name, { pcPhoto: src })}
+                        onClear={() => patchCrew(m.name, { pcPhoto: undefined })}
+                        onOpen={setLightbox}
+                      />
+                      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                        PC
+                      </span>
+                    </div>
+
                     <div className="min-w-0 flex-1">
                       {editing ? (
                         <EditField
@@ -733,6 +746,7 @@ function PhotoSlot({
   alt,
   label,
   editing,
+  showEmpty,
   onPick,
   onClear,
   onOpen,
@@ -741,14 +755,17 @@ function PhotoSlot({
   alt: string;
   label: string;
   editing: boolean;
+  showEmpty?: boolean;
   onPick: (src: string) => void;
   onClear: () => void;
   onOpen: (v: { src: string; alt: string }) => void;
 }) {
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (!src) {
-    if (!editing) return null;
+    if (!editing && !showEmpty) return null;
+
     return (
       <>
         <button
