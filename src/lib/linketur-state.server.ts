@@ -1,7 +1,9 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /** Delte Linketur-data (hytter, personer, bilder) lagret i databasen. */
-export async function readLinketurState(key: string): Promise<unknown> {
+export async function readLinketurState(
+  key: string,
+): Promise<Record<string, unknown> | null> {
   const { data, error } = await supabaseAdmin
     .from("linketur_state")
     .select("data")
@@ -9,7 +11,7 @@ export async function readLinketurState(key: string): Promise<unknown> {
     .maybeSingle();
 
   if (error) throw error;
-  return (data as { data?: unknown } | null)?.data ?? null;
+  return ((data as { data?: unknown } | null)?.data ?? null) as Record<string, unknown> | null;
 }
 
 export async function writeLinketurState(key: string, value: unknown): Promise<void> {
