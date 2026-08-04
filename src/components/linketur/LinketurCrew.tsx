@@ -733,6 +733,7 @@ function PhotoSlot({
   alt,
   label,
   editing,
+  showEmpty,
   onPick,
   onClear,
   onOpen,
@@ -741,10 +742,12 @@ function PhotoSlot({
   alt: string;
   label: string;
   editing: boolean;
+  showEmpty?: boolean;
   onPick: (src: string) => void;
   onClear: () => void;
   onOpen: (v: { src: string; alt: string }) => void;
 }) {
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (!src) {
