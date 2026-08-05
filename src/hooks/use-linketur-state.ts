@@ -7,7 +7,7 @@ import { getLinketurState, setLinketurState } from "@/lib/linketur-state.functio
  * til serveren første gang hvis serveren er tom.
  */
 export function useSharedLinketurState<T extends Record<string, unknown>>(
-  key: "cabins" | "crew",
+  key: "cabins" | "crew" | "food",
   initial: T,
 ): [T, React.Dispatch<React.SetStateAction<T>>, { loaded: boolean; saving: boolean; error: string | null }] {
   const storageKey = `linketur:${key}`;

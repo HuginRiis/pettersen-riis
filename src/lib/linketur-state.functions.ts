@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireHouseAuth } from "./house-auth.server";
 import { readLinketurState, writeLinketurState } from "./linketur-state.server";
 
-const KEYS = new Set(["cabins", "crew"]);
+const KEYS = new Set(["cabins", "crew", "food"]);
 
 function parseKey(value: unknown): string {
   const key = String(value ?? "");
