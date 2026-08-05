@@ -14,11 +14,13 @@ import {
   Network,
   Sparkles,
   Home,
+  UtensilsCrossed,
 } from "lucide-react";
 import heroImg from "@/assets/got-linketur.jpg";
 import { SteamSearch } from "@/components/linketur/SteamSearch";
 import { LinketurCrew, LinketurKart } from "@/components/linketur/LinketurCrew";
 import { NewestLanGames } from "@/components/linketur/NewestLanGames";
+import { LinketurMat } from "@/components/linketur/LinketurMat";
 
 import {
   LAN_GAMES,
@@ -54,11 +56,12 @@ export const Route = createFileRoute("/linketur")({
 
 const MODES: LanMode[] = ["ekte-lan", "vpn", "server", "online"];
 
-type TabId = "spill" | "personer" | "hytter";
+type TabId = "spill" | "personer" | "hytter" | "mat";
 const TABS: { id: TabId; label: string; icon: typeof Gamepad2 }[] = [
   { id: "spill", label: "Spill", icon: Gamepad2 },
   { id: "personer", label: "Personer", icon: Users },
   { id: "hytter", label: "Hyttene", icon: Home },
+  { id: "mat", label: "Mat", icon: UtensilsCrossed },
 ];
 
 function LinketurRoute() {
@@ -146,6 +149,7 @@ function LinketurRoute() {
 
         {tab === "hytter" && <LinketurCrew section="hytter" />}
         {tab === "personer" && <LinketurCrew section="personer" />}
+        {tab === "mat" && <LinketurMat />}
 
         {tab === "spill" && (
           <>
