@@ -498,7 +498,10 @@ export function LinketurMat() {
               >
                 {(spentBy[p] ?? 0) - perPerson >= 0
                   ? `Har til gode ${nok((spentBy[p] ?? 0) - perPerson)} kr`
-                  : `Skylder ${nok(perPerson - (spentBy[p] ?? 0))} kr`}
+                  : `Skylder ${nok(perPerson - (spentBy[p] ?? 0))} kr${
+                      foodCreditor && foodCreditor !== p ? ` til ${foodCreditor}` : ""
+                    }`}
+
               </div>
             </div>
           ))}
