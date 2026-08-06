@@ -12,6 +12,8 @@ import {
   Check,
   Loader2,
   Coins,
+  Home,
+
 } from "lucide-react";
 
 type Meal = {
