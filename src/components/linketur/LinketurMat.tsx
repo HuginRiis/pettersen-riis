@@ -31,10 +31,18 @@ type Payment = {
   paid: boolean;
 };
 
+type Rent = {
+  amount: string;
+  payer: string;
+  paid: Record<string, boolean>;
+};
+
 type FoodState = {
   meals?: Meal[];
   payments?: Payment[];
+  rent?: Rent;
 };
+
 
 const DEFAULT_DAYS = ["Fredag", "Lørdag", "Søndag"];
 const MEALS = ["Frokost", "Lunsj", "Middag", "Kveldsmat", "Snacks"];
