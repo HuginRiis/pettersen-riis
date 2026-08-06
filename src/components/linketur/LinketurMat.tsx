@@ -200,6 +200,96 @@ export function LinketurMat() {
       </section>
 
       <section className="space-y-4">
+        <h2 className="text-xl text-foreground inline-flex items-center gap-2">
+          <Home size={18} className="text-primary" /> Hytteleie
+        </h2>
+
+        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Total leie
+              </span>
+              <Input
+                value={rent.amount}
+                onChange={(e) => setRent({ amount: e.target.value })}
+                placeholder="kr"
+                inputMode="decimal"
+                className="h-9 text-sm"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Hvem har lagt ut?
+              </span>
+              <select
+                value={rent.payer}
+                onChange={(e) => setRent({ payer: e.target.value })}
+                className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs"
+              >
+                {PEOPLE.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Pr. person ({PEOPLE.length})
+              </span>
+              <div className="flex h-9 items-center text-lg text-foreground">
+                {nok(rentPerPerson)} kr
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {PEOPLE.map((p) => {
+              const isPayer = p === rent.payer;
+              const paid = isPayer || !!rent.paid[p];
+              return (
+                <div
+                  key={p}
+                  className={`flex items-center justify-between gap-2 rounded-lg border p-2 ${
+                    paid ? "border-emerald-500/40 bg-emerald-500/5" : "border-border/70"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm text-foreground">{p}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {isPayer
+                        ? `La ut ${nok(rentTotal)} kr`
+                        : `${nok(rentPerPerson)} kr til ${rent.payer || "—"}`}
+                    </div>
+                  </div>
+                  {!isPayer && (
+                    <button
+                      onClick={() => toggleRentPaid(p)}
+                      aria-pressed={paid}
+                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                        paid
+                          ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Check size={13} /> {paid ? "Betalt" : "Marker"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            Utestående hytteleie: <span className="text-foreground">{nok(rentOutstanding)} kr</span>
+          </div>
+        </div>
+      </section>
+
+
+
+      <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl text-foreground inline-flex items-center gap-2">
             <UtensilsCrossed size={18} className="text-primary" /> Matplan
