@@ -181,25 +181,33 @@ export function LinketurMat() {
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-3 sm:grid-cols-3">
-        <StatBox
-          icon={<ShoppingCart size={14} />}
-          label="Totalt handlet"
-          value={`${nok(total)} kr`}
-        />
-        <StatBox
-          icon={<Coins size={14} />}
-          label={`Pr. person (${PEOPLE.length})`}
-          value={`${nok(perPerson)} kr`}
-        />
-        <StatBox
-          icon={<Wallet size={14} />}
-          label="Utestående"
-          value={`${nok(
-            payments.filter((p) => !p.paid).reduce((s, p) => s + num(p.amount), 0),
-          )} kr`}
-        />
+      <section className="space-y-2">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatBox
+            icon={<ShoppingCart size={14} />}
+            label="Totalt handlet (mat)"
+            value={`${nok(total)} kr`}
+          />
+          <StatBox
+            icon={<Coins size={14} />}
+            label={`Mat pr. person (${PEOPLE.length})`}
+            value={`${nok(perPerson)} kr`}
+          />
+          <StatBox
+            icon={<Wallet size={14} />}
+            label="Utestående mat"
+            value={`${nok(
+              payments.filter((p) => !p.paid).reduce((s, p) => s + num(p.amount), 0),
+            )} kr`}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {foodCreditor
+            ? `Maten betales til ${foodCreditor} (har lagt ut mest).`
+            : "Legg inn hvem som handler for å se hvem pengene skal til."}
+        </p>
       </section>
+
 
       <section className="space-y-4">
         <h2 className="text-xl text-foreground inline-flex items-center gap-2">
