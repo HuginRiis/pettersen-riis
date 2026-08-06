@@ -12,6 +12,8 @@ import {
   Check,
   Loader2,
   Coins,
+  Home,
+
 } from "lucide-react";
 
 type Meal = {
@@ -31,10 +33,18 @@ type Payment = {
   paid: boolean;
 };
 
+type Rent = {
+  amount: string;
+  payer: string;
+  paid: Record<string, boolean>;
+};
+
 type FoodState = {
   meals?: Meal[];
   payments?: Payment[];
+  rent?: Rent;
 };
+
 
 const DEFAULT_DAYS = ["Fredag", "Lørdag", "Søndag"];
 const MEALS = ["Frokost", "Lunsj", "Middag", "Kveldsmat", "Snacks"];
@@ -74,6 +84,35 @@ export function LinketurMat() {
     });
     return map;
   }, [meals]);
+
+  /** Den som har lagt ut mest på mat — det er hen de andre skal betale til. */
+  const foodCreditor = useMemo(
+    () => Object.entries(spentBy).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "",
+    [spentBy],
+  );
+
+  const rent: Rent = state.rent ?? { amount: "", payer: PEOPLE[0] ?? "", paid: {} };
+  const rentTotal = num(rent.amount);
+  const rentPerPerson = PEOPLE.length > 0 ? rentTotal / PEOPLE.length : 0;
+  const rentOutstanding = PEOPLE.filter(
+    (p) => p !== rent.payer && !rent.paid[p],
+  ).length * rentPerPerson;
+
+  const setRent = (patch: Partial<Rent>) =>
+    setState((prev) => ({
+      ...prev,
+      rent: { ...(prev.rent ?? { amount: "", payer: PEOPLE[0] ?? "", paid: {} }), ...patch },
+    }));
+
+  const toggleRentPaid = (person: string) =>
+    setState((prev) => {
+      const cur = prev.rent ?? { amount: "", payer: PEOPLE[0] ?? "", paid: {} };
+      return {
+        ...prev,
+        rent: { ...cur, paid: { ...cur.paid, [person]: !cur.paid[person] } },
+      };
+    });
+
 
   const addMeal = (day: string) =>
     setState((prev) => ({
@@ -142,25 +181,123 @@ export function LinketurMat() {
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-3 sm:grid-cols-3">
-        <StatBox
-          icon={<ShoppingCart size={14} />}
-          label="Totalt handlet"
-          value={`${nok(total)} kr`}
-        />
-        <StatBox
-          icon={<Coins size={14} />}
-          label={`Pr. person (${PEOPLE.length})`}
-          value={`${nok(perPerson)} kr`}
-        />
-        <StatBox
-          icon={<Wallet size={14} />}
-          label="Utestående"
-          value={`${nok(
-            payments.filter((p) => !p.paid).reduce((s, p) => s + num(p.amount), 0),
-          )} kr`}
-        />
+      <section className="space-y-2">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatBox
+            icon={<ShoppingCart size={14} />}
+            label="Totalt handlet (mat)"
+            value={`${nok(total)} kr`}
+          />
+          <StatBox
+            icon={<Coins size={14} />}
+            label={`Mat pr. person (${PEOPLE.length})`}
+            value={`${nok(perPerson)} kr`}
+          />
+          <StatBox
+            icon={<Wallet size={14} />}
+            label="Utestående mat"
+            value={`${nok(
+              payments.filter((p) => !p.paid).reduce((s, p) => s + num(p.amount), 0),
+            )} kr`}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {foodCreditor
+            ? `Maten betales til ${foodCreditor} (har lagt ut mest).`
+            : "Legg inn hvem som handler for å se hvem pengene skal til."}
+        </p>
       </section>
+
+
+      <section className="space-y-4">
+        <h2 className="text-xl text-foreground inline-flex items-center gap-2">
+          <Home size={18} className="text-primary" /> Hytteleie
+        </h2>
+
+        <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Total leie
+              </span>
+              <Input
+                value={rent.amount}
+                onChange={(e) => setRent({ amount: e.target.value })}
+                placeholder="kr"
+                inputMode="decimal"
+                className="h-9 text-sm"
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Hvem har lagt ut?
+              </span>
+              <select
+                value={rent.payer}
+                onChange={(e) => setRent({ payer: e.target.value })}
+                className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs"
+              >
+                {PEOPLE.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                Pr. person ({PEOPLE.length})
+              </span>
+              <div className="flex h-9 items-center text-lg text-foreground">
+                {nok(rentPerPerson)} kr
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {PEOPLE.map((p) => {
+              const isPayer = p === rent.payer;
+              const paid = isPayer || !!rent.paid[p];
+              return (
+                <div
+                  key={p}
+                  className={`flex items-center justify-between gap-2 rounded-lg border p-2 ${
+                    paid ? "border-emerald-500/40 bg-emerald-500/5" : "border-border/70"
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm text-foreground">{p}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {isPayer
+                        ? `La ut ${nok(rentTotal)} kr`
+                        : `${nok(rentPerPerson)} kr til ${rent.payer || "—"}`}
+                    </div>
+                  </div>
+                  {!isPayer && (
+                    <button
+                      onClick={() => toggleRentPaid(p)}
+                      aria-pressed={paid}
+                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                        paid
+                          ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-400"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Check size={13} /> {paid ? "Betalt" : "Marker"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-xs text-muted-foreground">
+            Utestående hytteleie: <span className="text-foreground">{nok(rentOutstanding)} kr</span>
+          </div>
+        </div>
+      </section>
+
+
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -369,7 +506,10 @@ export function LinketurMat() {
               >
                 {(spentBy[p] ?? 0) - perPerson >= 0
                   ? `Har til gode ${nok((spentBy[p] ?? 0) - perPerson)} kr`
-                  : `Skylder ${nok(perPerson - (spentBy[p] ?? 0))} kr`}
+                  : `Skylder ${nok(perPerson - (spentBy[p] ?? 0))} kr${
+                      foodCreditor && foodCreditor !== p ? ` til ${foodCreditor}` : ""
+                    }`}
+
               </div>
             </div>
           ))}
