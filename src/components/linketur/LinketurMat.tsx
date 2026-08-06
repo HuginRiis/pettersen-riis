@@ -83,6 +83,35 @@ export function LinketurMat() {
     return map;
   }, [meals]);
 
+  /** Den som har lagt ut mest på mat — det er hen de andre skal betale til. */
+  const foodCreditor = useMemo(
+    () => Object.entries(spentBy).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "",
+    [spentBy],
+  );
+
+  const rent: Rent = state.rent ?? { amount: "", payer: PEOPLE[0] ?? "", paid: {} };
+  const rentTotal = num(rent.amount);
+  const rentPerPerson = PEOPLE.length > 0 ? rentTotal / PEOPLE.length : 0;
+  const rentOutstanding = PEOPLE.filter(
+    (p) => p !== rent.payer && !rent.paid[p],
+  ).length * rentPerPerson;
+
+  const setRent = (patch: Partial<Rent>) =>
+    setState((prev) => ({
+      ...prev,
+      rent: { ...(prev.rent ?? { amount: "", payer: PEOPLE[0] ?? "", paid: {} }), ...patch },
+    }));
+
+  const toggleRentPaid = (person: string) =>
+    setState((prev) => {
+      const cur = prev.rent ?? { amount: "", payer: PEOPLE[0] ?? "", paid: {} };
+      return {
+        ...prev,
+        rent: { ...cur, paid: { ...cur.paid, [person]: !cur.paid[person] } },
+      };
+    });
+
+
   const addMeal = (day: string) =>
     setState((prev) => ({
       ...prev,
