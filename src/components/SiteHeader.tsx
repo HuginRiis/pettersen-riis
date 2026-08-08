@@ -80,6 +80,7 @@ const isAlwaysLast = (p: RoutePath) => ALWAYS_LAST_SET.has(p);
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string; color?: string; fill?: string; strokeWidth?: number }>>> = {
   "/": Home,
   "/var": Sun,
+  "/varet-her": LocateFixed,
   "/turer": Compass,
   "/agenda": CalendarDays,
   "/push-varslinger": BellRing,
