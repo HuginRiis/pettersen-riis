@@ -320,6 +320,7 @@ function Home() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
           {showHall("/var") && <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} badge={<HallBadgeStack><WeatherDaysBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /><CurrentTempBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /></HallBadgeStack>} />}
+          {showHall("/varet-her") && <HallCard to="/varet-her" title="Været her" desc="Vær der du er akkurat nå." icon="📍" image={hallVar} locked={false} badge={<HallBadgeStack><CurrentTempBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /></HallBadgeStack>} />}
           {showHall("/pollen") && <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />}
           {showHall("/turer") && <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />}
           {showHall("/agenda") && <HallCard to="/agenda" title="Søppel, bursdager og meldinger" desc="Søppeltømming, bursdager og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} badge={<HallBadgeStack><GarbageNextPickupBadge inline /></HallBadgeStack>} />}
@@ -654,6 +655,7 @@ function HallCard({
   to:
     | "/agenda"
     | "/var"
+    | "/varet-her"
     | "/pollen"
     | "/vakttarnet"
     | "/varsler"

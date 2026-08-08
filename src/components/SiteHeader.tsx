@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2 } from "lucide-react";
+  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -34,6 +34,7 @@ type RoutePath =
   | "/agenda"
   | "/push-varslinger"
   | "/var"
+  | "/varet-her"
   | "/pollen"
   | "/vakttarnet"
   | "/hytta"
@@ -79,6 +80,7 @@ const isAlwaysLast = (p: RoutePath) => ALWAYS_LAST_SET.has(p);
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string; color?: string; fill?: string; strokeWidth?: number }>>> = {
   "/": Home,
   "/var": Sun,
+  "/varet-her": LocateFixed,
   "/turer": Compass,
   "/agenda": CalendarDays,
   "/push-varslinger": BellRing,
@@ -115,6 +117,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
 const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/": "#d4af37",
   "/var": "#fbbf24",
+  "/varet-her": "#38bdf8",
   "/turer": "#34d399",
   "/agenda": "#f472b6",
   "/push-varslinger": "#fb923c",
@@ -152,6 +155,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
 const navLinks: NavLink[] = [
   { to: "/", label: "Hjem", public: true },
   { to: "/var", label: "Vær", public: true },
+  { to: "/varet-her", label: "Været her", public: true },
   { to: "/pollen", label: "Luftkvalitet", public: true },
   { to: "/turer", label: "Ferden", public: true },
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
