@@ -117,6 +117,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
 const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/": "#d4af37",
   "/var": "#fbbf24",
+  "/varet-her": "#38bdf8",
   "/turer": "#34d399",
   "/agenda": "#f472b6",
   "/push-varslinger": "#fb923c",
