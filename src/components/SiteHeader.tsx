@@ -34,6 +34,7 @@ type RoutePath =
   | "/agenda"
   | "/push-varslinger"
   | "/var"
+  | "/varet-her"
   | "/pollen"
   | "/vakttarnet"
   | "/hytta"
