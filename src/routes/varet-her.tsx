@@ -269,7 +269,7 @@ function VaretHerPage() {
 
             {/* MAKS / MIN NESTE DØGN */}
             <section className="mt-4 grid grid-cols-2 gap-3">
-              <div className="panel rounded-xl p-5 text-center glow-on-hover">
+              <div className="panel rounded-xl p-5 text-center glow-on-hover bg-white/10 backdrop-blur-md border-white/15">
                 <ArrowUp className="h-5 w-5 mx-auto text-orange-400 mb-1 animate-fade-in" />
                 <div className="text-3xl font-semibold text-foreground tabular-nums leading-none">
                   {tMax !== null ? formatTemp(tMax, tUnit, { digits: 1 }) : "–"}
@@ -278,7 +278,7 @@ function VaretHerPage() {
                   maks · {hhmm(tMaxAt)}
                 </div>
               </div>
-              <div className="panel rounded-xl p-5 text-center glow-on-hover">
+              <div className="panel rounded-xl p-5 text-center glow-on-hover bg-white/10 backdrop-blur-md border-white/15">
                 <ArrowDown className="h-5 w-5 mx-auto text-sky-400 mb-1 animate-fade-in" />
                 <div className="text-3xl font-semibold text-foreground tabular-nums leading-none">
                   {tMin !== null ? formatTemp(tMin, tUnit, { digits: 1 }) : "–"}
@@ -290,7 +290,7 @@ function VaretHerPage() {
             </section>
 
             <section className="mt-3 grid grid-cols-2 gap-3">
-              <div className="panel rounded-xl p-4 flex items-center gap-3">
+              <div className="panel rounded-xl p-4 flex items-center gap-3 bg-white/10 backdrop-blur-md border-white/15">
                 <Droplets className="h-5 w-5 text-primary" />
                 <div>
                   <div className="text-xl font-semibold tabular-nums text-foreground leading-none">
@@ -299,7 +299,7 @@ function VaretHerPage() {
                   <div className="text-[11px] text-muted-foreground">nedbør neste døgn</div>
                 </div>
               </div>
-              <div className="panel rounded-xl p-4 flex items-center gap-3">
+              <div className="panel rounded-xl p-4 flex items-center gap-3 bg-white/10 backdrop-blur-md border-white/15">
                 <Wind className="h-5 w-5 text-primary" />
                 <div>
                   <div className="text-xl font-semibold tabular-nums text-foreground leading-none">
