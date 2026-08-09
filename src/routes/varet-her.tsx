@@ -254,7 +254,7 @@ function VaretHerPage() {
         {now && (
           <>
             {/* NÅ */}
-            <section className="mt-8 panel rounded-2xl p-6 sm:p-10 text-center animate-fade-in">
+            <section className="mt-8 panel rounded-2xl p-6 sm:p-10 text-center animate-fade-in bg-white/10 backdrop-blur-md border-white/15">
               <div className="text-6xl sm:text-7xl mb-2 animate-scale-in">
                 {symbolEmoji(now.symbol)}
               </div>
