@@ -240,11 +240,11 @@ function VaretHerPage() {
         )}
 
         {error && (
-          <div className="mt-10 panel rounded-lg p-6 text-center">
+          <div className="mt-10 panel rounded-lg p-6 text-center bg-white/10 backdrop-blur-md border-white/15">
             <p className="text-sm text-destructive">{error}</p>
             <button
               onClick={locate}
-              className="mt-4 inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              className="mt-4 inline-flex items-center gap-2 rounded-md border border-white/20 px-4 py-2 text-sm text-foreground hover:bg-white/20 transition-colors"
             >
               <RefreshCw className="h-4 w-4" /> Prøv igjen
             </button>
