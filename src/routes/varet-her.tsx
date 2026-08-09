@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Loader2, ArrowDown, ArrowUp, Wind, Droplets, RefreshCw } from "lucide-react";
+import { MapPin, Loader2, ArrowDown, ArrowUp, Wind, Droplets, RefreshCw, Home } from "lucide-react";
 import { GlassPaneFX, glassKindFromSymbol } from "@/components/weather/WeatherFX";
 import { getMetForecastComplete } from "@/lib/met-forecast.functions";
 import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
