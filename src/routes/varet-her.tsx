@@ -206,6 +206,10 @@ function VaretHerPage() {
         precipMm={now?.precip ?? 0}
       />
 
+      <NatureSceneFX kind={kind} wind={now?.wind ?? 0} intensity={0.95} />
+
+
+
       <Link
         to="/"
         className="absolute top-4 left-4 z-50 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-xl border transition-all bg-white/10 text-white/90 border-white/20 hover:bg-white/25"
