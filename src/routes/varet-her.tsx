@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Loader2, ArrowDown, ArrowUp, Wind, Droplets, RefreshCw } from "lucide-react";
+import { MapPin, Loader2, ArrowDown, ArrowUp, Wind, Droplets, RefreshCw, Home } from "lucide-react";
 import { GlassPaneFX, glassKindFromSymbol } from "@/components/weather/WeatherFX";
 import { getMetForecastComplete } from "@/lib/met-forecast.functions";
 import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
@@ -205,7 +205,15 @@ function VaretHerPage() {
         precipMm={now?.precip ?? 0}
       />
 
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-3xl">
+      <Link
+        to="/"
+        className="absolute top-4 left-4 z-50 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium backdrop-blur-xl border transition-all bg-white/10 text-white/90 border-white/20 hover:bg-white/25"
+      >
+        <Home className="h-4 w-4" />
+        <span>Hjem</span>
+      </Link>
+
+      <div className="relative z-10 container mx-auto px-4 py-8 pt-20 max-w-3xl">
         <header className="text-center">
           <p className="text-[10px] tracking-[0.35em] uppercase text-primary/80">
             Været der du er
@@ -232,11 +240,11 @@ function VaretHerPage() {
         )}
 
         {error && (
-          <div className="mt-10 panel rounded-lg p-6 text-center">
+          <div className="mt-10 panel rounded-lg p-6 text-center bg-white/10 backdrop-blur-md border-white/15">
             <p className="text-sm text-destructive">{error}</p>
             <button
               onClick={locate}
-              className="mt-4 inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+              className="mt-4 inline-flex items-center gap-2 rounded-md border border-white/20 px-4 py-2 text-sm text-foreground hover:bg-white/20 transition-colors"
             >
               <RefreshCw className="h-4 w-4" /> Prøv igjen
             </button>
@@ -246,7 +254,7 @@ function VaretHerPage() {
         {now && (
           <>
             {/* NÅ */}
-            <section className="mt-8 panel rounded-2xl p-6 sm:p-10 text-center animate-fade-in">
+            <section className="mt-8 panel rounded-2xl p-6 sm:p-10 text-center animate-fade-in bg-white/10 backdrop-blur-md border-white/15">
               <div className="text-6xl sm:text-7xl mb-2 animate-scale-in">
                 {symbolEmoji(now.symbol)}
               </div>
@@ -261,7 +269,7 @@ function VaretHerPage() {
 
             {/* MAKS / MIN NESTE DØGN */}
             <section className="mt-4 grid grid-cols-2 gap-3">
-              <div className="panel rounded-xl p-5 text-center glow-on-hover">
+              <div className="panel rounded-xl p-5 text-center glow-on-hover bg-white/10 backdrop-blur-md border-white/15">
                 <ArrowUp className="h-5 w-5 mx-auto text-orange-400 mb-1 animate-fade-in" />
                 <div className="text-3xl font-semibold text-foreground tabular-nums leading-none">
                   {tMax !== null ? formatTemp(tMax, tUnit, { digits: 1 }) : "–"}
@@ -270,7 +278,7 @@ function VaretHerPage() {
                   maks · {hhmm(tMaxAt)}
                 </div>
               </div>
-              <div className="panel rounded-xl p-5 text-center glow-on-hover">
+              <div className="panel rounded-xl p-5 text-center glow-on-hover bg-white/10 backdrop-blur-md border-white/15">
                 <ArrowDown className="h-5 w-5 mx-auto text-sky-400 mb-1 animate-fade-in" />
                 <div className="text-3xl font-semibold text-foreground tabular-nums leading-none">
                   {tMin !== null ? formatTemp(tMin, tUnit, { digits: 1 }) : "–"}
@@ -282,7 +290,7 @@ function VaretHerPage() {
             </section>
 
             <section className="mt-3 grid grid-cols-2 gap-3">
-              <div className="panel rounded-xl p-4 flex items-center gap-3">
+              <div className="panel rounded-xl p-4 flex items-center gap-3 bg-white/10 backdrop-blur-md border-white/15">
                 <Droplets className="h-5 w-5 text-primary" />
                 <div>
                   <div className="text-xl font-semibold tabular-nums text-foreground leading-none">
@@ -291,7 +299,7 @@ function VaretHerPage() {
                   <div className="text-[11px] text-muted-foreground">nedbør neste døgn</div>
                 </div>
               </div>
-              <div className="panel rounded-xl p-4 flex items-center gap-3">
+              <div className="panel rounded-xl p-4 flex items-center gap-3 bg-white/10 backdrop-blur-md border-white/15">
                 <Wind className="h-5 w-5 text-primary" />
                 <div>
                   <div className="text-xl font-semibold tabular-nums text-foreground leading-none">
@@ -303,7 +311,7 @@ function VaretHerPage() {
             </section>
 
             {/* TIMER */}
-            <section className="mt-4 panel rounded-xl p-4">
+            <section className="mt-4 panel rounded-xl p-4 bg-white/10 backdrop-blur-md border-white/15">
               <div className="text-[10px] uppercase tracking-[0.3em] text-primary/80 mb-3">
                 Neste 24 timer
               </div>
@@ -311,7 +319,7 @@ function VaretHerPage() {
                 {next24.map((h) => (
                   <div
                     key={h.time}
-                    className="shrink-0 w-16 rounded-lg bg-background/40 border border-border p-2 text-center hover-scale"
+                    className="shrink-0 w-16 rounded-lg bg-white/10 border border-white/15 p-2 text-center hover-scale"
                   >
                     <div className="text-[10px] text-muted-foreground">
                       {new Date(h.time).toLocaleTimeString("nb-NO", { hour: "2-digit" })}
