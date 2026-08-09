@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { MapPin, Loader2, ArrowDown, ArrowUp, Wind, Droplets, RefreshCw, Home } from "lucide-react";
 import { GlassPaneFX, glassKindFromSymbol } from "@/components/weather/WeatherFX";
+import { NatureSceneFX } from "@/components/weather/NatureSceneFX";
 import { getMetForecastComplete } from "@/lib/met-forecast.functions";
 import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
 import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
