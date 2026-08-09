@@ -311,7 +311,7 @@ function VaretHerPage() {
             </section>
 
             {/* TIMER */}
-            <section className="mt-4 panel rounded-xl p-4">
+            <section className="mt-4 panel rounded-xl p-4 bg-white/10 backdrop-blur-md border-white/15">
               <div className="text-[10px] uppercase tracking-[0.3em] text-primary/80 mb-3">
                 Neste 24 timer
               </div>
@@ -319,7 +319,7 @@ function VaretHerPage() {
                 {next24.map((h) => (
                   <div
                     key={h.time}
-                    className="shrink-0 w-16 rounded-lg bg-background/40 border border-border p-2 text-center hover-scale"
+                    className="shrink-0 w-16 rounded-lg bg-white/10 border border-white/15 p-2 text-center hover-scale"
                   >
                     <div className="text-[10px] text-muted-foreground">
                       {new Date(h.time).toLocaleTimeString("nb-NO", { hour: "2-digit" })}
