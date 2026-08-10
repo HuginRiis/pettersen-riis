@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { MapPin, Loader2, ArrowDown, ArrowUp, Wind, Droplets, RefreshCw, Home } from "lucide-react";
+import { MapPin, Loader2, ArrowDown, ArrowUp, Wind, Droplets, RefreshCw, Home, Settings2, Film, X } from "lucide-react";
 import { GlassPaneFX, glassKindFromSymbol } from "@/components/weather/WeatherFX";
 import { NatureSceneFX } from "@/components/weather/NatureSceneFX";
 import { getMetForecastComplete } from "@/lib/met-forecast.functions";
 import { useTempUnit, formatTemp } from "@/hooks/use-temp-unit";
 import { useWindUnit, formatWind } from "@/hooks/use-wind-unit";
+import { WeatherVideoBG } from "@/components/weather/WeatherVideoBG";
+import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
 
 export const Route = createFileRoute("/varet-her")({
   head: () => ({
@@ -66,6 +68,18 @@ function VaretHerPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+
+  // Innstillinger: gjennomsiktighet på flisene + naturfilm som bakgrunn
+  const [tileOpacity, setTileOpacity] = usePerUserPersistedState<number>("var.tileOpacity", 100);
+  const [videoBg, setVideoBg] = usePerUserPersistedState<boolean>("varetHer.videoBg", true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [clipTitle, setClipTitle] = useState<string | null>(null);
+
+  const o = Math.max(0, Math.min(100, tileOpacity)) / 100;
+  const tileStyle = {
+    backgroundColor: `rgba(255,255,255,${(0.22 * o).toFixed(3)})`,
+    borderColor: `rgba(255,255,255,${(0.04 + 0.16 * o).toFixed(3)})`,
+  } as React.CSSProperties;
 
   // 1) Hvor er jeg?
   const locate = useCallback(() => {
@@ -245,7 +259,8 @@ function VaretHerPage() {
         )}
 
         {error && (
-          <div className="mt-10 panel rounded-lg p-6 text-center bg-white/10 backdrop-blur-md border-white/15">
+          <div className="mt-10 panel rounded-lg p-6 text-center backdrop-blur-md"
+                style={tileStyle}>
             <p className="text-sm text-destructive">{error}</p>
             <button
               onClick={locate}
@@ -259,7 +274,8 @@ function VaretHerPage() {
         {now && (
           <>
             {/* NÅ */}
-            <section className="mt-8 panel rounded-2xl p-6 sm:p-10 text-center animate-fade-in bg-white/10 backdrop-blur-md border-white/15">
+            <section className="mt-8 panel rounded-2xl p-6 sm:p-10 text-center animate-fade-in backdrop-blur-md"
+                style={tileStyle}>
               <div className="text-6xl sm:text-7xl mb-2 animate-scale-in">
                 {symbolEmoji(now.symbol)}
               </div>
@@ -274,7 +290,8 @@ function VaretHerPage() {
 
             {/* MAKS / MIN NESTE DØGN */}
             <section className="mt-4 grid grid-cols-2 gap-3">
-              <div className="panel rounded-xl p-5 text-center glow-on-hover bg-white/10 backdrop-blur-md border-white/15">
+              <div className="panel rounded-xl p-5 text-center glow-on-hover backdrop-blur-md"
+                style={tileStyle}>
                 <ArrowUp className="h-5 w-5 mx-auto text-orange-400 mb-1 animate-fade-in" />
                 <div className="text-3xl font-semibold text-foreground tabular-nums leading-none">
                   {tMax !== null ? formatTemp(tMax, tUnit, { digits: 1 }) : "–"}
@@ -283,7 +300,8 @@ function VaretHerPage() {
                   maks · {hhmm(tMaxAt)}
                 </div>
               </div>
-              <div className="panel rounded-xl p-5 text-center glow-on-hover bg-white/10 backdrop-blur-md border-white/15">
+              <div className="panel rounded-xl p-5 text-center glow-on-hover backdrop-blur-md"
+                style={tileStyle}>
                 <ArrowDown className="h-5 w-5 mx-auto text-sky-400 mb-1 animate-fade-in" />
                 <div className="text-3xl font-semibold text-foreground tabular-nums leading-none">
                   {tMin !== null ? formatTemp(tMin, tUnit, { digits: 1 }) : "–"}
@@ -295,7 +313,8 @@ function VaretHerPage() {
             </section>
 
             <section className="mt-3 grid grid-cols-2 gap-3">
-              <div className="panel rounded-xl p-4 flex items-center gap-3 bg-white/10 backdrop-blur-md border-white/15">
+              <div className="panel rounded-xl p-4 flex items-center gap-3 backdrop-blur-md"
+                style={tileStyle}>
                 <Droplets className="h-5 w-5 text-primary" />
                 <div>
                   <div className="text-xl font-semibold tabular-nums text-foreground leading-none">
@@ -304,7 +323,8 @@ function VaretHerPage() {
                   <div className="text-[11px] text-muted-foreground">nedbør neste døgn</div>
                 </div>
               </div>
-              <div className="panel rounded-xl p-4 flex items-center gap-3 bg-white/10 backdrop-blur-md border-white/15">
+              <div className="panel rounded-xl p-4 flex items-center gap-3 backdrop-blur-md"
+                style={tileStyle}>
                 <Wind className="h-5 w-5 text-primary" />
                 <div>
                   <div className="text-xl font-semibold tabular-nums text-foreground leading-none">
@@ -316,7 +336,8 @@ function VaretHerPage() {
             </section>
 
             {/* TIMER */}
-            <section className="mt-4 panel rounded-xl p-4 bg-white/10 backdrop-blur-md border-white/15">
+            <section className="mt-4 panel rounded-xl p-4 backdrop-blur-md"
+                style={tileStyle}>
               <div className="text-[10px] uppercase tracking-[0.3em] text-primary/80 mb-3">
                 Neste 24 timer
               </div>
@@ -324,7 +345,8 @@ function VaretHerPage() {
                 {next24.map((h) => (
                   <div
                     key={h.time}
-                    className="shrink-0 w-16 rounded-lg bg-white/10 border border-white/15 p-2 text-center hover-scale"
+                    className="shrink-0 w-16 rounded-lg border p-2 text-center hover-scale"
+                    style={tileStyle}
                   >
                     <div className="text-[10px] text-muted-foreground">
                       {new Date(h.time).toLocaleTimeString("nb-NO", { hour: "2-digit" })}
