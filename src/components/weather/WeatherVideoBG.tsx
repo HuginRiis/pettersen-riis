@@ -107,7 +107,6 @@ export function WeatherVideoBG({
         playsInline
         autoPlay
         preload="auto"
-        crossOrigin="anonymous"
         onCanPlay={() => setReady(true)}
         onError={() => {
           if (idx + 1 < clips.length) setIdx(idx + 1);
