@@ -45,6 +45,7 @@ import {
   ChevronRight,
   ArrowUp,
   ArrowDown,
+  Snowflake,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type TileTone } from "@/components/weather/TileTone";
