@@ -45,6 +45,7 @@ import {
   ChevronRight,
   ArrowUp,
   ArrowDown,
+  Snowflake,
 } from "lucide-react";
 import { useWeatherSound, type WeatherSoundKind } from "@/components/weather/useWeatherSound";
 import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type TileTone } from "@/components/weather/TileTone";
@@ -648,6 +649,9 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             <PrecipTodayCard day={todayDay} days={skienDays} />
             <GustCard hour={currentHour} />
           </div>
+
+          {/* SNØ */}
+          <SnowCard hours={skienHours} />
 
           {/* GJENNOMSNITT TEMPERATUR + SIKT */}
           <div className="grid grid-cols-2 gap-3">
@@ -3641,6 +3645,153 @@ function PrecipTodayCard({ day, days }: { day: ForecastDay | undefined; days: Fo
         <NormalDelta delta={delta} unit="mm" normal={normal} upIsBad />
         <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
       </div>
+    </GlassCard>
+  );
+}
+
+// ============================================================
+// SNØ — mengde nå + forventet snømengde neste døgn
+// ============================================================
+
+/** cm snø per mm nedbør (vannekvivalent) — kaldere luft gir løsere, dypere snø. */
+function snowRatio(tempC: number): number {
+  if (tempC <= -12) return 15;
+  if (tempC <= -7) return 13;
+  if (tempC <= -3) return 11;
+  if (tempC <= -1) return 9;
+  if (tempC <= 0.5) return 7;
+  if (tempC <= 1.5) return 5;
+  return 3;
+}
+
+/** Andel av nedbøren som faller som snø for en gitt time. */
+function snowShare(h: Hour): number {
+  const sym = h.symbol ?? "";
+  if (sym.includes("snow")) return 1;
+  if (sym.includes("sleet")) return 0.5;
+  if (!sym && h.temp <= 0) return 1;
+  return 0;
+}
+
+/** Snøfnugg-animasjon som skaleres direkte etter meldt snømengde (0 = noen få fnugg). */
+function SnowAmountFX({ cm, wind = 0 }: { cm: number; wind?: number }) {
+  const level = Math.max(0, Math.min(1, cm / 15));
+  const count = Math.round(4 + level * 60);
+  const flakes = useMemo(
+    () =>
+      Array.from({ length: count }).map(() => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 6,
+        dur: 5.5 + Math.random() * 5 - level * 2,
+        size: 2 + Math.random() * (2 + level * 3),
+        sx: (Math.random() * (16 + wind * 6) - (8 + wind * 3)).toFixed(0) + "px",
+        op: 0.45 + Math.random() * 0.5,
+      })),
+    [count, level, wind],
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {/* Snølag som bygger seg opp i bunnen etter meldt mengde */}
+      <div
+        className="absolute inset-x-0 bottom-0 transition-all duration-700"
+        style={{
+          height: `${Math.round(2 + level * 26)}%`,
+          background:
+            "linear-gradient(to top, rgba(255,255,255,0.55), rgba(255,255,255,0.14) 60%, rgba(255,255,255,0))",
+          filter: "blur(1px)",
+        }}
+      />
+      {flakes.map((f, i) => (
+        <span
+          key={i}
+          className="absolute top-0 rounded-full bg-white animate-wx-snow"
+          style={{
+            left: `${f.left}%`,
+            width: f.size,
+            height: f.size,
+            opacity: f.op,
+            boxShadow: "0 0 5px rgba(255,255,255,0.7)",
+            animationDuration: `${Math.max(3, f.dur)}s`,
+            animationDelay: `${f.delay}s`,
+            ["--sx" as any]: f.sx,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function SnowCard({ hours }: { hours: Hour[] | null }) {
+  if (!hours || hours.length === 0) {
+    return (
+      <GlassCard eyebrow="Snø" icon={<Snowflake size={14} />}>
+        <div className="text-3xl font-light tabular-nums">—</div>
+      </GlassCard>
+    );
+  }
+
+  const next24 = hours.slice(0, 24);
+  const mmWater = next24.reduce((sum, h) => sum + (h.precip ?? 0) * snowShare(h), 0);
+  const cm = next24.reduce((sum, h) => {
+    const share = snowShare(h);
+    if (share <= 0) return sum;
+    return sum + (h.precip ?? 0) * share * snowRatio(h.temp ?? 0);
+  }, 0) / 10;
+
+  const nowH = next24[0];
+  const nowMm = (nowH?.precip ?? 0) * snowShare(nowH);
+  const nowCm = (nowMm * snowRatio(nowH?.temp ?? 0)) / 10;
+  const wind = nowH?.wind ?? 0;
+
+  const first = next24.find((h) => snowShare(h) > 0 && (h.precip ?? 0) > 0.05);
+  const hint =
+    cm < 0.2
+      ? "Ingen snø meldt neste døgn."
+      : first
+        ? `Snøbyger fra ca. ${new Date(first.time).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })} · ${mmWater.toFixed(1)} mm vann.`
+        : `${mmWater.toFixed(1)} mm vann som snø.`;
+
+  const maxCm = Math.max(
+    0.1,
+    ...next24.map((h) => ((h.precip ?? 0) * snowShare(h) * snowRatio(h.temp ?? 0)) / 10),
+  );
+
+  return (
+    <GlassCard
+      eyebrow="Snø · neste døgn"
+      icon={<Snowflake size={14} />}
+      fx={<SnowAmountFX cm={cm} wind={wind} />}
+    >
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <div className="text-3xl font-light tabular-nums">
+            {cm < 0.2 ? "0" : cm.toFixed(cm < 10 ? 1 : 0)} cm
+          </div>
+          <div className="text-sm text-white/85">Forventet snømengde</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xl font-light tabular-nums text-sky-100">
+            {nowCm < 0.05 ? "0" : nowCm.toFixed(1)} cm/t
+          </div>
+          <div className="text-[12px] text-white/70">Faller nå</div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-end gap-[3px] h-10">
+        {next24.map((h) => {
+          const c = ((h.precip ?? 0) * snowShare(h) * snowRatio(h.temp ?? 0)) / 10;
+          const pct = Math.max(3, Math.round((c / maxCm) * 100));
+          return (
+            <div
+              key={h.time}
+              className="flex-1 rounded-sm bg-white/80"
+              style={{ height: `${pct}%`, opacity: c > 0 ? 0.9 : 0.18 }}
+              title={`${new Date(h.time).toLocaleTimeString("nb-NO", { hour: "2-digit" })} · ${c.toFixed(1)} cm`}
+            />
+          );
+        })}
+      </div>
+      <div className="text-[12px] text-white/75 mt-2 leading-snug">{hint}</div>
     </GlassCard>
   );
 }
