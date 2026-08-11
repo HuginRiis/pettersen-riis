@@ -3730,17 +3730,8 @@ function SnowCard({ hours }: { hours: Hour[] | null }) {
   }
 
   const next24 = hours.slice(0, 24);
-  let mmWater = 0;
-  let cm = 0;
-  for (const h of next24) {
-    const share = snowShare(h);
-    if (share <= 0) continue;
-    const mm = (h.precip ?? 0) * share;
-    mmWater += mm;
-    cm += mm * snowRatio(h.temp ?? 0) * 0.1 * 10 * 0.1;
-  }
-  // cm = mm vann * ratio (cm per mm)
-  cm = next24.reduce((sum, h) => {
+  const mmWater = next24.reduce((sum, h) => sum + (h.precip ?? 0) * snowShare(h), 0);
+  const cm = next24.reduce((sum, h) => {
     const share = snowShare(h);
     if (share <= 0) return sum;
     return sum + (h.precip ?? 0) * share * snowRatio(h.temp ?? 0);
