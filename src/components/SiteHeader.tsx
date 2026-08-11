@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
@@ -189,6 +189,24 @@ const navLinks: NavLink[] = [
   { to: "/ssb-statistikk", label: "Norges-statistikk" },
 ];
 
+const EXTRA_PAGE_TITLES: Record<string, string> = {
+  "/varfavoritter": "Værfavoritter",
+  "/varkart": "Værkart",
+  "/varet-her": "Været her",
+};
+
+function pageTitleForPath(pathname: string): string | null {
+  const clean = pathname.replace(/\/+$/, "") || "/";
+  if (clean === "/") return null;
+  const hit = navLinks.find((l) => l.to === clean);
+  if (hit) return hit.label;
+  if (EXTRA_PAGE_TITLES[clean]) return EXTRA_PAGE_TITLES[clean];
+  const seg = clean.split("/").filter(Boolean).pop() ?? "";
+  if (!seg) return null;
+  const words = seg.replace(/-/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLElement | null>(null);
@@ -196,6 +214,8 @@ export function SiteHeader() {
 
   
   const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pageTitle = pageTitleForPath(pathname);
   const { authenticated } = useAuthStatus();
   const isAuthed = authenticated === true;
 
@@ -499,6 +519,12 @@ export function SiteHeader() {
             <div className="text-[10px] text-muted-foreground tracking-widest flex items-center gap-1.5">
               <Shield size={9} className="text-muted-foreground/70" />
               <span>OF SKIEN</span>
+              {pageTitle && (
+                <>
+                  <span className="text-primary/50">·</span>
+                  <span className="text-primary/90 normal-case tracking-[0.15em]">{pageTitle}</span>
+                </>
+              )}
             </div>
           </button>
         </div>
