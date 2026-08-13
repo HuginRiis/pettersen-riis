@@ -135,6 +135,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["batteri", "batterier", "batteries", "battery", "homey", "netatmo", "gardena", "lavt"],
   },
   {
+    title: "Bruksanvisning",
+    path: "/bruksanvisning",
+    section: "Hjemmet",
+    description: "Søk opp bruksanvisninger på nett og lagre dem som PDF i arkivet.",
+    keywords: ["bruksanvisning", "manual", "brukermanual", "pdf", "veiledning", "instruksjon", "håndbok", "dokumentasjon"],
+  },
+  {
     title: "Skatte-utregningen",
     path: "/skatte-utregningen",
     section: "Økonomi",
