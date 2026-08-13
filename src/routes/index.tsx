@@ -64,6 +64,7 @@ import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
 import hallUtlan from "@/assets/got-utlan.jpg";
 import hallBatterier from "@/assets/got-batterier.jpg";
+import hallBruksanvisning from "@/assets/got-bruksanvisning.jpg";
 
 import hallLys from "@/assets/got-lys.jpg";
 import hallVarme from "@/assets/got-varme.jpg";
@@ -343,7 +344,7 @@ function Home() {
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/utlan") && <HallCard to="/utlan" title="Utlån & Lånt" desc="Ting husets folk har lånt bort eller lånt inn." icon="📦" image={hallUtlan} locked={!isAuthed} />}
           {showHall("/batterier") && <HallCard to="/batterier" title="Batterier i huset" desc="Alle batteri-nivåer samlet på ett sted — med varsling." icon="🔋" image={hallBatterier} locked={!isAuthed} />}
-          
+          {showHall("/bruksanvisning") && <HallCard to="/bruksanvisning" title="Bruksanvisning" desc="Alle husets manualer — søkt opp på nett og lagret som PDF." icon="📖" image={hallBruksanvisning} locked={!isAuthed} />}
           {showHall("/push-varslinger") && <HallCard to="/push-varslinger" title="Innstillinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<HallBadgeStack><PushTodayBadge inline /></HallBadgeStack>} />}
         </div>
       </section>
@@ -674,6 +675,7 @@ function HallCard({
     | "/kvitteringer"
     | "/utlan"
     | "/batterier"
+    | "/bruksanvisning"
     | "/push-varslinger";
 
   title: string;
