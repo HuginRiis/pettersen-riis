@@ -1775,6 +1775,54 @@ export type Database = {
         }
         Relationships: []
       }
+      manuals: {
+        Row: {
+          added_by: string | null
+          brand: string | null
+          category: string | null
+          created_at: string
+          file_path: string | null
+          file_size: number | null
+          id: string
+          model: string | null
+          notes: string | null
+          source_url: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          added_by?: string | null
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          model?: string | null
+          notes?: string | null
+          source_url?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string | null
+          brand?: string | null
+          category?: string | null
+          created_at?: string
+          file_path?: string | null
+          file_size?: number | null
+          id?: string
+          model?: string | null
+          notes?: string | null
+          source_url?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       met_alert_notification_prefs: {
         Row: {
           colors: string[]
