@@ -142,6 +142,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["bruksanvisning", "manual", "brukermanual", "pdf", "veiledning", "instruksjon", "håndbok", "dokumentasjon"],
   },
   {
+    title: "Jaguar",
+    path: "/jaguar",
+    section: "Hjemmet",
+    description: "Kjørelogg fra Jaguaren med snitt per dag, uke og måned, forbruk og turhistorikk.",
+    keywords: ["jaguar", "bil", "kjørelogg", "trips", "km", "forbruk", "elbil", "statistikk", "kjøring"],
+  },
+  {
     title: "Skatte-utregningen",
     path: "/skatte-utregningen",
     section: "Økonomi",
