@@ -36,6 +36,7 @@ import { Route as NsmSikkerhetRouteImport } from './routes/nsm-sikkerhet'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as LinketurRouteImport } from './routes/linketur'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
+import { Route as JaguarRouteImport } from './routes/jaguar'
 import { Route as IphoneAppRouteImport } from './routes/iphone-app'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
@@ -200,6 +201,11 @@ const KvitteringerRoute = KvitteringerRouteImport.update({
   path: '/kvitteringer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JaguarRoute = JaguarRouteImport.update({
+  id: '/jaguar',
+  path: '/jaguar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IphoneAppRoute = IphoneAppRouteImport.update({
   id: '/iphone-app',
   path: '/iphone-app',
@@ -360,6 +366,7 @@ export interface FileRoutesByFullPath {
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
   '/iphone-app': typeof IphoneAppRoute
+  '/jaguar': typeof JaguarRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
@@ -417,6 +424,7 @@ export interface FileRoutesByTo {
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
   '/iphone-app': typeof IphoneAppRoute
+  '/jaguar': typeof JaguarRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
@@ -475,6 +483,7 @@ export interface FileRoutesById {
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
   '/iphone-app': typeof IphoneAppRoute
+  '/jaguar': typeof JaguarRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
@@ -534,6 +543,7 @@ export interface FileRouteTypes {
     | '/gressklipper'
     | '/hytta'
     | '/iphone-app'
+    | '/jaguar'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
@@ -591,6 +601,7 @@ export interface FileRouteTypes {
     | '/gressklipper'
     | '/hytta'
     | '/iphone-app'
+    | '/jaguar'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/gressklipper'
     | '/hytta'
     | '/iphone-app'
+    | '/jaguar'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
@@ -706,6 +718,7 @@ export interface RootRouteChildren {
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
   IphoneAppRoute: typeof IphoneAppRoute
+  JaguarRoute: typeof JaguarRoute
   KvitteringerRoute: typeof KvitteringerRoute
   LinketurRoute: typeof LinketurRoute
   LysRoute: typeof LysRoute
@@ -946,6 +959,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KvitteringerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jaguar': {
+      id: '/jaguar'
+      path: '/jaguar'
+      fullPath: '/jaguar'
+      preLoaderRoute: typeof JaguarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/iphone-app': {
       id: '/iphone-app'
       path: '/iphone-app'
@@ -1154,6 +1174,7 @@ const rootRouteChildren: RootRouteChildren = {
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
   IphoneAppRoute: IphoneAppRoute,
+  JaguarRoute: JaguarRoute,
   KvitteringerRoute: KvitteringerRoute,
   LinketurRoute: LinketurRoute,
   LysRoute: LysRoute,
