@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Car,
   Upload,
@@ -87,7 +86,6 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 function JaguarPage() {
-  const qc = useQueryClient();
   const fetchTrips = useServerFn(listCarTrips);
   const doImport = useServerFn(importCarTrips);
   const doDelete = useServerFn(deleteCarTrip);
@@ -99,10 +97,23 @@ function JaguarPage() {
   const [q, setQ] = useState("");
   const [price, setPrice] = useState(1.4);
 
-  const { data: trips = [], isLoading } = useQuery({
-    queryKey: ["car-trips"],
-    queryFn: () => fetchTrips(),
-  });
+  const [trips, setTrips] = useState<CarTrip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const reload = useCallback(async () => {
+    try {
+      const rows = await fetchTrips();
+      setTrips(rows);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Klarte ikke hente kjøreloggen");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchTrips]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
 
   const stats = useMemo(() => computeStats(trips), [trips]);
 
@@ -138,7 +149,7 @@ function JaguarPage() {
         const res = await doImport({ data: { trips: parsed.slice(i, i + 400) } });
         imported += res.imported;
       }
-      await qc.invalidateQueries({ queryKey: ["car-trips"] });
+      await reload();
       toast.success(
         `Importerte ${imported} nye turer av ${parsed.length} lest${skipped ? ` (${skipped} hoppet over)` : ""}.`,
       );
@@ -151,7 +162,7 @@ function JaguarPage() {
 
   async function removeTrip(id: string) {
     await doDelete({ data: { id } });
-    await qc.invalidateQueries({ queryKey: ["car-trips"] });
+    await reload();
     toast.success("Tur slettet");
   }
 
@@ -160,7 +171,7 @@ function JaguarPage() {
     setBusy(true);
     try {
       await doClear();
-      await qc.invalidateQueries({ queryKey: ["car-trips"] });
+      await reload();
       toast.success("Kjøreloggen er tømt");
     } finally {
       setBusy(false);
