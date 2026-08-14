@@ -162,7 +162,7 @@ function JaguarPage() {
 
   async function removeTrip(id: string) {
     await doDelete({ data: { id } });
-    await qc.invalidateQueries({ queryKey: ["car-trips"] });
+    await reload();
     toast.success("Tur slettet");
   }
 
