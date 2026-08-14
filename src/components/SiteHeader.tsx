@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed, BookOpen } from "lucide-react";
+  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed, BookOpen, Car } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -54,6 +54,7 @@ type RoutePath =
   | "/batterier"
   | "/bruksanvisning"
   | "/linketur"
+  | "/jaguar"
   
   | "/skatte-utregningen"
   | "/gressklipper"
@@ -96,6 +97,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/batterier": BatteryCharging,
   "/bruksanvisning": BookOpen,
   "/linketur": Gamepad2,
+  "/jaguar": Car,
   
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
@@ -134,6 +136,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/batterier": "#22c55e",
   "/bruksanvisning": "#e0b978",
   "/linketur": "#f472b6",
+  "/jaguar": "#38bdf8",
   
   "/trening": "#ef4444",
   "/varsler": "#dc2626",
@@ -178,6 +181,7 @@ const navLinks: NavLink[] = [
   { to: "/batterier", label: "Batterier i huset" },
   { to: "/bruksanvisning", label: "Bruksanvisning" },
   { to: "/linketur", label: "Linketur" },
+  { to: "/jaguar", label: "Jaguar" },
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },

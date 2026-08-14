@@ -521,6 +521,63 @@ export type Database = {
         }
         Relationships: []
       }
+      car_trips: {
+        Row: {
+          avg_speed_kmh: number | null
+          created_at: string
+          distance_km: number
+          duration_min: number | null
+          efficiency_kwh_100km: number | null
+          end_lat: number | null
+          end_lon: number | null
+          end_place: string | null
+          end_ts: string | null
+          energy_regen_kwh: number | null
+          id: string
+          start_lat: number | null
+          start_lon: number | null
+          start_place: string | null
+          start_ts: string
+          vehicle: string
+        }
+        Insert: {
+          avg_speed_kmh?: number | null
+          created_at?: string
+          distance_km?: number
+          duration_min?: number | null
+          efficiency_kwh_100km?: number | null
+          end_lat?: number | null
+          end_lon?: number | null
+          end_place?: string | null
+          end_ts?: string | null
+          energy_regen_kwh?: number | null
+          id?: string
+          start_lat?: number | null
+          start_lon?: number | null
+          start_place?: string | null
+          start_ts: string
+          vehicle?: string
+        }
+        Update: {
+          avg_speed_kmh?: number | null
+          created_at?: string
+          distance_km?: number
+          duration_min?: number | null
+          efficiency_kwh_100km?: number | null
+          end_lat?: number | null
+          end_lon?: number | null
+          end_place?: string | null
+          end_ts?: string | null
+          energy_regen_kwh?: number | null
+          id?: string
+          start_lat?: number | null
+          start_lon?: number | null
+          start_place?: string | null
+          start_ts?: string
+          vehicle?: string
+        }
+        Relationships: []
+      }
       changelog_entries: {
         Row: {
           category: string
