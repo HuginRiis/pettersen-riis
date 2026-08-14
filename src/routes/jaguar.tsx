@@ -330,7 +330,7 @@ function AvgCard({
   data,
 }: {
   title: string;
-  data: { km: number; trips: number; minutes: number; kwh: number };
+  data: { km: number; trips: number; minutes: number; kwh: number; projectedKm: number };
 }) {
   return (
     <div className="rounded-lg border border-border bg-background/50 p-4">
@@ -348,6 +348,10 @@ function AvgCard({
         <div className="flex justify-between">
           <dt>Forbruk</dt>
           <dd className="text-foreground">{fmtKwh(data.kwh)}</dd>
+        </div>
+        <div className="flex justify-between border-t border-border/60 pt-1 mt-1">
+          <dt>Estimert årlig</dt>
+          <dd className="text-foreground font-medium">{fmtKm(data.projectedKm)}</dd>
         </div>
       </dl>
     </div>
