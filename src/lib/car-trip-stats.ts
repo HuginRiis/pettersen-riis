@@ -199,6 +199,7 @@ export type TripStats = {
   perDay: Bucket[];
   perWeek: Bucket[];
   perMonth: Bucket[];
+  perYear: Bucket[];
   avgPerDay: { km: number; trips: number; minutes: number; kwh: number; projectedKm: number };
   avgPerActiveDay: { km: number; trips: number; minutes: number; kwh: number; projectedKm: number };
   avgPerWeek: { km: number; trips: number; minutes: number; kwh: number; projectedKm: number };
@@ -368,6 +369,7 @@ export function computeStats(trips: CarTrip[]): TripStats {
     perDay,
     perWeek,
     perMonth,
+    perYear,
     avgPerDay: { ...per(spanDays), projectedKm: spanDays ? (totalKm / spanDays) * 365 : 0 },
     avgPerActiveDay: { ...per(activeDays), projectedKm: activeDays ? (totalKm / activeDays) * 365 : 0 },
     avgPerWeek: { ...per(spanDays / 7), projectedKm: spanDays ? (totalKm / (spanDays / 7)) * 52 : 0 },
