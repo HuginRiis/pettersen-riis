@@ -451,17 +451,8 @@ function Oversikt({ stats }: { stats: ReturnType<typeof computeStats> }) {
         </p>
       </Panel>
 
-      <Panel title="Effektivitet per måned (kWh/100 km)">
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={stats.perMonth.map((m) => ({ ...m, eff: m.km ? (m.kwh / m.km) * 100 : 0 }))}>
-            <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
-            <XAxis dataKey="label" stroke={AXIS} fontSize={10} />
-            <YAxis stroke={AXIS} fontSize={10} domain={["auto", "auto"]} />
-            <RTooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v.toFixed(1)} kWh/100 km`} />
-            <Line type="monotone" dataKey="eff" stroke="hsl(var(--primary))" strokeWidth={2} dot />
-          </LineChart>
-        </ResponsiveContainer>
-      </Panel>
+      <EfficiencyChart stats={stats} />
+
     </div>
   );
 }
