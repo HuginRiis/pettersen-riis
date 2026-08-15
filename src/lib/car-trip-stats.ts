@@ -298,7 +298,40 @@ export function computeStats(trips: CarTrip[]): TripStats {
 
   const perDay = [...perDayMap.values()];
   const perWeek = [...perWeekMap.values()];
-  const perMonth = [...perMonthMap.values()];
+  const perMonthRaw = [...perMonthMap.values()].sort((a, b) => a.key.localeCompare(b.key));
+
+  // Fyll ut alle måneder i perioden, også måneder uten turer
+  const perMonth: Bucket[] = [];
+  if (perMonthRaw.length) {
+    const [fy, fm] = perMonthRaw[0].key.split("-").map(Number);
+    const [ly, lm] = perMonthRaw[perMonthRaw.length - 1].key.split("-").map(Number);
+    let y = fy;
+    let m = fm;
+    while (y < ly || (y === ly && m <= lm)) {
+      const mk = `${y}-${String(m).padStart(2, "0")}`;
+      perMonth.push(perMonthMap.get(mk) ?? emptyBucket(mk, monthLabel(mk)));
+      m += 1;
+      if (m > 12) {
+        m = 1;
+        y += 1;
+      }
+    }
+  }
+
+  // År-buckets
+  const perYearMap = new Map<string, Bucket>();
+  for (const b of perMonthRaw) {
+    const yk = b.key.slice(0, 4);
+    const yb = perYearMap.get(yk) ?? emptyBucket(yk, yk);
+    yb.km += b.km;
+    yb.trips += b.trips;
+    yb.minutes += b.minutes;
+    yb.kwh += b.kwh;
+    yb.regen += b.regen;
+    perYearMap.set(yk, yb);
+  }
+  const perYear = [...perYearMap.values()].sort((a, b) => a.key.localeCompare(b.key));
+
 
   const firstDate = sorted.length ? new Date(sorted[0].start_ts) : null;
   const lastDate = sorted.length ? new Date(sorted[sorted.length - 1].start_ts) : null;
