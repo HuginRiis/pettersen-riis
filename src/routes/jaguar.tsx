@@ -51,6 +51,7 @@ import {
   fmtKwh,
   type Bucket,
 } from "@/lib/car-trip-stats";
+import { PlacesMap } from "@/components/PlacesMap";
 import heroImg from "@/assets/got-jaguar.jpg";
 
 export const Route = createFileRoute("/jaguar")({
@@ -442,6 +443,12 @@ function Oversikt({ stats }: { stats: ReturnType<typeof computeStats> }) {
             </li>
           ))}
         </ul>
+        <div className="mt-4 h-[320px]">
+          <PlacesMap places={stats.topPlaces} />
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Størrelsen på punktene viser antall besøk. Klikk for detaljer.
+        </p>
       </Panel>
 
       <Panel title="Effektivitet per måned (kWh/100 km)">
