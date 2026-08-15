@@ -205,7 +205,7 @@ export type TripStats = {
   avgPerMonth: { km: number; trips: number; minutes: number; kwh: number; projectedKm: number };
   byWeekday: { label: string; km: number; trips: number }[];
   byHour: { hour: string; trips: number; km: number }[];
-  topPlaces: { place: string; visits: number; km: number }[];
+  topPlaces: { place: string; visits: number; km: number; lat: number | null; lon: number | null }[];
   longest: CarTrip | null;
   fastest: CarTrip | null;
   mostEfficient: CarTrip | null;
@@ -233,7 +233,10 @@ export function computeStats(trips: CarTrip[]): TripStats {
     trips: 0,
     km: 0,
   }));
-  const placeMap = new Map<string, { place: string; visits: number; km: number }>();
+  const placeMap = new Map<
+    string,
+    { place: string; visits: number; km: number; latSum: number; lonSum: number; geo: number }
+  >();
 
   let totalKm = 0;
   let totalMinutes = 0;
@@ -267,9 +270,15 @@ export function computeStats(trips: CarTrip[]): TripStats {
     hourArr[d.getHours()].km += t.distance_km;
 
     const key = shortPlace(t.end_place);
-    const p = placeMap.get(key) ?? { place: key, visits: 0, km: 0 };
+    const p =
+      placeMap.get(key) ?? { place: key, visits: 0, km: 0, latSum: 0, lonSum: 0, geo: 0 };
     p.visits += 1;
     p.km += t.distance_km;
+    if (t.end_lat != null && t.end_lon != null) {
+      p.latSum += t.end_lat;
+      p.lonSum += t.end_lon;
+      p.geo += 1;
+    }
     placeMap.set(key, p);
 
     totalKm += t.distance_km;
@@ -332,7 +341,16 @@ export function computeStats(trips: CarTrip[]): TripStats {
     avgPerMonth: { ...per(spanDays / 30.44), projectedKm: spanDays ? (totalKm / (spanDays / 30.44)) * 12 : 0 },
     byWeekday: weekdayArr,
     byHour: hourArr,
-    topPlaces: [...placeMap.values()].sort((a, b) => b.visits - a.visits).slice(0, 10),
+    topPlaces: [...placeMap.values()]
+      .sort((a, b) => b.visits - a.visits)
+      .slice(0, 10)
+      .map((p) => ({
+        place: p.place,
+        visits: p.visits,
+        km: p.km,
+        lat: p.geo ? p.latSum / p.geo : null,
+        lon: p.geo ? p.lonSum / p.geo : null,
+      })),
     longest,
     fastest,
     mostEfficient,
