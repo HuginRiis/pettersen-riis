@@ -359,14 +359,26 @@ function AvgCard({
   );
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({
+  title,
+  children,
+  action,
+}: {
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
   return (
     <section className="rounded-xl border border-border bg-card/60 backdrop-blur p-4">
-      <h3 className="text-sm font-semibold mb-3">{title}</h3>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {action}
+      </div>
       {children}
     </section>
   );
 }
+
 
 const tooltipStyle = {
   background: "hsl(var(--popover))",
@@ -451,20 +463,68 @@ function Oversikt({ stats }: { stats: ReturnType<typeof computeStats> }) {
         </p>
       </Panel>
 
-      <Panel title="Effektivitet per måned (kWh/100 km)">
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={stats.perMonth.map((m) => ({ ...m, eff: m.km ? (m.kwh / m.km) * 100 : 0 }))}>
-            <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
-            <XAxis dataKey="label" stroke={AXIS} fontSize={10} />
-            <YAxis stroke={AXIS} fontSize={10} domain={["auto", "auto"]} />
-            <RTooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v.toFixed(1)} kWh/100 km`} />
-            <Line type="monotone" dataKey="eff" stroke="hsl(var(--primary))" strokeWidth={2} dot />
-          </LineChart>
-        </ResponsiveContainer>
-      </Panel>
+      <EfficiencyChart stats={stats} />
+
     </div>
   );
 }
+
+function EfficiencyChart({ stats }: { stats: ReturnType<typeof computeStats> }) {
+  const [mode, setMode] = useState<"month" | "year">("month");
+  const src = mode === "month" ? stats.perMonth : stats.perYear;
+  const data = src.map((m) => ({ ...m, eff: m.km ? (m.kwh / m.km) * 100 : 0 }));
+  return (
+    <Panel
+      title={`Effektivitet per ${mode === "month" ? "måned" : "år"} (kWh/100 km)`}
+      action={
+        <div className="flex gap-1">
+          {(["month", "year"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
+                mode === m
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m === "month" ? "Måned" : "År"}
+            </button>
+          ))}
+        </div>
+      }
+    >
+      <ResponsiveContainer width="100%" height={280}>
+        <LineChart data={data} margin={{ bottom: mode === "month" ? 28 : 4 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+          <XAxis
+            dataKey="label"
+            stroke={AXIS}
+            fontSize={10}
+            interval={0}
+            angle={mode === "month" ? -45 : 0}
+            textAnchor={mode === "month" ? "end" : "middle"}
+            height={mode === "month" ? 60 : 30}
+          />
+          <YAxis stroke={AXIS} fontSize={10} domain={["auto", "auto"]} />
+          <RTooltip contentStyle={tooltipStyle} formatter={(v: number) => `${v.toFixed(1)} kWh/100 km`} />
+          <Line
+            type="monotone"
+            dataKey="eff"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            dot
+            connectNulls
+          />
+        </LineChart>
+      </ResponsiveContainer>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Viser hele perioden{mode === "month" ? " – alle måneder, også uten turer" : ""}.
+      </p>
+    </Panel>
+  );
+}
+
 
 function Record({
   icon: Icon,
