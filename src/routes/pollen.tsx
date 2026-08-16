@@ -128,6 +128,16 @@ function PollenPage() {
 
         <div>
           <SectionHeader
+            eyebrow="Innendørs · Airthings via Homey"
+            title="Radon & VOC — kjeller og stue"
+          />
+          <div className="mt-6">
+            <IndoorAirSection />
+          </div>
+        </div>
+
+        <div>
+          <SectionHeader
             eyebrow="Analyse & innsikt · Skien Tollnes"
             title="Komplett luftkvalitetsdashbord"
           />
@@ -142,6 +152,7 @@ function PollenPage() {
           </div>
         </div>
       </section>
+
     </PageShell>
   );
 }
