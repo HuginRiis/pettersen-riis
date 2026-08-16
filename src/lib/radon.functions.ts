@@ -199,5 +199,15 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
   );
 
     return { ok: true, devices: matched, fetchedAt };
+  })();
+
+  rg.__radonInflight = run;
+  try {
+    const value = await run;
+    if (value.ok) rg.__radonCache = { at: Date.now(), value };
+    return value;
+  } finally {
+    rg.__radonInflight = null;
+  }
   }),
 );
