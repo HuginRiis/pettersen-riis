@@ -90,8 +90,20 @@ function bucketAggregate(points: VocSample[], buckets: number, bucketMs: number)
   return out;
 }
 
+// 10 min server-cache — VOC-kall gjør mange Homey Insights-kall (429-risiko).
+const VOC_TTL_MS = 10 * 60_000;
+const vg = globalThis as unknown as {
+  __vocCache?: { at: number; value: VocStatusResult };
+  __vocInflight?: Promise<VocStatusResult> | null;
+};
+
 export const getVocStatus = createServerFn({ method: "GET" }).handler(
   withApiLog("homey", "getVocStatus", async (): Promise<VocStatusResult> => {
+    const cached = vg.__vocCache;
+    if (cached && Date.now() - cached.at < VOC_TTL_MS) return cached.value;
+    if (vg.__vocInflight) return vg.__vocInflight;
+
+    const run = (async (): Promise<VocStatusResult> => {
     const fetchedAt = new Date().toISOString();
     const conn = await getValidConnection();
     if (!conn) return { ok: false, error: "Ingen Homey-tilkobling", devices: [], fetchedAt };
