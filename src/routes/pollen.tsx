@@ -4,6 +4,7 @@ import { LivePollen } from "@/components/LivePollen";
 import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { AirQualityDashboard } from "@/components/AirQualityDashboard";
 import { UvCloudPanel } from "@/components/UvCloudPanel";
+import { IndoorAirSection } from "@/components/IndoorAirSection";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import heroImg from "@/assets/got-pollen.jpg";
 
@@ -128,6 +129,16 @@ function PollenPage() {
 
         <div>
           <SectionHeader
+            eyebrow="Innendørs · Airthings via Homey"
+            title="Radon & VOC — kjeller og stue"
+          />
+          <div className="mt-6">
+            <IndoorAirSection />
+          </div>
+        </div>
+
+        <div>
+          <SectionHeader
             eyebrow="Analyse & innsikt · Skien Tollnes"
             title="Komplett luftkvalitetsdashbord"
           />
@@ -142,6 +153,7 @@ function PollenPage() {
           </div>
         </div>
       </section>
+
     </PageShell>
   );
 }
