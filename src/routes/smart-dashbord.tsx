@@ -3280,7 +3280,7 @@ function RadonTile() {
         .catch(() => {});
     };
     load();
-    const id = setInterval(load, 5 * 60_000);
+    const id = setInterval(load, 10 * 60_000);
     return () => { c = true; clearInterval(id); };
   }, [fetchRadon]);
 
@@ -3443,7 +3443,7 @@ function VocStuaTile() {
       fetchVoc().then((r: any) => { if (!c && r?.ok) setDevs(r.devices); }).catch(() => {});
     };
     load();
-    const id = setInterval(load, 5 * 60_000);
+    const id = setInterval(load, 10 * 60_000);
     return () => { c = true; clearInterval(id); };
   }, [fetchVoc]);
 

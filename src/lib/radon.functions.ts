@@ -113,8 +113,21 @@ function dailyAggregate(points: RadonSample[], days: number): RadonSample[] {
   return out;
 }
 
+// Server-side cache: radon endrer seg langsomt, og hvert kall gjør mange
+// Homey Insights-kall. 10 min TTL hindrer 429 (rate limit).
+const RADON_TTL_MS = 10 * 60_000;
+const rg = globalThis as unknown as {
+  __radonCache?: { at: number; value: RadonStatusResult };
+  __radonInflight?: Promise<RadonStatusResult> | null;
+};
+
 export const getRadonStatus = createServerFn({ method: "GET" }).handler(
   withApiLog("homey", "getRadonStatus", async (): Promise<RadonStatusResult> => {
+  const cached = rg.__radonCache;
+  if (cached && Date.now() - cached.at < RADON_TTL_MS) return cached.value;
+  if (rg.__radonInflight) return rg.__radonInflight;
+
+  const run = (async (): Promise<RadonStatusResult> => {
   const fetchedAt = new Date().toISOString();
   const conn = await getValidConnection();
   if (!conn) return { ok: false, error: "Ingen Homey-tilkobling", devices: [], fetchedAt };
@@ -186,5 +199,15 @@ export const getRadonStatus = createServerFn({ method: "GET" }).handler(
   );
 
     return { ok: true, devices: matched, fetchedAt };
+  })();
+
+  rg.__radonInflight = run;
+  try {
+    const value = await run;
+    if (value.ok) rg.__radonCache = { at: Date.now(), value };
+    return value;
+  } finally {
+    rg.__radonInflight = null;
+  }
   }),
 );
