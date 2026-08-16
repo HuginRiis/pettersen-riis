@@ -171,5 +171,15 @@ export const getVocStatus = createServerFn({ method: "GET" }).handler(
     );
 
     return { ok: true, devices: matched, fetchedAt };
+    })();
+
+    vg.__vocInflight = run;
+    try {
+      const value = await run;
+      if (value.ok) vg.__vocCache = { at: Date.now(), value };
+      return value;
+    } finally {
+      vg.__vocInflight = null;
+    }
   }),
 );
