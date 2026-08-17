@@ -249,7 +249,7 @@ export const saveAccountsConfig = createServerFn({ method: "POST" })
 
 export const extractBankStatement = createServerFn({ method: "POST" })
   .inputValidator(
-    (d: { csvText?: string | null; fileDataUrl?: string | null; categories: string[] }) => d,
+    (d: { csvText?: string | null; fileDataUrl?: string | null; fileName?: string | null; categories: string[] }) => d,
   )
   .handler(async ({ data }) => {
     await requireHouseAuth();

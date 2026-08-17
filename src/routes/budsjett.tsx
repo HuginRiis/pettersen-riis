@@ -794,7 +794,7 @@ function ImportPanel({
     try {
       const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
       const categories = cats.map((c) => c.name);
-      let payload: { csvText?: string; fileDataUrl?: string; categories: string[] };
+      let payload: { csvText?: string; fileDataUrl?: string; fileName?: string; categories: string[] };
       if (isCsv) {
         const csvText = await file.text();
         payload = { csvText, categories };
@@ -805,7 +805,7 @@ function ImportPanel({
           r.onerror = () => reject(r.error);
           r.readAsDataURL(file);
         });
-        payload = { fileDataUrl: dataUrl, categories };
+        payload = { fileDataUrl: dataUrl, fileName: file.name, categories };
       }
 
       const res = await extractBankStatement({ data: payload });
