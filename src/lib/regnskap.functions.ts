@@ -623,3 +623,93 @@ export const autoMatchReceipts = createServerFn({ method: "POST" })
     }
     return { count: matches.length, matches: matches.slice(0, 50), applied: Boolean(data.apply) };
   });
+
+/** Kobler én kvittering til én transaksjon (manuelt valg fra veiviser/forslag). */
+export const linkReceiptToTx = createServerFn({ method: "POST" })
+  .inputValidator((d: { tx_id: string; receipt_id: string | null }) => d)
+  .handler(async ({ data }) => {
+    await requireHouseAuth();
+    const { error } = await db()
+      .from("fin_transactions")
+      .update({ receipt_id: data.receipt_id })
+      .eq("id", data.tx_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export type WizardGroup = {
+  pattern: string;
+  label: string;
+  count: number;
+  total: number;
+  ids: string[];
+  state: "missing" | "annet";
+  samples: { date: string; description: string; amount: number }[];
+};
+
+/** Grupperer transaksjoner uten kategori + de som havnet i "Annet", til veiviseren. */
+export const listCategoryWizardGroups = createServerFn({ method: "GET" })
+  .inputValidator((d: { includeAnnet?: boolean } | undefined) => d ?? {})
+  .handler(async ({ data }): Promise<WizardGroup[]> => {
+    await requireHouseAuth();
+    const { data: cats } = await db().from("fin_categories").select("id,name");
+    const annet = (cats ?? []).find((c: any) => String(c.name).toLowerCase() === "annet");
+    const includeAnnet = data.includeAnnet !== false;
+
+    const { data: rows, error } = await db()
+      .from("fin_transactions")
+      .select("id,tx_date,description,counterparty,amount,category_id")
+      .is("deleted_at", null)
+      .order("tx_date", { ascending: false })
+      .limit(3000);
+    if (error) throw new Error(error.message);
+
+    const map = new Map<string, WizardGroup>();
+    for (const t of (rows ?? []) as any[]) {
+      const isMissing = !t.category_id;
+      const isAnnet = annet && t.category_id === annet.id;
+      if (!isMissing && !(includeAnnet && isAnnet)) continue;
+      const label = (t.counterparty || t.description || "").trim() || "Ukjent";
+      const key = merchantKey(label) || "ukjent";
+      let g = map.get(key);
+      if (!g) {
+        g = { pattern: key, label, count: 0, total: 0, ids: [], state: isMissing ? "missing" : "annet", samples: [] };
+        map.set(key, g);
+      }
+      g.count++;
+      g.total += Number(t.amount) || 0;
+      g.ids.push(t.id);
+      if (isMissing) g.state = "missing";
+      if (g.samples.length < 3)
+        g.samples.push({ date: t.tx_date, description: t.description, amount: Number(t.amount) });
+    }
+    return [...map.values()].sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
+  });
+
+/** Setter kategori på en hel gruppe og husker valget som regel til neste gang. */
+export const applyWizardChoice = createServerFn({ method: "POST" })
+  .inputValidator(
+    (d: { ids: string[]; pattern: string; category_id: string | null; tx_type?: string; remember?: boolean }) => d,
+  )
+  .handler(async ({ data }) => {
+    await requireHouseAuth();
+    if (!data.ids?.length) return { updated: 0 };
+    const patch: Record<string, unknown> = {
+      category_id: data.category_id,
+      is_manual_category: true,
+      needs_review: false,
+    };
+    if (data.tx_type) patch.tx_type = data.tx_type;
+    const { error } = await db().from("fin_transactions").update(patch).in("id", data.ids);
+    if (error) throw new Error(error.message);
+
+    if (data.remember !== false && data.pattern && data.category_id) {
+      await db()
+        .from("fin_rules")
+        .upsert(
+          { pattern: data.pattern, category_id: data.category_id, tx_type: data.tx_type ?? null, hits: data.ids.length },
+          { onConflict: "pattern" },
+        );
+    }
+    return { updated: data.ids.length };
+  });

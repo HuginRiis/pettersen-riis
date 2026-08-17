@@ -22,7 +22,8 @@ import {
   listFinCategories, listFinTransactions, updateFinTransaction, deleteFinTransaction,
   importFinTransactions, categorizeFinTransactions, getFinStats, getFinRecurring,
   listFinImports, listFinReceipts, autoMatchReceipts, createFinCategory,
-  type FinCategory, type FinTx, type FinReceipt,
+  linkReceiptToTx, listCategoryWizardGroups, applyWizardChoice,
+  type FinCategory, type FinTx, type FinReceipt, type WizardGroup,
 } from "@/lib/regnskap.functions";
 
 export const Route = createFileRoute("/regnskap")({
@@ -54,12 +55,14 @@ const fmtDate = (iso: string | null) =>
 const COLORS = ["#d4af37", "#22c55e", "#38bdf8", "#f472b6", "#fb923c", "#a78bfa", "#eab308", "#ef4444",
   "#34d399", "#60a5fa", "#c084fc", "#94a3b8", "#10b981", "#f59e0b", "#22d3ee"];
 
-type TabKey = "oversikt" | "transaksjoner" | "import" | "kvitteringer" | "faste" | "innstillinger";
+type TabKey =
+  | "oversikt" | "transaksjoner" | "import" | "kvitteringer" | "veiviser" | "faste" | "innstillinger";
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
   { key: "oversikt", label: "Oversikt", icon: Wallet },
   { key: "transaksjoner", label: "Transaksjoner", icon: FileSpreadsheet },
   { key: "import", label: "Import", icon: Upload },
+  { key: "veiviser", label: "Kategori-veiviser", icon: Sparkles },
   { key: "kvitteringer", label: "Kvitteringer", icon: ReceiptIcon },
   { key: "faste", label: "Faste utgifter", icon: Repeat },
   { key: "innstillinger", label: "Innstillinger", icon: Settings2 },
@@ -166,6 +169,7 @@ function RegnskapPage() {
         )}
         {tab === "import" && <ImportPanel onDone={() => { loadStats(); }} />}
         {tab === "kvitteringer" && <Kvitteringer onChanged={loadStats} />}
+        {tab === "veiviser" && <Veiviser categories={categories} onChanged={loadStats} />}
         {tab === "faste" && <FasteUtgifter />}
         {tab === "innstillinger" && <Innstillinger categories={categories} reload={loadCats} />}
       </div>
@@ -679,13 +683,141 @@ function ImportPanel({ onDone }: { onDone: () => void }) {
   );
 }
 
+/* ------------------------------------------------------------------ Veiviser */
+
+function Veiviser({ categories, onChanged }: { categories: FinCategory[]; onChanged: () => void }) {
+  const listFn = useServerFn(listCategoryWizardGroups);
+  const applyFn = useServerFn(applyWizardChoice);
+  const [groups, setGroups] = useState<WizardGroup[]>([]);
+  const [idx, setIdx] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [includeAnnet, setIncludeAnnet] = useState(true);
+  const [remember, setRemember] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const load = async (withAnnet = includeAnnet) => {
+    setLoading(true);
+    try {
+      const g = await listFn({ data: { includeAnnet: withAnnet } });
+      setGroups(g);
+      setIdx(0);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Kunne ikke laste veiviseren");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const current = groups[idx];
+  const next = () => setIdx((i) => i + 1);
+
+  const choose = async (categoryId: string | null) => {
+    if (!current) return;
+    setBusy(true);
+    try {
+      await applyFn({
+        data: { ids: current.ids, pattern: current.pattern, category_id: categoryId, remember },
+      });
+      toast.success(`${current.count} transaksjon(er) oppdatert`);
+      onChanged();
+      next();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Kunne ikke lagre");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const catLabel = (c: FinCategory) => {
+    const parent = categories.find((p) => p.id === c.parent_id);
+    return parent ? `${parent.name} › ${c.name}` : c.name;
+  };
+  const annet = categories.find((c) => c.name.toLowerCase() === "annet");
+
+  if (loading)
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="animate-spin" size={16} /> Laster veiviser…
+      </div>
+    );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={includeAnnet}
+            onChange={(e) => { setIncludeAnnet(e.target.checked); load(e.target.checked); }}
+          />
+          Ta med de som ligger i «Annet»
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Husk valget til neste gang
+        </label>
+        <Button size="sm" variant="secondary" onClick={() => load()}>
+          <RefreshCw size={14} /> Oppdater
+        </Button>
+      </div>
+
+      {!current ? (
+        <div className="rounded-xl border border-border bg-card/60 p-6 text-center text-sm text-muted-foreground">
+          Ingenting igjen å kategorisere. 🎉
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card/60 p-5">
+          <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+            {idx + 1} av {groups.length} · {current.state === "annet" ? "Ligger i «Annet»" : "Mangler kategori"}
+          </div>
+          <div className="text-lg font-semibold">{current.label}</div>
+          <div className="mb-3 text-sm text-muted-foreground">
+            {current.count} transaksjon(er) · totalt {nok2(current.total)}
+          </div>
+          <ul className="mb-4 space-y-1 text-xs text-muted-foreground">
+            {current.samples.map((s, i) => (
+              <li key={i}>{fmtDate(s.date)} · {s.description} · {nok2(s.amount)}</li>
+            ))}
+          </ul>
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map((c) => (
+              <Button key={c.id} size="sm" variant="secondary" disabled={busy} onClick={() => choose(c.id)}>
+                {catLabel(c)}
+              </Button>
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/50 pt-3">
+            {annet && (
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => choose(annet.id)}>
+                Behold som «Annet»
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" disabled={busy} onClick={next}>
+              Hopp over
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* --------------------------------------------------------------- Kvitteringer */
 
 function Kvitteringer({ onChanged }: { onChanged: () => void }) {
   const receiptsFn = useServerFn(listFinReceipts);
   const matchFn = useServerFn(autoMatchReceipts);
+  const linkFn = useServerFn(linkReceiptToTx);
   const [receipts, setReceipts] = useState<FinReceipt[]>([]);
   const [matches, setMatches] = useState<any[] | null>(null);
+  const [linked, setLinked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -693,13 +825,12 @@ function Kvitteringer({ onChanged }: { onChanged: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const run = async (apply: boolean) => {
+  const findMatches = async () => {
     setBusy(true);
     try {
-      const res = await matchFn({ data: { apply } });
+      const res = await matchFn({ data: { apply: false } });
       setMatches(res.matches);
-      toast.success(apply ? `${res.count} kvitteringer koblet` : `${res.count} mulige koblinger funnet`);
-      if (apply) onChanged();
+      toast.success(`${res.count} mulige koblinger funnet`);
     } catch (e: any) {
       toast.error(e?.message ?? "Kobling feilet");
     } finally {
@@ -707,28 +838,52 @@ function Kvitteringer({ onChanged }: { onChanged: () => void }) {
     }
   };
 
+  const linkOne = async (m: any) => {
+    try {
+      await linkFn({ data: { tx_id: m.tx_id, receipt_id: m.receipt_id } });
+      setLinked((p) => new Set(p).add(m.tx_id));
+      toast.success("Kvittering koblet");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Kobling feilet");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" disabled={busy} onClick={() => run(false)}>
-          {busy ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} Finn koblinger
+        <Button size="sm" variant="secondary" disabled={busy} onClick={findMatches}>
+          {busy ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} Finn forslag til kobling
         </Button>
-        <Button size="sm" disabled={busy} onClick={() => run(true)}><Link2 size={14} /> Koble automatisk</Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Kvitteringer fra kvitteringsarkivet kobles til transaksjoner med samme beløp innen ±3 dager.
+        Kvitteringer kobles aldri automatisk. Du får kun forslag (samme beløp innen ±3 dager) og velger selv hvilke som
+        skal kobles.
       </p>
 
       {matches && (
         <div className="rounded-xl border border-border bg-card/60 p-4 text-sm">
           <div className="mb-2 font-medium">{matches.length} forslag</div>
-          <ul className="space-y-1 text-xs text-muted-foreground">
+          <ul className="space-y-1 text-xs">
             {matches.map((m, i) => (
-              <li key={i}>{fmtDate(m.date)} · {m.store ?? "kvittering"} · {nok2(Number(m.amount))}</li>
+              <li key={i} className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-1">
+                <span className="text-muted-foreground">
+                  {fmtDate(m.date)} · {m.store ?? "kvittering"} · {nok2(Number(m.amount))}
+                </span>
+                {linked.has(m.tx_id) ? (
+                  <span className="text-emerald-400">Koblet</span>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={() => linkOne(m)}>
+                    <Link2 size={13} /> Koble
+                  </Button>
+                )}
+              </li>
             ))}
+            {matches.length === 0 && <li className="text-muted-foreground">Ingen forslag.</li>}
           </ul>
         </div>
       )}
+
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {receipts.map((r) => (
