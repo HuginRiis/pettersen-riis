@@ -647,6 +647,14 @@ function Posteringer({
         <Button size="sm" variant="secondary" onClick={() => setBulkOpen(true)}>
           <Wand2 size={14} className="mr-1" /> Bulk-rediger
         </Button>
+        <Button
+          size="sm"
+          variant={pendingIds.length ? "default" : "outline"}
+          disabled={!pendingIds.length}
+          onClick={() => postIds(pendingIds)}
+        >
+          <CheckCircle2 size={14} className="mr-1" /> Poster ventende ({pendingIds.length})
+        </Button>
       </div>
 
       {showNew && (
