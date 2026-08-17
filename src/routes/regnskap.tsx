@@ -22,7 +22,8 @@ import {
   listFinCategories, listFinTransactions, updateFinTransaction, deleteFinTransaction,
   importFinTransactions, categorizeFinTransactions, getFinStats, getFinRecurring,
   listFinImports, listFinReceipts, autoMatchReceipts, createFinCategory,
-  type FinCategory, type FinTx, type FinReceipt,
+  linkReceiptToTx, listCategoryWizardGroups, applyWizardChoice,
+  type FinCategory, type FinTx, type FinReceipt, type WizardGroup,
 } from "@/lib/regnskap.functions";
 
 export const Route = createFileRoute("/regnskap")({
