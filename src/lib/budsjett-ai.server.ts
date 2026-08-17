@@ -186,12 +186,16 @@ export async function extractStatement(input: {
     all = results.flatMap((r) => r.transactions);
     account = results.find((r) => r.account)?.account;
   } else if (input.fileDataUrl) {
+    const isPdf = /^data:application\/pdf/i.test(input.fileDataUrl);
+    const mediaBlock = isPdf
+      ? { type: "file", file: { filename: input.fileName || "kontoutskrift.pdf", file_data: input.fileDataUrl } }
+      : { type: "image_url", image_url: { url: input.fileDataUrl } };
     const r = await callAI(systemPrompt, [
       {
         type: "text",
         text: "Les denne kontoutskriften og hent ut ALLE transaksjoner etter reglene. Ta med hver eneste linje.",
       },
-      { type: "image_url", image_url: { url: input.fileDataUrl } },
+      mediaBlock,
     ]);
     all = r.transactions;
     account = r.account;
