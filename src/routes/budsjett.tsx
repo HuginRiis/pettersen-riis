@@ -15,6 +15,10 @@ import { PageShell, PageHero } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import heroImg from "@/assets/got-budsjett.jpg";
 import {
   ACCOUNT_KEYS, ACCOUNT_LABELS, applyRules, fmtNok, monthLabel, monthRange,
