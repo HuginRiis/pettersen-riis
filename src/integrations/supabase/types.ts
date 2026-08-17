@@ -683,6 +683,255 @@ export type Database = {
         }
         Relationships: []
       }
+      fin_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          kind: string
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          kind?: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          kind?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fin_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "fin_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fin_imports: {
+        Row: {
+          duplicates: number
+          errors: number
+          filename: string
+          id: string
+          imported_at: string
+          inserted: number
+          meta: Json
+          status: string
+          total_rows: number
+        }
+        Insert: {
+          duplicates?: number
+          errors?: number
+          filename: string
+          id?: string
+          imported_at?: string
+          inserted?: number
+          meta?: Json
+          status?: string
+          total_rows?: number
+        }
+        Update: {
+          duplicates?: number
+          errors?: number
+          filename?: string
+          id?: string
+          imported_at?: string
+          inserted?: number
+          meta?: Json
+          status?: string
+          total_rows?: number
+        }
+        Relationships: []
+      }
+      fin_rules: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          hits: number
+          id: string
+          pattern: string
+          tx_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          hits?: number
+          id?: string
+          pattern: string
+          tx_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          hits?: number
+          id?: string
+          pattern?: string
+          tx_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fin_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "fin_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fin_transactions: {
+        Row: {
+          account: string | null
+          ai_category: string | null
+          ai_confidence: number | null
+          ai_reason: string | null
+          amount: number
+          bank_status: string | null
+          bank_subtype: string | null
+          bank_type: string | null
+          booked_date: string | null
+          category_id: string | null
+          comment: string | null
+          counterparty: string | null
+          created_at: string
+          currency: string
+          dedupe_key: string | null
+          deleted_at: string | null
+          description: string
+          dup_of: string | null
+          dup_status: string
+          id: string
+          import_id: string | null
+          is_manual_category: boolean
+          needs_review: boolean
+          raw: Json
+          receipt_id: string | null
+          reference: string | null
+          source: string
+          to_account: string | null
+          tx_date: string
+          tx_type: string
+          updated_at: string
+        }
+        Insert: {
+          account?: string | null
+          ai_category?: string | null
+          ai_confidence?: number | null
+          ai_reason?: string | null
+          amount: number
+          bank_status?: string | null
+          bank_subtype?: string | null
+          bank_type?: string | null
+          booked_date?: string | null
+          category_id?: string | null
+          comment?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          dedupe_key?: string | null
+          deleted_at?: string | null
+          description?: string
+          dup_of?: string | null
+          dup_status?: string
+          id?: string
+          import_id?: string | null
+          is_manual_category?: boolean
+          needs_review?: boolean
+          raw?: Json
+          receipt_id?: string | null
+          reference?: string | null
+          source?: string
+          to_account?: string | null
+          tx_date: string
+          tx_type?: string
+          updated_at?: string
+        }
+        Update: {
+          account?: string | null
+          ai_category?: string | null
+          ai_confidence?: number | null
+          ai_reason?: string | null
+          amount?: number
+          bank_status?: string | null
+          bank_subtype?: string | null
+          bank_type?: string | null
+          booked_date?: string | null
+          category_id?: string | null
+          comment?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          dedupe_key?: string | null
+          deleted_at?: string | null
+          description?: string
+          dup_of?: string | null
+          dup_status?: string
+          id?: string
+          import_id?: string | null
+          is_manual_category?: boolean
+          needs_review?: boolean
+          raw?: Json
+          receipt_id?: string | null
+          reference?: string | null
+          source?: string
+          to_account?: string | null
+          tx_date?: string
+          tx_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fin_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "fin_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fin_transactions_dup_of_fkey"
+            columns: ["dup_of"]
+            isOneToOne: false
+            referencedRelation: "fin_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fin_transactions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "fin_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fin_transactions_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flights_seen: {
         Row: {
           callsign: string | null
@@ -3350,6 +3599,8 @@ export type Database = {
     }
     Functions: {
       cleanup_pgnet_cache: { Args: never; Returns: Json }
+      fin_recurring: { Args: never; Returns: Json }
+      fin_stats: { Args: { p_from?: string; p_to?: string }; Returns: Json }
       get_api_call_hourly_24h: { Args: never; Returns: Json }
       get_api_call_summary_24h: { Args: never; Returns: Json }
       get_cron_jobs: {
