@@ -601,6 +601,18 @@ function Posteringer({
     await reload();
   };
 
+  const pendingIds = useMemo(
+    () => expenses.filter((e) => e.status === "pending").map((e) => e.id),
+    [expenses],
+  );
+
+  const postIds = async (ids: string[]) => {
+    if (!ids.length) return;
+    await updateBudExpenses({ data: { ids, patch: { status: "approved" } } });
+    toast.success(`Postet ${ids.length} ${ids.length === 1 ? "postering" : "posteringer"}`);
+    await reload();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-card/50 p-4">
