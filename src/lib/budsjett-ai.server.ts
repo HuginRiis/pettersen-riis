@@ -103,7 +103,12 @@ async function callAI(systemPrompt: string, userContent: unknown): Promise<AiExt
   if (!res.ok) {
     if (res.status === 429) throw new Error("For mange forespørsler mot AI. Prøv igjen om litt.");
     if (res.status === 402) throw new Error("AI-kredittene er tomme.");
-    throw new Error(`AI feilet (${res.status})`);
+    if (res.status >= 500)
+      throw new Error(
+        `AI-tjenesten er midlertidig utilgjengelig (${res.status}). Prøv igjen om et minutt, eller last opp CSV i stedet.`,
+      );
+    const t = await res.text().catch(() => "");
+    throw new Error(`AI feilet (${res.status})${t ? `: ${t.slice(0, 200)}` : ""}`);
   }
 
   const data = (await res.json()) as any;
