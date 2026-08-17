@@ -687,8 +687,10 @@ function ImportPanel({ onDone }: { onDone: () => void }) {
 function Kvitteringer({ onChanged }: { onChanged: () => void }) {
   const receiptsFn = useServerFn(listFinReceipts);
   const matchFn = useServerFn(autoMatchReceipts);
+  const linkFn = useServerFn(linkReceiptToTx);
   const [receipts, setReceipts] = useState<FinReceipt[]>([]);
   const [matches, setMatches] = useState<any[] | null>(null);
+  const [linked, setLinked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -696,13 +698,12 @@ function Kvitteringer({ onChanged }: { onChanged: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const run = async (apply: boolean) => {
+  const findMatches = async () => {
     setBusy(true);
     try {
-      const res = await matchFn({ data: { apply } });
+      const res = await matchFn({ data: { apply: false } });
       setMatches(res.matches);
-      toast.success(apply ? `${res.count} kvitteringer koblet` : `${res.count} mulige koblinger funnet`);
-      if (apply) onChanged();
+      toast.success(`${res.count} mulige koblinger funnet`);
     } catch (e: any) {
       toast.error(e?.message ?? "Kobling feilet");
     } finally {
@@ -710,28 +711,52 @@ function Kvitteringer({ onChanged }: { onChanged: () => void }) {
     }
   };
 
+  const linkOne = async (m: any) => {
+    try {
+      await linkFn({ data: { tx_id: m.tx_id, receipt_id: m.receipt_id } });
+      setLinked((p) => new Set(p).add(m.tx_id));
+      toast.success("Kvittering koblet");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Kobling feilet");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" disabled={busy} onClick={() => run(false)}>
-          {busy ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} Finn koblinger
+        <Button size="sm" variant="secondary" disabled={busy} onClick={findMatches}>
+          {busy ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />} Finn forslag til kobling
         </Button>
-        <Button size="sm" disabled={busy} onClick={() => run(true)}><Link2 size={14} /> Koble automatisk</Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Kvitteringer fra kvitteringsarkivet kobles til transaksjoner med samme beløp innen ±3 dager.
+        Kvitteringer kobles aldri automatisk. Du får kun forslag (samme beløp innen ±3 dager) og velger selv hvilke som
+        skal kobles.
       </p>
 
       {matches && (
         <div className="rounded-xl border border-border bg-card/60 p-4 text-sm">
           <div className="mb-2 font-medium">{matches.length} forslag</div>
-          <ul className="space-y-1 text-xs text-muted-foreground">
+          <ul className="space-y-1 text-xs">
             {matches.map((m, i) => (
-              <li key={i}>{fmtDate(m.date)} · {m.store ?? "kvittering"} · {nok2(Number(m.amount))}</li>
+              <li key={i} className="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-1">
+                <span className="text-muted-foreground">
+                  {fmtDate(m.date)} · {m.store ?? "kvittering"} · {nok2(Number(m.amount))}
+                </span>
+                {linked.has(m.tx_id) ? (
+                  <span className="text-emerald-400">Koblet</span>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={() => linkOne(m)}>
+                    <Link2 size={13} /> Koble
+                  </Button>
+                )}
+              </li>
             ))}
+            {matches.length === 0 && <li className="text-muted-foreground">Ingen forslag.</li>}
           </ul>
         </div>
       )}
+
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {receipts.map((r) => (
