@@ -521,6 +521,154 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_categories: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          kind: string
+          monthly_budget: number | null
+          name: string
+          position: number
+          updated_at: string
+          yearly_budget: number | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          kind?: string
+          monthly_budget?: number | null
+          name: string
+          position?: number
+          updated_at?: string
+          yearly_budget?: number | null
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          kind?: string
+          monthly_budget?: number | null
+          name?: string
+          position?: number
+          updated_at?: string
+          yearly_budget?: number | null
+        }
+        Relationships: []
+      }
+      budget_expenses: {
+        Row: {
+          account: string | null
+          amount: number
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          note: string | null
+          occurred_on: string
+          source: string
+          status: string
+          store: string | null
+          updated_at: string
+        }
+        Insert: {
+          account?: string | null
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          occurred_on: string
+          source?: string
+          status?: string
+          store?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account?: string | null
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          occurred_on?: string
+          source?: string
+          status?: string
+          store?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_rules: {
+        Row: {
+          category_id: string
+          created_at: string
+          hits: number
+          id: string
+          pattern: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          hits?: number
+          id?: string
+          pattern: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          hits?: number
+          id?: string
+          pattern?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "budget_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       car_trips: {
         Row: {
           avg_speed_kmh: number | null

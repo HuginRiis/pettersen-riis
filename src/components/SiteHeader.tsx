@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
-  Receipt, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
+  Receipt, PiggyBank, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
   TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed, BookOpen, Car, Wallet } from "lucide-react";
 
 
@@ -51,6 +51,7 @@ type RoutePath =
   | "/steintavle-2"
   | "/kvitteringer"
   | "/regnskap"
+  | "/budsjett"
   | "/utlan"
   | "/batterier"
   | "/bruksanvisning"
@@ -95,6 +96,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/stromkroniken": Zap,
   "/kvitteringer": Receipt,
   "/regnskap": Wallet,
+  "/budsjett": PiggyBank,
   "/utlan": PackageOpen,
   "/batterier": BatteryCharging,
   "/bruksanvisning": BookOpen,
@@ -135,6 +137,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/stromkroniken": "#eab308",
   "/kvitteringer": "#94a3b8",
   "/regnskap": "#d4af37",
+  "/budsjett": "#34d399",
   "/utlan": "#c084fc",
   "/batterier": "#22c55e",
   "/bruksanvisning": "#e0b978",
@@ -181,6 +184,7 @@ const navLinks: NavLink[] = [
   { to: "/stromkroniken", label: "Strømkrøniken" },
   { to: "/kvitteringer", label: "Kvitteringer" },
   { to: "/regnskap", label: "Regnskap" },
+  { to: "/budsjett", label: "Regnskap og budsjett" },
   { to: "/utlan", label: "Utlån & Lånt" },
   { to: "/batterier", label: "Batterier i huset" },
   { to: "/bruksanvisning", label: "Bruksanvisning" },

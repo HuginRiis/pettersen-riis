@@ -42,6 +42,7 @@ import { Route as IphoneAppRouteImport } from './routes/iphone-app'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
 import { Route as FlyRouteImport } from './routes/fly'
+import { Route as BudsjettRouteImport } from './routes/budsjett'
 import { Route as BruksanvisningRouteImport } from './routes/bruksanvisning'
 import { Route as BatterierRouteImport } from './routes/batterier'
 import { Route as AgendaRouteImport } from './routes/agenda'
@@ -232,6 +233,11 @@ const FlyRoute = FlyRouteImport.update({
   path: '/fly',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BudsjettRoute = BudsjettRouteImport.update({
+  id: '/budsjett',
+  path: '/budsjett',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BruksanvisningRoute = BruksanvisningRouteImport.update({
   id: '/bruksanvisning',
   path: '/bruksanvisning',
@@ -368,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof AgendaRoute
   '/batterier': typeof BatterierRoute
   '/bruksanvisning': typeof BruksanvisningRoute
+  '/budsjett': typeof BudsjettRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -427,6 +434,7 @@ export interface FileRoutesByTo {
   '/agenda': typeof AgendaRoute
   '/batterier': typeof BatterierRoute
   '/bruksanvisning': typeof BruksanvisningRoute
+  '/budsjett': typeof BudsjettRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -487,6 +495,7 @@ export interface FileRoutesById {
   '/agenda': typeof AgendaRoute
   '/batterier': typeof BatterierRoute
   '/bruksanvisning': typeof BruksanvisningRoute
+  '/budsjett': typeof BudsjettRoute
   '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/batterier'
     | '/bruksanvisning'
+    | '/budsjett'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -607,6 +617,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/batterier'
     | '/bruksanvisning'
+    | '/budsjett'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/batterier'
     | '/bruksanvisning'
+    | '/budsjett'
     | '/fly'
     | '/gressklipper'
     | '/hytta'
@@ -726,6 +738,7 @@ export interface RootRouteChildren {
   AgendaRoute: typeof AgendaRoute
   BatterierRoute: typeof BatterierRoute
   BruksanvisningRoute: typeof BruksanvisningRoute
+  BudsjettRoute: typeof BudsjettRoute
   FlyRoute: typeof FlyRoute
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
@@ -1014,6 +1027,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FlyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/budsjett': {
+      id: '/budsjett'
+      path: '/budsjett'
+      fullPath: '/budsjett'
+      preLoaderRoute: typeof BudsjettRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bruksanvisning': {
       id: '/bruksanvisning'
       path: '/bruksanvisning'
@@ -1190,6 +1210,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgendaRoute: AgendaRoute,
   BatterierRoute: BatterierRoute,
   BruksanvisningRoute: BruksanvisningRoute,
+  BudsjettRoute: BudsjettRoute,
   FlyRoute: FlyRoute,
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
