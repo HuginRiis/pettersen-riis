@@ -756,9 +756,21 @@ function Posteringer({
                   {fmtNok(Number(e.amount))}
                 </td>
                 <td className="p-2 text-right">
-                  <Button size="icon" variant="ghost" onClick={() => remove(e.id)}>
-                    <Trash2 size={14} />
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    {e.status === "pending" && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Poster"
+                        onClick={() => postIds([e.id])}
+                      >
+                        <CheckCircle2 size={14} className="text-emerald-400" />
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={() => remove(e.id)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
