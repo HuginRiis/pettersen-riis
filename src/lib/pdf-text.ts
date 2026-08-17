@@ -31,6 +31,6 @@ export async function extractPdfText(file: File): Promise<string> {
       if (line) lines.push(line);
     }
   }
-  await doc.destroy();
+  await (doc as any).cleanup?.();
   return lines.join("\n");
 }
