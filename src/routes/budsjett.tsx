@@ -948,6 +948,36 @@ function ImportPanel({
         </Button>
       </div>
 
+      {expenses.some((e) => e.status === "pending") && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
+          <p className="text-sm">
+            <span className="font-bold text-primary">
+              {expenses.filter((e) => e.status === "pending").length}
+            </span>{" "}
+            importerte posteringer venter på å bli postert i regnskapet.
+          </p>
+          <Button
+            onClick={async () => {
+              const ids = expenses.filter((e) => e.status === "pending").map((e) => e.id);
+              setBusy(true);
+              try {
+                await updateBudExpenses({ data: { ids, patch: { status: "approved" } } });
+                toast.success(`Postet ${ids.length} posteringer`);
+                await reload();
+              } catch (err: any) {
+                toast.error(err?.message ?? "Kunne ikke postere");
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy}
+          >
+            {busy ? <Loader2 size={15} className="mr-1 animate-spin" /> : <CheckCircle2 size={15} className="mr-1" />}
+            Poster i regnskapet
+          </Button>
+        </div>
+      )}
+
       {log.length > 0 && (
         <div className="rounded-xl border border-border bg-card/50 p-4 text-sm">
           {log.map((l, i) => (
