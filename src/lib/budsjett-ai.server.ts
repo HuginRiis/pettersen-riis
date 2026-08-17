@@ -151,6 +151,7 @@ async function runWithConcurrency<T, R>(
 export async function extractStatement(input: {
   csvText?: string | null;
   fileDataUrl?: string | null;
+  fileName?: string | null;
   categories: string[];
 }): Promise<AiExtractResult> {
   const catList = input.categories.length
