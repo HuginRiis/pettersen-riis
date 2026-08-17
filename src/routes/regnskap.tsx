@@ -54,12 +54,14 @@ const fmtDate = (iso: string | null) =>
 const COLORS = ["#d4af37", "#22c55e", "#38bdf8", "#f472b6", "#fb923c", "#a78bfa", "#eab308", "#ef4444",
   "#34d399", "#60a5fa", "#c084fc", "#94a3b8", "#10b981", "#f59e0b", "#22d3ee"];
 
-type TabKey = "oversikt" | "transaksjoner" | "import" | "kvitteringer" | "faste" | "innstillinger";
+type TabKey =
+  | "oversikt" | "transaksjoner" | "import" | "kvitteringer" | "veiviser" | "faste" | "innstillinger";
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
   { key: "oversikt", label: "Oversikt", icon: Wallet },
   { key: "transaksjoner", label: "Transaksjoner", icon: FileSpreadsheet },
   { key: "import", label: "Import", icon: Upload },
+  { key: "veiviser", label: "Kategori-veiviser", icon: Sparkles },
   { key: "kvitteringer", label: "Kvitteringer", icon: ReceiptIcon },
   { key: "faste", label: "Faste utgifter", icon: Repeat },
   { key: "innstillinger", label: "Innstillinger", icon: Settings2 },
