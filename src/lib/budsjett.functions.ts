@@ -202,10 +202,15 @@ export const deleteBudExpenses = createServerFn({ method: "POST" })
   .inputValidator((d: { ids: string[] }) => d)
   .handler(async ({ data }) => {
     await requireHouseAuth();
-    if (!data.ids.length) return { ok: true };
-    const { error } = await db().from("budget_expenses").delete().in("id", data.ids);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    if (!data.ids.length) return { ok: true, deleted: 0 };
+    let deleted = 0;
+    for (let i = 0; i < data.ids.length; i += 300) {
+      const batch = data.ids.slice(i, i + 300);
+      const { error } = await db().from("budget_expenses").delete().in("id", batch);
+      if (error) throw new Error(error.message);
+      deleted += batch.length;
+    }
+    return { ok: true, deleted };
   });
 
 /* ------------------------------------------------------------------ regler */
