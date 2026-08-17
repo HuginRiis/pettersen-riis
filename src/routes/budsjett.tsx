@@ -608,10 +608,16 @@ function Posteringer({
 
   const postIds = async (ids: string[]) => {
     if (!ids.length) return;
-    await updateBudExpenses({ data: { ids, patch: { status: "approved" } } });
-    toast.success(`Postet ${ids.length} ${ids.length === 1 ? "postering" : "posteringer"}`);
-    await reload();
+    const t = toast.loading(`Posterer ${ids.length}…`);
+    try {
+      await updateBudExpenses({ data: { ids, patch: { status: "approved" } } });
+      toast.success(`Postet ${ids.length} ${ids.length === 1 ? "postering" : "posteringer"}`, { id: t });
+      await reload();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Kunne ikke postere", { id: t });
+    }
   };
+
 
   return (
     <div className="space-y-4">

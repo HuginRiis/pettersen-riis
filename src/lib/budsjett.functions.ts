@@ -185,13 +185,18 @@ export const updateBudExpenses = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireHouseAuth();
     if (!data.ids.length) return { updated: 0 };
-    const { error } = await db()
-      .from("budget_expenses")
-      .update({ ...data.patch, updated_at: new Date().toISOString() })
-      .in("id", data.ids);
-    if (error) throw new Error(error.message);
-    return { updated: data.ids.length };
+    const patch = { ...data.patch, updated_at: new Date().toISOString() };
+    let updated = 0;
+    // Del opp i mindre batcher – én stor .in(...) sprenger URL-lengden hos PostgREST.
+    for (let i = 0; i < data.ids.length; i += 200) {
+      const batch = data.ids.slice(i, i + 200);
+      const { error } = await db().from("budget_expenses").update(patch).in("id", batch);
+      if (error) throw new Error(error.message);
+      updated += batch.length;
+    }
+    return { updated };
   });
+
 
 export const deleteBudExpenses = createServerFn({ method: "POST" })
   .inputValidator((d: { ids: string[] }) => d)
