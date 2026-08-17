@@ -695,6 +695,60 @@ function Posteringer({
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-end gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+        <div>
+          <Label className="text-xs text-muted-foreground">Slett fra</Label>
+          <Input type="date" value={delFrom} onChange={(e) => setDelFrom(e.target.value)} />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Slett til</Label>
+          <Input type="date" value={delTo} onChange={(e) => setDelTo(e.target.value)} />
+        </div>
+        <Button
+          size="sm"
+          variant="destructive"
+          disabled={(!delFrom && !delTo) || !rangeIds.length || deleting}
+          onClick={() => setConfirmMode("range")}
+        >
+          <Trash2 size={14} className="mr-1" /> Slett periode ({rangeIds.length})
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-destructive/50 text-destructive"
+          disabled={!expenses.length || deleting}
+          onClick={() => setConfirmMode("all")}
+        >
+          <Trash2 size={14} className="mr-1" /> Slett alt ({expenses.length})
+        </Button>
+      </div>
+
+      <AlertDialog open={confirmMode !== null} onOpenChange={(o) => !o && setConfirmMode(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Er du sikker på at du vil slette?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmMode === "all"
+                ? `Dette sletter alle ${expenses.length} posteringer permanent. Handlingen kan ikke angres.`
+                : `Dette sletter ${rangeIds.length} posteringer${delFrom ? ` fra ${delFrom}` : ""}${delTo ? ` til ${delTo}` : ""} permanent. Handlingen kan ikke angres.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(ev) => {
+                ev.preventDefault();
+                doDelete();
+              }}
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 size={14} className="mr-1 animate-spin" /> : <Trash2 size={14} className="mr-1" />}
+              Ja, slett
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {showNew && (
         <div className="grid gap-3 rounded-xl border border-border bg-card/50 p-4 sm:grid-cols-3">
           <div>
