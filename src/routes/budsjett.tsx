@@ -805,7 +805,7 @@ function ImportPanel({
           r.onerror = () => reject(r.error);
           r.readAsDataURL(file);
         });
-        payload = { fileDataUrl: dataUrl, categories };
+        payload = { fileDataUrl: dataUrl, fileName: file.name, categories };
       }
 
       const res = await extractBankStatement({ data: payload });
