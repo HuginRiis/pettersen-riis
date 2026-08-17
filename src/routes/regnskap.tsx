@@ -166,6 +166,7 @@ function RegnskapPage() {
         )}
         {tab === "import" && <ImportPanel onDone={() => { loadStats(); }} />}
         {tab === "kvitteringer" && <Kvitteringer onChanged={loadStats} />}
+        {tab === "veiviser" && <Veiviser categories={categories} onChanged={loadStats} />}
         {tab === "faste" && <FasteUtgifter />}
         {tab === "innstillinger" && <Innstillinger categories={categories} reload={loadCats} />}
       </div>
