@@ -343,6 +343,7 @@ function Home() {
           {showHall("/skatte-utregningen") && <HallCard to="/skatte-utregningen" title="Skatte­utregningen" desc="Skatt og lønn — beregninger." icon="🪙" image={hallSkatt} locked={!isAuthed} />}
           {showHall("/steintavle") && <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
           {showHall("/steintavle-2") && <HallCard to="/steintavle-2" title="Steintavle 2" desc="Stor visning — temperatur, regn og vind på borgen." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
+          {showHall("/budsjett") && <HallCard to="/budsjett" title="Regnskap og budsjett" desc="AI-import av kontoutskrift, budsjett per kategori og familiesammenligning." icon="🏦" locked={!isAuthed} />}
           {showHall("/regnskap") && <HallCard to="/regnskap" title="Regnskap" desc="Bankimport, AI-kategorisering og full oversikt over pengebruken." icon="💰" image={hallRegnskap} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/utlan") && <HallCard to="/utlan" title="Utlån & Lånt" desc="Ting husets folk har lånt bort eller lånt inn." icon="📦" image={hallUtlan} locked={!isAuthed} />}
@@ -678,6 +679,7 @@ function HallCard({
     | "/steintavle-2"
     | "/kvitteringer"
     | "/regnskap"
+    | "/budsjett"
     | "/utlan"
     | "/batterier"
     | "/bruksanvisning"
