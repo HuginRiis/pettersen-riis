@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Upload, Loader2, Search, Sparkles, Trash2, RefreshCw, Receipt as ReceiptIcon,
@@ -424,8 +424,8 @@ function Transaksjoner({ categories, from, to, onChanged }: {
           </thead>
           <tbody>
             {rows.map((t) => (
-              <>
-                <tr key={t.id} className="border-t border-border/50 hover:bg-muted/20">
+              <Fragment key={t.id}>
+                <tr className="border-t border-border/50 hover:bg-muted/20">
                   <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{fmtDate(t.tx_date)}</td>
                   <td className="px-3 py-2">
                     <button className="flex items-center gap-1 text-left" onClick={() => setExpanded(expanded === t.id ? null : t.id)}>
@@ -469,7 +469,7 @@ function Transaksjoner({ categories, from, to, onChanged }: {
                   </td>
                 </tr>
                 {expanded === t.id && (
-                  <tr key={`${t.id}-x`} className="border-t border-border/30 bg-muted/10">
+                  <tr className="border-t border-border/30 bg-muted/10">
                     <td colSpan={5} className="px-6 py-3 text-xs">
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1 text-muted-foreground">
@@ -505,7 +505,7 @@ function Transaksjoner({ categories, from, to, onChanged }: {
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
             {!loading && rows.length === 0 && (
               <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">Ingen transaksjoner. Importer en CSV-fil fra banken.</td></tr>

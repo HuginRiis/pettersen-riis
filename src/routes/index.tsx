@@ -62,6 +62,7 @@ import hallStrom from "@/assets/stromkroniken.jpg";
 import hallSteintavle from "@/assets/got-brodering.jpg";
 import hallVarslinger from "@/assets/got-varslinger.jpg";
 import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
+import hallRegnskap from "@/assets/got-regnskap.jpg";
 import hallUtlan from "@/assets/got-utlan.jpg";
 import hallBatterier from "@/assets/got-batterier.jpg";
 import hallBruksanvisning from "@/assets/got-bruksanvisning.jpg";
@@ -342,6 +343,7 @@ function Home() {
           {showHall("/skatte-utregningen") && <HallCard to="/skatte-utregningen" title="Skatte­utregningen" desc="Skatt og lønn — beregninger." icon="🪙" image={hallSkatt} locked={!isAuthed} />}
           {showHall("/steintavle") && <HallCard to="/steintavle" title="Steintavle" desc="Husets innskrifter og notater." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
           {showHall("/steintavle-2") && <HallCard to="/steintavle-2" title="Steintavle 2" desc="Stor visning — temperatur, regn og vind på borgen." icon="🪨" image={hallSteintavle} locked={!isAuthed} />}
+          {showHall("/regnskap") && <HallCard to="/regnskap" title="Regnskap" desc="Bankimport, AI-kategorisering og full oversikt over pengebruken." icon="💰" image={hallRegnskap} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/utlan") && <HallCard to="/utlan" title="Utlån & Lånt" desc="Ting husets folk har lånt bort eller lånt inn." icon="📦" image={hallUtlan} locked={!isAuthed} />}
           {showHall("/batterier") && <HallCard to="/batterier" title="Batterier i huset" desc="Alle batteri-nivåer samlet på ett sted — med varsling." icon="🔋" image={hallBatterier} locked={!isAuthed} />}
@@ -675,6 +677,7 @@ function HallCard({
     | "/steintavle"
     | "/steintavle-2"
     | "/kvitteringer"
+    | "/regnskap"
     | "/utlan"
     | "/batterier"
     | "/bruksanvisning"

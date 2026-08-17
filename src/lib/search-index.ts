@@ -114,6 +114,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["strøm", "tibber", "pulse", "spotpris", "kwh", "kraft"],
   },
   {
+    title: "Regnskap",
+    path: "/regnskap",
+    section: "Økonomi",
+    description: "Importer banktransaksjoner, AI-kategorisering, faste utgifter og full utgiftsoversikt.",
+    keywords: ["regnskap", "økonomi", "bank", "transaksjoner", "csv", "import", "budsjett", "utgifter", "inntekter", "kategori", "faste utgifter", "abonnement"],
+  },
+  {
     title: "Kvitteringer",
     path: "/kvitteringer",
     section: "Økonomi",

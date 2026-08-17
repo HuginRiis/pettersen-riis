@@ -29,6 +29,7 @@ import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as SmartDashbordRouteImport } from './routes/smart-dashbord'
 import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
 import { Route as RoborockRouteImport } from './routes/roborock'
+import { Route as RegnskapRouteImport } from './routes/regnskap'
 import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
 import { Route as PlanterRouteImport } from './routes/planter'
@@ -164,6 +165,11 @@ const SkatteUtregningenRoute = SkatteUtregningenRouteImport.update({
 const RoborockRoute = RoborockRouteImport.update({
   id: '/roborock',
   path: '/roborock',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegnskapRoute = RegnskapRouteImport.update({
+  id: '/regnskap',
+  path: '/regnskap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PushVarslingerRoute = PushVarslingerRouteImport.update({
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
+  '/regnskap': typeof RegnskapRoute
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
@@ -432,6 +439,7 @@ export interface FileRoutesByTo {
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
+  '/regnskap': typeof RegnskapRoute
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
+  '/regnskap': typeof RegnskapRoute
   '/roborock': typeof RoborockRoute
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
@@ -551,6 +560,7 @@ export interface FileRouteTypes {
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
+    | '/regnskap'
     | '/roborock'
     | '/skatte-utregningen'
     | '/smart-dashbord'
@@ -609,6 +619,7 @@ export interface FileRouteTypes {
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
+    | '/regnskap'
     | '/roborock'
     | '/skatte-utregningen'
     | '/smart-dashbord'
@@ -667,6 +678,7 @@ export interface FileRouteTypes {
     | '/planter'
     | '/pollen'
     | '/push-varslinger'
+    | '/regnskap'
     | '/roborock'
     | '/skatte-utregningen'
     | '/smart-dashbord'
@@ -726,6 +738,7 @@ export interface RootRouteChildren {
   PlanterRoute: typeof PlanterRoute
   PollenRoute: typeof PollenRoute
   PushVarslingerRoute: typeof PushVarslingerRoute
+  RegnskapRoute: typeof RegnskapRoute
   RoborockRoute: typeof RoborockRoute
   SkatteUtregningenRoute: typeof SkatteUtregningenRoute
   SmartDashbordRoute: typeof SmartDashbordRoute
@@ -908,6 +921,13 @@ declare module '@tanstack/react-router' {
       path: '/roborock'
       fullPath: '/roborock'
       preLoaderRoute: typeof RoborockRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/regnskap': {
+      id: '/regnskap'
+      path: '/regnskap'
+      fullPath: '/regnskap'
+      preLoaderRoute: typeof RegnskapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/push-varslinger': {
@@ -1182,6 +1202,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlanterRoute: PlanterRoute,
   PollenRoute: PollenRoute,
   PushVarslingerRoute: PushVarslingerRoute,
+  RegnskapRoute: RegnskapRoute,
   RoborockRoute: RoborockRoute,
   SkatteUtregningenRoute: SkatteUtregningenRoute,
   SmartDashbordRoute: SmartDashbordRoute,
