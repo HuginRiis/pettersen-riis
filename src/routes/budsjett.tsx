@@ -606,6 +606,38 @@ function Posteringer({
     [expenses],
   );
 
+  const [delFrom, setDelFrom] = useState("");
+  const [delTo, setDelTo] = useState("");
+  const [confirmMode, setConfirmMode] = useState<null | "range" | "all">(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const rangeIds = useMemo(
+    () =>
+      expenses
+        .filter(
+          (e) =>
+            (!delFrom || e.occurred_on >= delFrom) && (!delTo || e.occurred_on <= delTo),
+        )
+        .map((e) => e.id),
+    [expenses, delFrom, delTo],
+  );
+
+  const doDelete = async () => {
+    const ids = confirmMode === "all" ? expenses.map((e) => e.id) : rangeIds;
+    setDeleting(true);
+    const t = toast.loading(`Sletter ${ids.length}…`);
+    try {
+      await deleteBudExpenses({ data: { ids } });
+      toast.success(`Slettet ${ids.length} posteringer`, { id: t });
+      setConfirmMode(null);
+      await reload();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Kunne ikke slette", { id: t });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const postIds = async (ids: string[]) => {
     if (!ids.length) return;
     const t = toast.loading(`Posterer ${ids.length}…`);
