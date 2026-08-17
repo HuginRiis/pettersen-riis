@@ -793,11 +793,23 @@ function ImportPanel({
     setLog([`Leser ${file.name} med AI…`]);
     try {
       const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
+      const isPdf = /\.pdf$/i.test(file.name) || file.type === "application/pdf";
       const categories = cats.map((c) => c.name);
       let payload: { csvText?: string; fileDataUrl?: string; fileName?: string; categories: string[] };
       if (isCsv) {
         const csvText = await file.text();
         payload = { csvText, categories };
+      } else if (isPdf) {
+        setLog((l) => [...l, "Henter ut tekst fra PDF-en…"]);
+        const { extractPdfText } = await import("@/lib/pdf-text");
+        const text = await extractPdfText(file);
+        if (text.trim().length < 40) {
+          throw new Error(
+            "Fant ingen tekst i PDF-en (den er trolig skannet). Last opp CSV eller et bilde i stedet.",
+          );
+        }
+        setLog((l) => [...l, `Fant ${text.split("\n").length} linjer — sender til AI i mindre biter…`]);
+        payload = { csvText: text, fileName: file.name, categories };
       } else {
         const dataUrl: string = await new Promise((resolve, reject) => {
           const r = new FileReader();
