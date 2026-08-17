@@ -601,6 +601,18 @@ function Posteringer({
     await reload();
   };
 
+  const pendingIds = useMemo(
+    () => expenses.filter((e) => e.status === "pending").map((e) => e.id),
+    [expenses],
+  );
+
+  const postIds = async (ids: string[]) => {
+    if (!ids.length) return;
+    await updateBudExpenses({ data: { ids, patch: { status: "approved" } } });
+    toast.success(`Postet ${ids.length} ${ids.length === 1 ? "postering" : "posteringer"}`);
+    await reload();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-card/50 p-4">
@@ -634,6 +646,14 @@ function Posteringer({
         </Button>
         <Button size="sm" variant="secondary" onClick={() => setBulkOpen(true)}>
           <Wand2 size={14} className="mr-1" /> Bulk-rediger
+        </Button>
+        <Button
+          size="sm"
+          variant={pendingIds.length ? "default" : "outline"}
+          disabled={!pendingIds.length}
+          onClick={() => postIds(pendingIds)}
+        >
+          <CheckCircle2 size={14} className="mr-1" /> Poster ventende ({pendingIds.length})
         </Button>
       </div>
 
@@ -736,9 +756,21 @@ function Posteringer({
                   {fmtNok(Number(e.amount))}
                 </td>
                 <td className="p-2 text-right">
-                  <Button size="icon" variant="ghost" onClick={() => remove(e.id)}>
-                    <Trash2 size={14} />
-                  </Button>
+                  <div className="flex justify-end gap-1">
+                    {e.status === "pending" && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Poster"
+                        onClick={() => postIds([e.id])}
+                      >
+                        <CheckCircle2 size={14} className="text-emerald-400" />
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={() => remove(e.id)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -915,6 +947,36 @@ function ImportPanel({
           Velg fil
         </Button>
       </div>
+
+      {expenses.some((e) => e.status === "pending") && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
+          <p className="text-sm">
+            <span className="font-bold text-primary">
+              {expenses.filter((e) => e.status === "pending").length}
+            </span>{" "}
+            importerte posteringer venter på å bli postert i regnskapet.
+          </p>
+          <Button
+            onClick={async () => {
+              const ids = expenses.filter((e) => e.status === "pending").map((e) => e.id);
+              setBusy(true);
+              try {
+                await updateBudExpenses({ data: { ids, patch: { status: "approved" } } });
+                toast.success(`Postet ${ids.length} posteringer`);
+                await reload();
+              } catch (err: any) {
+                toast.error(err?.message ?? "Kunne ikke postere");
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy}
+          >
+            {busy ? <Loader2 size={15} className="mr-1 animate-spin" /> : <CheckCircle2 size={15} className="mr-1" />}
+            Poster i regnskapet
+          </Button>
+        </div>
+      )}
 
       {log.length > 0 && (
         <div className="rounded-xl border border-border bg-card/50 p-4 text-sm">
