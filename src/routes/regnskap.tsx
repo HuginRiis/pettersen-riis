@@ -683,6 +683,132 @@ function ImportPanel({ onDone }: { onDone: () => void }) {
   );
 }
 
+/* ------------------------------------------------------------------ Veiviser */
+
+function Veiviser({ categories, onChanged }: { categories: FinCategory[]; onChanged: () => void }) {
+  const listFn = useServerFn(listCategoryWizardGroups);
+  const applyFn = useServerFn(applyWizardChoice);
+  const [groups, setGroups] = useState<WizardGroup[]>([]);
+  const [idx, setIdx] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [includeAnnet, setIncludeAnnet] = useState(true);
+  const [remember, setRemember] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const load = async (withAnnet = includeAnnet) => {
+    setLoading(true);
+    try {
+      const g = await listFn({ data: { includeAnnet: withAnnet } });
+      setGroups(g);
+      setIdx(0);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Kunne ikke laste veiviseren");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const current = groups[idx];
+  const next = () => setIdx((i) => i + 1);
+
+  const choose = async (categoryId: string | null) => {
+    if (!current) return;
+    setBusy(true);
+    try {
+      await applyFn({
+        data: { ids: current.ids, pattern: current.pattern, category_id: categoryId, remember },
+      });
+      toast.success(`${current.count} transaksjon(er) oppdatert`);
+      onChanged();
+      next();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Kunne ikke lagre");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const catLabel = (c: FinCategory) => {
+    const parent = categories.find((p) => p.id === c.parent_id);
+    return parent ? `${parent.name} › ${c.name}` : c.name;
+  };
+  const annet = categories.find((c) => c.name.toLowerCase() === "annet");
+
+  if (loading)
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Loader2 className="animate-spin" size={16} /> Laster veiviser…
+      </div>
+    );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={includeAnnet}
+            onChange={(e) => { setIncludeAnnet(e.target.checked); load(e.target.checked); }}
+          />
+          Ta med de som ligger i «Annet»
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Husk valget til neste gang
+        </label>
+        <Button size="sm" variant="secondary" onClick={() => load()}>
+          <RefreshCw size={14} /> Oppdater
+        </Button>
+      </div>
+
+      {!current ? (
+        <div className="rounded-xl border border-border bg-card/60 p-6 text-center text-sm text-muted-foreground">
+          Ingenting igjen å kategorisere. 🎉
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border bg-card/60 p-5">
+          <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+            {idx + 1} av {groups.length} · {current.state === "annet" ? "Ligger i «Annet»" : "Mangler kategori"}
+          </div>
+          <div className="text-lg font-semibold">{current.label}</div>
+          <div className="mb-3 text-sm text-muted-foreground">
+            {current.count} transaksjon(er) · totalt {nok2(current.total)}
+          </div>
+          <ul className="mb-4 space-y-1 text-xs text-muted-foreground">
+            {current.samples.map((s, i) => (
+              <li key={i}>{fmtDate(s.date)} · {s.description} · {nok2(s.amount)}</li>
+            ))}
+          </ul>
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map((c) => (
+              <Button key={c.id} size="sm" variant="secondary" disabled={busy} onClick={() => choose(c.id)}>
+                {catLabel(c)}
+              </Button>
+            ))}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/50 pt-3">
+            {annet && (
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => choose(annet.id)}>
+                Behold som «Annet»
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" disabled={busy} onClick={next}>
+              Hopp over
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* --------------------------------------------------------------- Kvitteringer */
 
 function Kvitteringer({ onChanged }: { onChanged: () => void }) {
