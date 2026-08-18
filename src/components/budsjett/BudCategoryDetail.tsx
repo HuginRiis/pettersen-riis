@@ -71,16 +71,17 @@ export function BudCategoryDetail({
 
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[88vh] max-w-3xl overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-3xl max-h-[92vh] overflow-hidden p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full" style={{ background: row?.color }} />
-            {row?.name}
-            <span className="text-sm font-normal text-muted-foreground">· {periodLabel}</span>
+          <DialogTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
+            <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: row?.color }} />
+            <span className="min-w-0 truncate">{row?.name}</span>
+            <span className="text-xs font-normal text-muted-foreground sm:text-sm">· {periodLabel}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[72vh] pr-3">
+        <ScrollArea className="max-h-[calc(92vh-5rem)] pr-2 sm:pr-3">
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Stat label="Totalt" value={fmtNok(stats.sum)} />
