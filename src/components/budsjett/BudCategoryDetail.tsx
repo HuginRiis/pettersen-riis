@@ -71,16 +71,17 @@ export function BudCategoryDetail({
 
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[88vh] max-w-3xl overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-3xl max-h-[92vh] overflow-hidden p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full" style={{ background: row?.color }} />
-            {row?.name}
-            <span className="text-sm font-normal text-muted-foreground">· {periodLabel}</span>
+          <DialogTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
+            <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: row?.color }} />
+            <span className="min-w-0 truncate">{row?.name}</span>
+            <span className="text-xs font-normal text-muted-foreground sm:text-sm">· {periodLabel}</span>
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[72vh] pr-3">
+        <ScrollArea className="max-h-[calc(92vh-5rem)] pr-2 sm:pr-3">
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Stat label="Totalt" value={fmtNok(stats.sum)} />
@@ -167,22 +168,24 @@ export function BudCategoryDetail({
                 {sorted.map((e) => (
                   <div
                     key={e.id}
-                    className="flex items-center justify-between gap-3 border-b border-border/50 py-1 text-sm last:border-0"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border/50 py-1.5 text-sm last:border-0 sm:flex sm:items-center sm:justify-between sm:gap-3"
                   >
-                    <span className="w-20 shrink-0 tabular-nums text-xs text-muted-foreground">
+                    <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
                       {e.occurred_on}
                     </span>
-                    <span className="min-w-0 flex-1 truncate">
+                    <span className="min-w-0 truncate">
                       {e.store ?? e.note ?? "—"}
                       {e.store && e.note ? (
                         <span className="ml-1 text-xs text-muted-foreground">{e.note}</span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <span className="shrink-0 tabular-nums text-right">
+                      {fmtNok(Number(e.amount))}
+                    </span>
+                    <span className="hidden text-xs text-muted-foreground sm:inline sm:shrink-0">
                       {ACCOUNT_LABELS[resolveAccount(e.account, e.created_by)]}
                     </span>
-                    <span className="shrink-0 tabular-nums">{fmtNok(Number(e.amount))}</span>
-                    <span className="w-12 shrink-0 text-right text-xs text-muted-foreground">
+                    <span className="hidden w-12 shrink-0 text-right text-xs text-muted-foreground sm:block">
                       {stats.sum > 0 ? `${((Number(e.amount) / stats.sum) * 100).toFixed(1)}%` : ""}
                     </span>
                   </div>
@@ -199,10 +202,10 @@ export function BudCategoryDetail({
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card/50 p-2.5">
-      <p className="text-[11px] uppercase text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold tabular-nums ${tone ?? ""}`}>{value}</p>
-      {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
+    <div className="min-w-0 rounded-lg border border-border bg-card/50 p-2 sm:p-2.5">
+      <p className="text-[10px] uppercase leading-tight text-muted-foreground sm:text-[11px]">{label}</p>
+      <p className={`text-base font-bold tabular-nums break-words sm:text-lg ${tone ?? ""}`}>{value}</p>
+      {sub && <p className="text-[10px] leading-tight text-muted-foreground sm:text-[11px]">{sub}</p>}
     </div>
   );
 }
