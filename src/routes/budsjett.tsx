@@ -301,6 +301,24 @@ function Oversikt({
       .sort((a, b) => b.value - a.value);
   }, [inRange, cats, kind, period]);
 
+  const totalKind = kind === "expense" ? totalSpent : totalIncome;
+
+  const detailItems = useMemo(() => {
+    if (!detail) return [];
+    return inRange.filter(
+      (e) => e.kind === kind && (e.category_id ?? "none") === detail.id,
+    );
+  }, [detail, inRange, kind]);
+
+  const detailPrev = useMemo(() => {
+    if (!detail) return 0;
+    return inPrev
+      .filter((e) => e.kind === kind && (e.category_id ?? "none") === detail.id)
+      .reduce((s, e) => s + Number(e.amount), 0);
+  }, [detail, inPrev, kind]);
+
+
+
   const approveAll = async () => {
     const ids = pending.map((e) => e.id);
     if (!ids.length) return;
