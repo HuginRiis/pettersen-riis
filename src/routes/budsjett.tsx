@@ -33,6 +33,8 @@ import {
 import { BudAccountsTab } from "@/components/budsjett/BudAccountsTab";
 import { BudFamilyCompare } from "@/components/budsjett/BudFamilyCompare";
 import { BudBulkEditDialog } from "@/components/budsjett/BudBulkEditDialog";
+import { BudCategoryDetail, type TopRow } from "@/components/budsjett/BudCategoryDetail";
+
 
 export const Route = createFileRoute("/budsjett")({
   head: () => ({
