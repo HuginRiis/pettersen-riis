@@ -214,6 +214,8 @@ function Oversikt({
 }) {
   const [kind, setKind] = useState<"expense" | "income">("expense");
   const [chartType, setChartType] = useState<"bar" | "pie">("bar");
+  const [detail, setDetail] = useState<TopRow | null>(null);
+
 
   const inRange = useMemo(
     () =>
