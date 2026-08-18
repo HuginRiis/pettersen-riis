@@ -200,10 +200,10 @@ export function BudCategoryDetail({
 
 function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-card/50 p-2.5">
-      <p className="text-[11px] uppercase text-muted-foreground">{label}</p>
-      <p className={`text-lg font-bold tabular-nums ${tone ?? ""}`}>{value}</p>
-      {sub && <p className="text-[11px] text-muted-foreground">{sub}</p>}
+    <div className="min-w-0 rounded-lg border border-border bg-card/50 p-2 sm:p-2.5">
+      <p className="text-[10px] uppercase leading-tight text-muted-foreground sm:text-[11px]">{label}</p>
+      <p className={`text-base font-bold tabular-nums break-words sm:text-lg ${tone ?? ""}`}>{value}</p>
+      {sub && <p className="text-[10px] leading-tight text-muted-foreground sm:text-[11px]">{sub}</p>}
     </div>
   );
 }
