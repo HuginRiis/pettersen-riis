@@ -168,22 +168,24 @@ export function BudCategoryDetail({
                 {sorted.map((e) => (
                   <div
                     key={e.id}
-                    className="flex items-center justify-between gap-3 border-b border-border/50 py-1 text-sm last:border-0"
+                    className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border/50 py-1.5 text-sm last:border-0 sm:flex sm:items-center sm:justify-between sm:gap-3"
                   >
-                    <span className="w-20 shrink-0 tabular-nums text-xs text-muted-foreground">
+                    <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
                       {e.occurred_on}
                     </span>
-                    <span className="min-w-0 flex-1 truncate">
+                    <span className="min-w-0 truncate">
                       {e.store ?? e.note ?? "—"}
                       {e.store && e.note ? (
                         <span className="ml-1 text-xs text-muted-foreground">{e.note}</span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <span className="shrink-0 tabular-nums text-right">
+                      {fmtNok(Number(e.amount))}
+                    </span>
+                    <span className="hidden text-xs text-muted-foreground sm:inline sm:shrink-0">
                       {ACCOUNT_LABELS[resolveAccount(e.account, e.created_by)]}
                     </span>
-                    <span className="shrink-0 tabular-nums">{fmtNok(Number(e.amount))}</span>
-                    <span className="w-12 shrink-0 text-right text-xs text-muted-foreground">
+                    <span className="hidden w-12 shrink-0 text-right text-xs text-muted-foreground sm:block">
                       {stats.sum > 0 ? `${((Number(e.amount) / stats.sum) * 100).toFixed(1)}%` : ""}
                     </span>
                   </div>
