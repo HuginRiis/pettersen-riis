@@ -466,26 +466,49 @@ function Oversikt({
         <h3 className="mb-2 flex items-center gap-1 text-sm font-bold uppercase tracking-widest text-primary">
           <Trophy size={15} /> Topp 10
         </h3>
+        <p className="mb-2 text-xs text-muted-foreground">Klikk en kategori for detaljer og alle poster.</p>
         <ol className="space-y-1.5">
-          {kindRows.slice(0, 10).map((r, i) => (
-            <li key={r.id} className="flex items-center justify-between gap-2 text-sm">
-              <span className="flex min-w-0 items-center gap-2">
-                <span className="w-4 text-right text-muted-foreground">{i + 1}.</span>
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />
-                <span className="truncate">{r.name}</span>
-              </span>
-              <span className="tabular-nums">
-                {fmtNok(r.value)}
-                {r.budget > 0 && (
-                  <span className={`ml-2 text-xs ${r.value > r.budget ? "text-destructive" : "text-emerald-400"}`}>
-                    {r.value > r.budget ? "over" : "innenfor"} budsjett
+          {kindRows.slice(0, 10).map((r, i) => {
+            const share = totalKind > 0 ? (r.value / totalKind) * 100 : 0;
+            return (
+              <li key={r.id}>
+                <button
+                  type="button"
+                  onClick={() => setDetail(r)}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg px-1.5 py-1 text-left text-sm transition-colors hover:bg-primary/10"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="w-4 text-right text-muted-foreground">{i + 1}.</span>
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.color }} />
+                    <span className="truncate">{r.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{share.toFixed(1)} %</span>
                   </span>
-                )}
-              </span>
-            </li>
-          ))}
+                  <span className="tabular-nums">
+                    {fmtNok(r.value)}
+                    {r.budget > 0 && (
+                      <span className={`ml-2 text-xs ${r.value > r.budget ? "text-destructive" : "text-emerald-400"}`}>
+                        {r.value > r.budget ? "over" : "innenfor"} budsjett
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
         </ol>
       </div>
+
+      <BudCategoryDetail
+        row={detail}
+        onClose={() => setDetail(null)}
+        items={detailItems}
+        prevValue={detailPrev}
+        totalKind={totalKind}
+        kind={kind}
+        periodLabel={period === "month" ? monthLabel(refDate) : String(refDate.getFullYear())}
+        days={daysInfo.elapsed}
+      />
+
     </div>
   );
 }
