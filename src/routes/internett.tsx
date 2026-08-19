@@ -7,7 +7,6 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Gauge,
-  Globe2,
   Loader2,
   Network,
   Radio,
@@ -785,5 +784,3 @@ function Row({
     </div>
   );
 }
-
-export { Globe2 };

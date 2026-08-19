@@ -142,6 +142,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["batteri", "batterier", "batteries", "battery", "homey", "netatmo", "gardena", "lavt"],
   },
   {
+    title: "Internett-test",
+    path: "/internett",
+    section: "Hjemmet",
+    description: "Mål hastighet, ping, jitter, pakketap og finn ut hva som gjør nettet tregt.",
+    keywords: ["internett", "nett", "wifi", "hastighet", "speedtest", "ping", "jitter", "båndbredde", "treg", "fiber", "mbps", "latens"],
+  },
+  {
     title: "Bruksanvisning",
     path: "/bruksanvisning",
     section: "Hjemmet",

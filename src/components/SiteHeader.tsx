@@ -54,6 +54,7 @@ type RoutePath =
   | "/budsjett"
   | "/utlan"
   | "/batterier"
+  | "/internett"
   | "/bruksanvisning"
   | "/linketur"
   | "/jaguar"
@@ -99,6 +100,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/budsjett": PiggyBank,
   "/utlan": PackageOpen,
   "/batterier": BatteryCharging,
+  "/internett": Wifi,
   "/bruksanvisning": BookOpen,
   "/linketur": Gamepad2,
   "/jaguar": Car,
@@ -140,6 +142,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/budsjett": "#34d399",
   "/utlan": "#c084fc",
   "/batterier": "#22c55e",
+  "/internett": "#22d3ee",
   "/bruksanvisning": "#e0b978",
   "/linketur": "#f472b6",
   "/jaguar": "#38bdf8",
@@ -187,6 +190,7 @@ const navLinks: NavLink[] = [
   { to: "/budsjett", label: "Regnskap og budsjett" },
   { to: "/utlan", label: "Utlån & Lånt" },
   { to: "/batterier", label: "Batterier i huset" },
+  { to: "/internett", label: "Internett-test" },
   { to: "/bruksanvisning", label: "Bruksanvisning" },
   { to: "/linketur", label: "Linketur" },
   { to: "/jaguar", label: "Jaguar" },
