@@ -17,6 +17,8 @@ import {
   Wifi,
 } from "lucide-react";
 import heroImg from "@/assets/got-internett.jpg";
+import { NeighbourScan } from "@/components/internett/NeighbourScan";
+
 
 export const Route = createFileRoute("/internett")({
   head: () => ({
@@ -742,7 +744,11 @@ function InternettRoute() {
           </div>
         )}
 
+        {/* Nettvaner / hvem forstyrrer */}
+        <NeighbourScan />
+
         {/* Sjekkliste */}
+
         <div className="panel rounded-2xl p-5 ring-1 ring-border/60">
           <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-3">
             <Signal className="w-3.5 h-3.5" /> Vanlige årsaker til tregt nett
