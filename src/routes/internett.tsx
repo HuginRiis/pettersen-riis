@@ -17,6 +17,8 @@ import {
   Wifi,
 } from "lucide-react";
 import heroImg from "@/assets/got-internett.jpg";
+import { NeighbourScan } from "@/components/internett/NeighbourScan";
+
 
 export const Route = createFileRoute("/internett")({
   head: () => ({
