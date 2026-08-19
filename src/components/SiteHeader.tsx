@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, PiggyBank, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed, BookOpen, Car, Wallet } from "lucide-react";
+  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed, BookOpen, Car, Wallet, Wifi } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
