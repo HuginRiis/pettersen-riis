@@ -67,7 +67,7 @@ import hallBudsjett from "@/assets/got-budsjett.jpg";
 import hallUtlan from "@/assets/got-utlan.jpg";
 import hallBatterier from "@/assets/got-batterier.jpg";
 import hallInternett from "@/assets/got-internett.jpg";
-import hallKosthold from "@/assets/got-kosthold.jpg";
+import hallKosthold from "@/assets/hogwarts-kosthold.jpg.asset.json";
 import hallBruksanvisning from "@/assets/got-bruksanvisning.jpg";
 import hallJaguar from "@/assets/got-jaguar.jpg";
 
@@ -351,7 +351,7 @@ function Home() {
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/utlan") && <HallCard to="/utlan" title="Utlån & Lånt" desc="Ting husets folk har lånt bort eller lånt inn." icon="📦" image={hallUtlan} locked={!isAuthed} />}
           {showHall("/batterier") && <HallCard to="/batterier" title="Batterier i huset" desc="Alle batteri-nivåer samlet på ett sted — med varsling." icon="🔋" image={hallBatterier} locked={!isAuthed} />}
-          {showHall("/kosthold") && <HallCard to="/kosthold" title="Kosthold" desc="Kalorier, AI-analyse av matbilder, laktosefritt og ukeplaner." icon="🥗" image={hallKosthold} locked={!isAuthed} />}
+          {showHall("/kosthold") && <HallCard to="/kosthold" title="Kosthold" desc="Kalorier, AI-analyse av matbilder, laktosefritt og ukeplaner." icon="🥗" image={hallKosthold.url} locked={!isAuthed} />}
           {showHall("/internett") && <HallCard to="/internett" title="Internett-test" desc="Hastighet, ping, jitter og hva som gjør nettet tregt." icon="📶" image={hallInternett} locked={!isAuthed} />}
           {showHall("/bruksanvisning") && <HallCard to="/bruksanvisning" title="Bruksanvisning" desc="Alle husets manualer — søkt opp på nett og lagret som PDF." icon="📖" image={hallBruksanvisning} locked={!isAuthed} />}
           {showHall("/jaguar") && <HallCard to="/jaguar" title="Jaguar" desc="Kjørelogg, forbruk og statistikk for husets elektriske katt." icon="🚗" image={hallJaguar} locked={!isAuthed} />}
