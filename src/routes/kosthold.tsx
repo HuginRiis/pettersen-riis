@@ -1175,7 +1175,13 @@ function GoalDialog({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setCalc((c) => ({ ...c, sex: person === "Arne" ? "mann" : "kvinne" }));
+    setCalc((c) => ({
+      ...c,
+      sex: person === "Arne" ? "mann" : "kvinne",
+      age: "",
+      weightKg: "",
+      heightCm: "",
+    }));
     if (goal) {
       setVals({
         calorie_goal: goal.calorie_goal,
