@@ -492,6 +492,9 @@ function KostholdRoute() {
               </div>
             </div>
           </CardContent>
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 -mt-2">
+            <BmiBadge weightKg={goal?.weight_kg} heightCm={goal?.height_cm} />
+          </div>
         </Card>
 
         {/* Hurtighandlinger */}
