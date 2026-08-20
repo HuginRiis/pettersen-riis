@@ -1213,10 +1213,10 @@ function GoalDialog({
   useEffect(() => {
     setCalc((c) => ({
       ...c,
-      sex: person === "Arne" ? "mann" : "kvinne",
-      age: "",
-      weightKg: "",
-      heightCm: "",
+      sex: (goal?.sex as "mann" | "kvinne") ?? (person === "Arne" ? "mann" : "kvinne"),
+      age: goal?.age?.toString() ?? "",
+      weightKg: goal?.weight_kg?.toString() ?? "",
+      heightCm: goal?.height_cm?.toString() ?? "",
     }));
     if (goal) {
       setVals({
