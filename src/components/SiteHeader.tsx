@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Menu, X, LogOut, Crown, Swords, Shield, KeyRound, Home, Star, Flower2,
   Sun, Compass, CalendarDays, BellRing, Eye, Mountain, Lightbulb, Lamp, Flame, Zap,
   Receipt, PiggyBank, Dumbbell, AlertTriangle, ScrollText, Globe, ChevronDown, ChevronRight,
-  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed, BookOpen, Car, Wallet, Wifi } from "lucide-react";
+  TreePine, Coins, Bot, Settings, Gauge, Plane, Folder, Smartphone, BarChart3, PackageOpen, BatteryCharging, Gamepad2, LocateFixed, BookOpen, Car, Wallet, Wifi, Salad } from "lucide-react";
 
 
 import { logoutFn } from "@/lib/auth.functions";
@@ -58,6 +58,7 @@ type RoutePath =
   | "/bruksanvisning"
   | "/linketur"
   | "/jaguar"
+  | "/kosthold"
   
   | "/skatte-utregningen"
   | "/gressklipper"
@@ -104,6 +105,7 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/bruksanvisning": BookOpen,
   "/linketur": Gamepad2,
   "/jaguar": Car,
+  "/kosthold": Salad,
   
   "/trening": Dumbbell,
   "/varsler": AlertTriangle,
@@ -146,6 +148,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/bruksanvisning": "#e0b978",
   "/linketur": "#f472b6",
   "/jaguar": "#38bdf8",
+  "/kosthold": "#4ade80",
   
   "/trening": "#ef4444",
   "/varsler": "#dc2626",
@@ -194,6 +197,7 @@ const navLinks: NavLink[] = [
   { to: "/bruksanvisning", label: "Bruksanvisning" },
   { to: "/linketur", label: "Linketur" },
   { to: "/jaguar", label: "Jaguar" },
+  { to: "/kosthold", label: "Kosthold" },
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },

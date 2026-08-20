@@ -37,6 +37,7 @@ import { Route as NsmSikkerhetRouteImport } from './routes/nsm-sikkerhet'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as LinketurRouteImport } from './routes/linketur'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
+import { Route as KostholdRouteImport } from './routes/kosthold'
 import { Route as JaguarRouteImport } from './routes/jaguar'
 import { Route as IphoneAppRouteImport } from './routes/iphone-app'
 import { Route as InternettRouteImport } from './routes/internett'
@@ -207,6 +208,11 @@ const LinketurRoute = LinketurRouteImport.update({
 const KvitteringerRoute = KvitteringerRouteImport.update({
   id: '/kvitteringer',
   path: '/kvitteringer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KostholdRoute = KostholdRouteImport.update({
+  id: '/kosthold',
+  path: '/kosthold',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JaguarRoute = JaguarRouteImport.update({
@@ -387,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/internett': typeof InternettRoute
   '/iphone-app': typeof IphoneAppRoute
   '/jaguar': typeof JaguarRoute
+  '/kosthold': typeof KostholdRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
@@ -448,6 +455,7 @@ export interface FileRoutesByTo {
   '/internett': typeof InternettRoute
   '/iphone-app': typeof IphoneAppRoute
   '/jaguar': typeof JaguarRoute
+  '/kosthold': typeof KostholdRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
@@ -510,6 +518,7 @@ export interface FileRoutesById {
   '/internett': typeof InternettRoute
   '/iphone-app': typeof IphoneAppRoute
   '/jaguar': typeof JaguarRoute
+  '/kosthold': typeof KostholdRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
@@ -573,6 +582,7 @@ export interface FileRouteTypes {
     | '/internett'
     | '/iphone-app'
     | '/jaguar'
+    | '/kosthold'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
@@ -634,6 +644,7 @@ export interface FileRouteTypes {
     | '/internett'
     | '/iphone-app'
     | '/jaguar'
+    | '/kosthold'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
@@ -695,6 +706,7 @@ export interface FileRouteTypes {
     | '/internett'
     | '/iphone-app'
     | '/jaguar'
+    | '/kosthold'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
@@ -757,6 +769,7 @@ export interface RootRouteChildren {
   InternettRoute: typeof InternettRoute
   IphoneAppRoute: typeof IphoneAppRoute
   JaguarRoute: typeof JaguarRoute
+  KostholdRoute: typeof KostholdRoute
   KvitteringerRoute: typeof KvitteringerRoute
   LinketurRoute: typeof LinketurRoute
   LysRoute: typeof LysRoute
@@ -1005,6 +1018,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KvitteringerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kosthold': {
+      id: '/kosthold'
+      path: '/kosthold'
+      fullPath: '/kosthold'
+      preLoaderRoute: typeof KostholdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/jaguar': {
       id: '/jaguar'
       path: '/jaguar'
@@ -1237,6 +1257,7 @@ const rootRouteChildren: RootRouteChildren = {
   InternettRoute: InternettRoute,
   IphoneAppRoute: IphoneAppRoute,
   JaguarRoute: JaguarRoute,
+  KostholdRoute: KostholdRoute,
   KvitteringerRoute: KvitteringerRoute,
   LinketurRoute: LinketurRoute,
   LysRoute: LysRoute,
