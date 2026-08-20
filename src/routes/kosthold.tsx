@@ -1263,7 +1263,17 @@ function GoalDialog({
           : calc.goalType === "opp"
             ? "Bygg muskler"
             : "Vedlikehold";
-      await persist({ data: { person, plan_type, ...vals } });
+      await persist({
+        data: {
+          person,
+          plan_type,
+          ...vals,
+          weight_kg: calc.weightKg ? Number(calc.weightKg) : null,
+          height_cm: calc.heightCm ? Number(calc.heightCm) : null,
+          age: calc.age ? Number(calc.age) : null,
+          sex: calc.sex,
+        },
+      });
       toast.success("Mål oppdatert");
       onOpenChange(false);
       onSaved();
