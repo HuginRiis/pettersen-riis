@@ -1133,7 +1133,23 @@ function KostholdRoute() {
         goal={goal}
         onSaved={() => void load()}
       />
+
+      <Dialog open={!!lightbox} onOpenChange={(o) => !o && setLightbox(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl p-2">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Bilde av måltidet</DialogTitle>
+          </DialogHeader>
+          {lightbox && (
+            <img
+              src={lightbox}
+              alt="Bilde av måltidet"
+              className="w-full max-h-[80vh] object-contain rounded-lg"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </PageShell>
+
   );
 }
 
