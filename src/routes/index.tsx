@@ -691,7 +691,6 @@ function HallCard({
     | "/kosthold"
     | "/bruksanvisning"
     | "/jaguar"
-    | "/kosthold"
     | "/push-varslinger";
 
   title: string;
