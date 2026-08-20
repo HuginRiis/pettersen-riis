@@ -1007,6 +1007,21 @@ function KostholdRoute() {
               {analyzing ? "Analyserer…" : "Bilde + AI"}
             </Button>
 
+            {form.image_view_url && (
+              <button
+                type="button"
+                onClick={() => setLightbox(form.image_view_url)}
+                className="block rounded-lg overflow-hidden ring-1 ring-border/60 hover:ring-primary/60 transition"
+                aria-label="Vis bilde større"
+              >
+                <img
+                  src={form.image_view_url}
+                  alt="Bilde av måltidet"
+                  className="h-24 w-24 object-cover"
+                />
+              </button>
+            )}
+
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
