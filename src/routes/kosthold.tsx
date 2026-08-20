@@ -1140,6 +1140,25 @@ function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
   );
 }
 
+function BmiBadge({ weightKg, heightCm }: { weightKg?: number | null; heightCm?: number | null }) {
+  const value = bmi(weightKg, heightCm);
+  if (value == null) {
+    return (
+      <div className="text-[11px] text-muted-foreground">
+        Fyll inn vekt og høyde under <strong>Endre mål</strong> for å se BMI.
+      </div>
+    );
+  }
+  const { label, color } = bmiLabel(value);
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-[10px] uppercase tracking-widest text-muted-foreground">BMI</span>
+      <span className="font-bold tabular-nums">{value}</span>
+      <span className={`text-xs font-medium ${color}`}>{label}</span>
+    </div>
+  );
+}
+
 function MacroBar({ label, value, goal }: { label: string; value: number; goal: number }) {
   const pct = Math.min((value / Math.max(goal, 1)) * 100, 100);
   return (
