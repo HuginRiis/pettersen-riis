@@ -51,9 +51,12 @@ export type MealRow = {
   items: MealItem[] | null;
   source: string;
   image_url: string | null;
+  /** Tidsbegrenset visnings-URL generert på serveren (privat bucket) */
+  image_view_url?: string | null;
   notes: string | null;
   created_at: string;
 };
+
 
 export type GoalRow = {
   id: string;
