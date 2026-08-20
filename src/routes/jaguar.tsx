@@ -452,7 +452,7 @@ function Oversikt({ stats }: { stats: ReturnType<typeof computeStats> }) {
   );
 }
 
-function PlacesPanel({ stats }: { stats: CarStats }) {
+function PlacesPanel({ stats }: { stats: TripStats }) {
   const [expanded, setExpanded] = useState(false);
   const list = expanded ? stats.allPlaces : stats.topPlaces;
   const rest = stats.allPlaces.length - stats.topPlaces.length;
