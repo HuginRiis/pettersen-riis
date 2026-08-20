@@ -94,6 +94,20 @@ const num = (v: number | null | undefined) => (typeof v === "number" && Number.i
 const r = (v: number) => Math.round(v);
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+function bmi(weightKg: number | null | undefined, heightCm: number | null | undefined): number | null {
+  const w = num(weightKg);
+  const h = num(heightCm) / 100;
+  if (!w || !h) return null;
+  return Math.round((w / (h * h)) * 10) / 10;
+}
+
+function bmiLabel(value: number): { label: string; color: string } {
+  if (value < 18.5) return { label: "Undervekt", color: "text-sky-500" };
+  if (value < 25) return { label: "Normalvekt", color: "text-emerald-500" };
+  if (value < 30) return { label: "Overvekt", color: "text-amber-500" };
+  return { label: "Fedme", color: "text-destructive" };
+}
+
 type Form = {
   meal_type: string;
   name: string;
