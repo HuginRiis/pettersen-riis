@@ -2040,6 +2040,69 @@ export type Database = {
         }
         Relationships: []
       }
+      kosthold_meals: {
+        Row: {
+          amount_text: string | null
+          carbs_g: number | null
+          created_at: string
+          eaten_at: string
+          fat_g: number | null
+          fiber_g: number | null
+          id: string
+          image_url: string | null
+          kcal: number | null
+          lactose_free: boolean | null
+          meal_type: string
+          name: string
+          notes: string | null
+          protein_g: number | null
+          source: string
+          sugar_g: number | null
+          updated_at: string
+          who: string
+        }
+        Insert: {
+          amount_text?: string | null
+          carbs_g?: number | null
+          created_at?: string
+          eaten_at?: string
+          fat_g?: number | null
+          fiber_g?: number | null
+          id?: string
+          image_url?: string | null
+          kcal?: number | null
+          lactose_free?: boolean | null
+          meal_type?: string
+          name: string
+          notes?: string | null
+          protein_g?: number | null
+          source?: string
+          sugar_g?: number | null
+          updated_at?: string
+          who?: string
+        }
+        Update: {
+          amount_text?: string | null
+          carbs_g?: number | null
+          created_at?: string
+          eaten_at?: string
+          fat_g?: number | null
+          fiber_g?: number | null
+          id?: string
+          image_url?: string | null
+          kcal?: number | null
+          lactose_free?: boolean | null
+          meal_type?: string
+          name?: string
+          notes?: string | null
+          protein_g?: number | null
+          source?: string
+          sugar_g?: number | null
+          updated_at?: string
+          who?: string
+        }
+        Relationships: []
+      }
       light_idle_notification_prefs: {
         Row: {
           cooldown_minutes: number
