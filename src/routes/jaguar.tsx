@@ -50,6 +50,7 @@ import {
   fmtKm,
   fmtKwh,
   type Bucket,
+  type TripStats,
 } from "@/lib/car-trip-stats";
 import { PlacesMap } from "@/components/PlacesMap";
 import heroImg from "@/assets/got-jaguar.jpg";
