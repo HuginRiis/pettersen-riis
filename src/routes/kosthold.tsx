@@ -1159,9 +1159,9 @@ function GoalDialog({
   const persist = useServerFn(saveGoal);
   const [calc, setCalc] = useState({
     sex: person === "Arne" ? "mann" : "kvinne",
-    weightKg: 75,
-    heightCm: 175,
-    age: 40,
+    weightKg: "",
+    heightCm: "",
+    age: "",
     activity: 1.55,
     goalType: "vedlikehold" as "ned" | "vedlikehold" | "opp",
   });
