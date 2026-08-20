@@ -3,17 +3,22 @@ import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const __loadAdmin = createIsomorphicFn()
-  .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
-    import("@/integrations/supabase/client.server"),
+  .server(
+    (): Promise<typeof import("@/integrations/supabase/client.server")> =>
+      import("@/integrations/supabase/client.server"),
   )
   .client(
     (): Promise<typeof import("@/integrations/supabase/client.server")> =>
-      Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
+      Promise.resolve({
+        supabaseAdmin: null,
+      } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
 
 const __loadAuth = createIsomorphicFn()
-  .server((): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"))
+  .server(
+    (): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"),
+  )
   .client(
     (): Promise<typeof import("@/lib/house-auth.server")> =>
       Promise.resolve({
@@ -24,6 +29,8 @@ const __loadAuth = createIsomorphicFn()
 const { requireHouseAuth } = await __loadAuth();
 
 const VISION_MODEL = "google/gemini-2.5-flash";
+
+export type MealItem = { name: string; amount_g?: number | null; calories?: number | null };
 
 export type MealRow = {
   id: string;
@@ -39,14 +46,29 @@ export type MealRow = {
   fiber_g: number | null;
   sugar_g: number | null;
   lactose_free: boolean | null;
+  health_score: number | null;
+  ai_notes: string | null;
+  items: MealItem[] | null;
   source: string;
   image_url: string | null;
   notes: string | null;
   created_at: string;
 };
 
+export type GoalRow = {
+  id: string;
+  person: string;
+  plan_type: string;
+  calorie_goal: number;
+  protein_goal: number;
+  carbs_goal: number;
+  fat_goal: number;
+  fiber_goal: number;
+};
+
 export type MealAnalysis = {
   name: string;
+  meal_type: string;
   amount_text: string;
   kcal: number;
   protein_g: number;
@@ -55,6 +77,8 @@ export type MealAnalysis = {
   fiber_g: number;
   sugar_g: number;
   lactose_free: boolean;
+  health_score: number;
+  items: MealItem[];
   confidence: "low" | "medium" | "high";
   notes: string;
 };
@@ -68,7 +92,15 @@ const NUTRITION_TOOL = {
       type: "object",
       properties: {
         name: { type: "string", description: "Kort norsk navn på måltidet" },
-        amount_text: { type: "string", description: "Anslått mengde, f.eks. '1 tallerken, ca 350 g'" },
+        meal_type: {
+          type: "string",
+          enum: ["Frokost", "Lunsj", "Snack", "Middag", "Kveld"],
+          description: "Hvilken måltidstype dette mest sannsynlig er",
+        },
+        amount_text: {
+          type: "string",
+          description: "Anslått mengde, f.eks. '1 tallerken, ca 350 g'",
+        },
         kcal: { type: "number" },
         protein_g: { type: "number" },
         carbs_g: { type: "number" },
@@ -76,11 +108,27 @@ const NUTRITION_TOOL = {
         fiber_g: { type: "number" },
         sugar_g: { type: "number" },
         lactose_free: { type: "boolean", description: "true hvis måltidet er laktosefritt" },
+        health_score: { type: "number", description: "0-100 hvor sunt måltidet er totalt sett" },
+        items: {
+          type: "array",
+          description: "Enkeltingrediensene AI ser i måltidet",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              amount_g: { type: "number" },
+              calories: { type: "number" },
+            },
+            required: ["name", "amount_g", "calories"],
+            additionalProperties: false,
+          },
+        },
         confidence: { type: "string", enum: ["low", "medium", "high"] },
         notes: { type: "string", description: "Kort norsk kommentar med tips" },
       },
       required: [
         "name",
+        "meal_type",
         "amount_text",
         "kcal",
         "protein_g",
@@ -89,6 +137,8 @@ const NUTRITION_TOOL = {
         "fiber_g",
         "sugar_g",
         "lactose_free",
+        "health_score",
+        "items",
         "confidence",
         "notes",
       ],
@@ -100,6 +150,7 @@ const NUTRITION_TOOL = {
 const SYSTEM_PROMPT =
   "Du er en norsk klinisk ernæringsfysiolog. Du anslår næringsinnhold i måltider så realistisk som mulig. " +
   "Vurder porsjonsstørrelse ut fra tallerken, bestikk og kjente referanser. Angi alltid tall (aldri null). " +
+  "Del måltidet opp i enkeltingredienser med gram og kalorier. " +
   "Marker lactose_free=false hvis måltidet trolig inneholder melk, fløte, ost (unntatt lagret ost som parmesan), is eller melkepulver. " +
   "Svar KUN via verktøyet estimate_nutrition.";
 
@@ -118,14 +169,18 @@ async function callAi(messages: unknown[]): Promise<MealAnalysis> {
     }),
   });
 
-  if (res.status === 429) throw new Error("For mange forespørsler mot AI akkurat nå — prøv igjen om litt.");
-  if (res.status === 402) throw new Error("AI-kredittene er brukt opp. Fyll på i Lovable for å fortsette.");
+  if (res.status === 429)
+    throw new Error("For mange forespørsler mot AI akkurat nå — prøv igjen om litt.");
+  if (res.status === 402)
+    throw new Error("AI-kredittene er brukt opp. Fyll på i Lovable for å fortsette.");
   if (!res.ok) throw new Error(`AI feilet (${res.status})`);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = (await res.json()) as any;
   const call = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!call) throw new Error("AI ga ikke noe svar å tolke.");
-  return JSON.parse(call) as MealAnalysis;
+  const parsed = JSON.parse(call) as MealAnalysis;
+  return { ...parsed, items: Array.isArray(parsed.items) ? parsed.items : [] };
 }
 
 export const analyzeMealImage = createServerFn({ method: "POST" })
@@ -162,7 +217,7 @@ export const analyzeMealText = createServerFn({ method: "POST" })
   });
 
 export const listMeals = createServerFn({ method: "GET" })
-  .inputValidator((input: { days?: number } | undefined) => ({ days: input?.days ?? 14 }))
+  .inputValidator((input: { days?: number } | undefined) => ({ days: input?.days ?? 35 }))
   .handler(async ({ data }): Promise<MealRow[]> => {
     await requireHouseAuth();
     const from = new Date(Date.now() - data.days * 86_400_000).toISOString();
@@ -172,13 +227,13 @@ export const listMeals = createServerFn({ method: "GET" })
       .gte("eaten_at", from)
       .order("eaten_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []) as MealRow[];
+    return (rows ?? []) as unknown as MealRow[];
   });
 
 const MealInput = z.object({
   who: z.string().default("Alle"),
   eaten_at: z.string().optional(),
-  meal_type: z.string().default("annet"),
+  meal_type: z.string().default("Middag"),
   name: z.string().min(1),
   amount_text: z.string().nullable().optional(),
   kcal: z.number().nullable().optional(),
@@ -188,6 +243,18 @@ const MealInput = z.object({
   fiber_g: z.number().nullable().optional(),
   sugar_g: z.number().nullable().optional(),
   lactose_free: z.boolean().nullable().optional(),
+  health_score: z.number().nullable().optional(),
+  ai_notes: z.string().nullable().optional(),
+  items: z
+    .array(
+      z.object({
+        name: z.string(),
+        amount_g: z.number().nullable().optional(),
+        calories: z.number().nullable().optional(),
+      }),
+    )
+    .optional(),
+  image_url: z.string().nullable().optional(),
   source: z.string().default("manual"),
   notes: z.string().nullable().optional(),
 });
@@ -198,11 +265,31 @@ export const addMeal = createServerFn({ method: "POST" })
     await requireHouseAuth();
     const { data: row, error } = await supabaseAdmin
       .from("kosthold_meals")
-      .insert({ ...data, eaten_at: data.eaten_at ?? new Date().toISOString() })
+      .insert({
+        ...data,
+        items: (data.items ?? []) as never,
+        eaten_at: data.eaten_at ?? new Date().toISOString(),
+        added_by: data.who,
+      } as never)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    return row as MealRow;
+    return row as unknown as MealRow;
+  });
+
+export const updateMeal = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => MealInput.extend({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data }): Promise<MealRow> => {
+    await requireHouseAuth();
+    const { id, ...rest } = data;
+    const { data: row, error } = await supabaseAdmin
+      .from("kosthold_meals")
+      .update({ ...rest, items: (rest.items ?? []) as never } as never)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row as unknown as MealRow;
   });
 
 export const deleteMeal = createServerFn({ method: "POST" })
@@ -212,4 +299,36 @@ export const deleteMeal = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("kosthold_meals").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const listGoals = createServerFn({ method: "GET" }).handler(async (): Promise<GoalRow[]> => {
+  await requireHouseAuth();
+  const { data, error } = await supabaseAdmin.from("kosthold_goals").select("*");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as GoalRow[];
+});
+
+export const saveGoal = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        person: z.string().min(1),
+        plan_type: z.string().default("Vedlikehold"),
+        calorie_goal: z.number().int().min(800).max(8000),
+        protein_goal: z.number().int().min(0).max(500),
+        carbs_goal: z.number().int().min(0).max(1000),
+        fat_goal: z.number().int().min(0).max(400),
+        fiber_goal: z.number().int().min(0).max(150),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<GoalRow> => {
+    await requireHouseAuth();
+    const { data: row, error } = await supabaseAdmin
+      .from("kosthold_goals")
+      .upsert(data as never, { onConflict: "person" })
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+    return row as unknown as GoalRow;
   });
