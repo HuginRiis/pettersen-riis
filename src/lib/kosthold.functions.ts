@@ -234,8 +234,51 @@ export const listMeals = createServerFn({ method: "GET" })
       .gte("eaten_at", from)
       .order("eaten_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []) as unknown as MealRow[];
+    const meals = (rows ?? []) as unknown as MealRow[];
+    const paths = meals
+      .map((m) => m.image_url)
+      .filter((p): p is string => !!p && !p.startsWith("http"));
+    if (paths.length) {
+      const { data: signed } = await supabaseAdmin.storage
+        .from("kosthold")
+        .createSignedUrls(paths, 60 * 60 * 12);
+      const map = new Map<string, string>();
+      (signed ?? []).forEach((s) => {
+        if (s.path && s.signedUrl) map.set(s.path, s.signedUrl);
+      });
+      meals.forEach((m) => {
+        if (m.image_url) m.image_view_url = map.get(m.image_url) ?? null;
+      });
+    }
+    meals.forEach((m) => {
+      if (m.image_url?.startsWith("http")) m.image_view_url = m.image_url;
+    });
+    return meals;
   });
+
+export const uploadMealImage = createServerFn({ method: "POST" })
+  .inputValidator((input: { dataUrl: string }) =>
+    z.object({ dataUrl: z.string().min(20) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<{ path: string; url: string }> => {
+    await requireHouseAuth();
+    const match = /^data:([^;]+);base64,(.+)$/.exec(data.dataUrl);
+    if (!match) throw new Error("Ugyldig bildeformat");
+    const mime = match[1];
+    const bytes = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+    const ext = mime.split("/")[1]?.replace("jpeg", "jpg") ?? "webp";
+    const path = `meals/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabaseAdmin.storage
+      .from("kosthold")
+      .upload(path, bytes, { contentType: mime, upsert: false });
+    if (error) throw new Error(error.message);
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
+      .from("kosthold")
+      .createSignedUrl(path, 60 * 60 * 12);
+    if (sErr) throw new Error(sErr.message);
+    return { path, url: signed.signedUrl };
+  });
+
 
 const MealInput = z.object({
   who: z.string().default("Alle"),
