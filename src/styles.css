@@ -1510,3 +1510,68 @@ main .container {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Hogwarts-tema (kostholdsiden) ───────────────────────────────────────── */
+.theme-hogwarts {
+  --background: oklch(0.15 0.03 275);          /* nattblå slottsmørke */
+  --foreground: oklch(0.94 0.02 85);
+  --card: oklch(0.20 0.035 285 / 0.85);
+  --card-foreground: oklch(0.94 0.02 85);
+  --popover: oklch(0.18 0.035 285);
+  --popover-foreground: oklch(0.94 0.02 85);
+  --primary: oklch(0.80 0.15 85);              /* levende lys / gull */
+  --primary-foreground: oklch(0.17 0.03 275);
+  --secondary: oklch(0.28 0.06 20);            /* gryffindor bordeaux */
+  --secondary-foreground: oklch(0.95 0.02 85);
+  --muted: oklch(0.24 0.035 285);
+  --muted-foreground: oklch(0.74 0.03 80);
+  --accent: oklch(0.42 0.16 22);               /* gryffindor rød */
+  --accent-foreground: oklch(0.96 0.02 85);
+  --destructive: oklch(0.52 0.20 25);
+  --destructive-foreground: oklch(0.97 0.01 80);
+  --border: oklch(0.75 0.13 85 / 26%);         /* gullkant */
+  --input: oklch(0.26 0.04 285);
+  --ring: oklch(0.80 0.15 85);
+  --gold: oklch(0.84 0.15 88);
+  --gradient-gold: linear-gradient(135deg, oklch(0.86 0.15 88), oklch(0.55 0.12 60));
+  --gradient-overlay: linear-gradient(
+    180deg,
+    oklch(0.12 0.03 275 / 0.25) 0%,
+    oklch(0.12 0.03 275 / 0.82) 68%,
+    oklch(0.14 0.03 275) 100%
+  );
+  --shadow-glow: 0 0 44px oklch(0.80 0.15 85 / 0.3);
+
+  color: var(--foreground);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse at 15% 0%, oklch(0.42 0.16 22 / 0.22), transparent 55%),
+    radial-gradient(ellipse at 85% 12%, oklch(0.80 0.15 85 / 0.14), transparent 55%),
+    radial-gradient(circle at 50% 100%, oklch(0.28 0.06 285 / 0.6), transparent 70%);
+}
+
+/* Svevende lys-partikler i bakgrunnen */
+.hogwarts-candles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hogwarts-candle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: oklch(0.92 0.16 88);
+  box-shadow: 0 0 10px 3px oklch(0.85 0.16 88 / 0.55);
+  animation: hogwartsFloat linear infinite;
+}
+@keyframes hogwartsFloat {
+  0%   { transform: translate3d(0, 12px, 0) scale(0.7); opacity: 0; }
+  15%  { opacity: 0.9; }
+  85%  { opacity: 0.8; }
+  100% { transform: translate3d(0, -70px, 0) scale(1.1); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hogwarts-candle { animation: none; opacity: 0.6; }
+}
