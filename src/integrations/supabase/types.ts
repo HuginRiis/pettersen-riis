@@ -2040,16 +2040,59 @@ export type Database = {
         }
         Relationships: []
       }
+      kosthold_goals: {
+        Row: {
+          calorie_goal: number
+          carbs_goal: number
+          created_at: string
+          fat_goal: number
+          fiber_goal: number
+          id: string
+          person: string
+          plan_type: string
+          protein_goal: number
+          updated_at: string
+        }
+        Insert: {
+          calorie_goal?: number
+          carbs_goal?: number
+          created_at?: string
+          fat_goal?: number
+          fiber_goal?: number
+          id?: string
+          person: string
+          plan_type?: string
+          protein_goal?: number
+          updated_at?: string
+        }
+        Update: {
+          calorie_goal?: number
+          carbs_goal?: number
+          created_at?: string
+          fat_goal?: number
+          fiber_goal?: number
+          id?: string
+          person?: string
+          plan_type?: string
+          protein_goal?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kosthold_meals: {
         Row: {
+          added_by: string | null
+          ai_notes: string | null
           amount_text: string | null
           carbs_g: number | null
           created_at: string
           eaten_at: string
           fat_g: number | null
           fiber_g: number | null
+          health_score: number | null
           id: string
           image_url: string | null
+          items: Json
           kcal: number | null
           lactose_free: boolean | null
           meal_type: string
@@ -2062,14 +2105,18 @@ export type Database = {
           who: string
         }
         Insert: {
+          added_by?: string | null
+          ai_notes?: string | null
           amount_text?: string | null
           carbs_g?: number | null
           created_at?: string
           eaten_at?: string
           fat_g?: number | null
           fiber_g?: number | null
+          health_score?: number | null
           id?: string
           image_url?: string | null
+          items?: Json
           kcal?: number | null
           lactose_free?: boolean | null
           meal_type?: string
@@ -2082,14 +2129,18 @@ export type Database = {
           who?: string
         }
         Update: {
+          added_by?: string | null
+          ai_notes?: string | null
           amount_text?: string | null
           carbs_g?: number | null
           created_at?: string
           eaten_at?: string
           fat_g?: number | null
           fiber_g?: number | null
+          health_score?: number | null
           id?: string
           image_url?: string | null
+          items?: Json
           kcal?: number | null
           lactose_free?: boolean | null
           meal_type?: string
