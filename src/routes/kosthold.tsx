@@ -1188,6 +1188,10 @@ function GoalDialog({
   }, [goal, person, open]);
 
   const applyCalc = () => {
+    if (!calc.age || !calc.weightKg || !calc.heightCm) {
+      toast.error("Fyll inn alder, vekt og høyde");
+      return;
+    }
     const res = calcCalorieNeed({
       sex: calc.sex as "mann" | "kvinne",
       weightKg: Number(calc.weightKg),
