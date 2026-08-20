@@ -1246,56 +1246,89 @@ function GoalDialog({
               <Droplets className="h-3 w-3" /> Kalkulator
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <select
-                value={calc.sex}
-                onChange={(e) => setCalc((c) => ({ ...c, sex: e.target.value }))}
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="mann">Mann</option>
-                <option value="kvinne">Kvinne</option>
-              </select>
-              <Input
-                type="number"
-                value={calc.age}
-                onChange={(e) => setCalc((c) => ({ ...c, age: Number(e.target.value) }))}
-                placeholder="Alder"
-              />
-              <Input
-                type="number"
-                value={calc.weightKg}
-                onChange={(e) => setCalc((c) => ({ ...c, weightKg: Number(e.target.value) }))}
-                placeholder="Vekt kg"
-              />
-              <Input
-                type="number"
-                value={calc.heightCm}
-                onChange={(e) => setCalc((c) => ({ ...c, heightCm: Number(e.target.value) }))}
-                placeholder="Høyde cm"
-              />
-              <select
-                value={calc.activity}
-                onChange={(e) => setCalc((c) => ({ ...c, activity: Number(e.target.value) }))}
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value={1.2}>Stillesittende</option>
-                <option value={1.375}>Lett aktiv</option>
-                <option value={1.55}>Moderat aktiv</option>
-                <option value={1.725}>Svært aktiv</option>
-              </select>
-              <select
-                value={calc.goalType}
-                onChange={(e) =>
-                  setCalc((c) => ({
-                    ...c,
-                    goalType: e.target.value as "ned" | "vedlikehold" | "opp",
-                  }))
-                }
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="ned">Ned i vekt</option>
-                <option value="vedlikehold">Vedlikehold</option>
-                <option value="opp">Bygg muskler</option>
-              </select>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Kjønn
+                </label>
+                <select
+                  value={calc.sex}
+                  onChange={(e) => setCalc((c) => ({ ...c, sex: e.target.value }))}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="mann">Mann</option>
+                  <option value="kvinne">Kvinne</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Alder (år)
+                </label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={calc.age}
+                  onChange={(e) => setCalc((c) => ({ ...c, age: e.target.value }))}
+                  placeholder="F.eks. 40"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Vekt (kg)
+                </label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={calc.weightKg}
+                  onChange={(e) => setCalc((c) => ({ ...c, weightKg: e.target.value }))}
+                  placeholder="F.eks. 75"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Høyde (cm)
+                </label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={calc.heightCm}
+                  onChange={(e) => setCalc((c) => ({ ...c, heightCm: e.target.value }))}
+                  placeholder="F.eks. 175"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Aktivitetsnivå
+                </label>
+                <select
+                  value={calc.activity}
+                  onChange={(e) => setCalc((c) => ({ ...c, activity: Number(e.target.value) }))}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value={1.2}>Stillesittende</option>
+                  <option value={1.375}>Lett aktiv</option>
+                  <option value={1.55}>Moderat aktiv</option>
+                  <option value={1.725}>Svært aktiv</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Mål
+                </label>
+                <select
+                  value={calc.goalType}
+                  onChange={(e) =>
+                    setCalc((c) => ({
+                      ...c,
+                      goalType: e.target.value as "ned" | "vedlikehold" | "opp",
+                    }))
+                  }
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="ned">Ned i vekt</option>
+                  <option value="vedlikehold">Vedlikehold</option>
+                  <option value="opp">Bygg muskler</option>
+                </select>
+              </div>
             </div>
             <Button variant="outline" size="sm" className="w-full" onClick={applyCalc}>
               Beregn mål
