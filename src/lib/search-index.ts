@@ -163,6 +163,13 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["jaguar", "bil", "kjørelogg", "trips", "km", "forbruk", "elbil", "statistikk", "kjøring"],
   },
   {
+    title: "Kosthold",
+    path: "/kosthold",
+    section: "Hjemmet",
+    description: "Kaloridagbok, AI-analyse av matbilder, laktosefri guide for Nora og ukeplaner.",
+    keywords: ["kosthold", "kalorier", "mat", "kcal", "protein", "karbo", "fett", "fiber", "laktose", "laktosefri", "nora", "ukeplan", "diett", "vekt", "muskler"],
+  },
+  {
     title: "Skatte-utregningen",
     path: "/skatte-utregningen",
     section: "Økonomi",
