@@ -34,7 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { compressImageToWebp } from "@/lib/image-compress";
-import heroImg from "@/assets/got-kosthold.jpg";
+import heroAsset from "@/assets/hogwarts-kosthold.jpg.asset.json";
 import {
   addMeal,
   analyzeMealImage,
@@ -432,14 +432,16 @@ function KostholdRoute() {
 
   return (
     <PageShell>
+      <div className="theme-hogwarts relative">
+        <FloatingCandles />
       <PageHero
-        eyebrow="Ernæringsmatrise"
+        eyebrow="Den store salen"
         title="Kosthold"
-        subtitle="Foto-AI · makroer · ukeplaner · laktosefritt"
-        image={heroImg}
+        subtitle="Foto-trylleri · makroer · ukeplaner · laktosefritt — en festmåltid-logg verdig Galtvort"
+        image={heroAsset.url}
       />
 
-      <div className="container mx-auto px-4 py-8 space-y-6 max-w-6xl">
+      <div className="relative container mx-auto px-4 py-8 space-y-6 max-w-6xl">
         {/* Person + dato */}
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div className="flex flex-wrap gap-1 rounded-full border border-border p-1">
@@ -1148,6 +1150,7 @@ function KostholdRoute() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </PageShell>
 
   );
@@ -1478,5 +1481,35 @@ function GoalDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Svevende levende lys — Galtvort-stemning bak innholdet. */
+function FloatingCandles() {
+  const candles = useMemo(
+    () =>
+      Array.from({ length: 22 }, (_, i) => ({
+        left: (i * 37) % 100,
+        top: (i * 53) % 100,
+        delay: (i % 11) * 0.9,
+        duration: 7 + (i % 6),
+      })),
+    [],
+  );
+  return (
+    <div className="hogwarts-candles" aria-hidden>
+      {candles.map((c, i) => (
+        <span
+          key={i}
+          className="hogwarts-candle"
+          style={{
+            left: `${c.left}%`,
+            top: `${c.top}%`,
+            animationDelay: `${c.delay}s`,
+            animationDuration: `${c.duration}s`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
