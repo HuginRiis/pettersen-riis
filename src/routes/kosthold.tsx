@@ -44,6 +44,7 @@ import {
   listMeals,
   saveGoal,
   updateMeal,
+  uploadMealImage,
   type GoalRow,
   type MealItem,
   type MealRow,
@@ -122,6 +123,8 @@ type Form = {
   ai_notes: string;
   notes: string;
   time: string;
+  image_url: string | null;
+  image_view_url: string | null;
 };
 
 const EMPTY_FORM: Form = {
@@ -138,6 +141,8 @@ const EMPTY_FORM: Form = {
   ai_notes: "",
   notes: "",
   time: "12:00",
+  image_url: null,
+  image_view_url: null,
 };
 
 function KostholdRoute() {
@@ -148,6 +153,7 @@ function KostholdRoute() {
   const remove = useServerFn(deleteMeal);
   const analyzeImg = useServerFn(analyzeMealImage);
   const analyzeTxt = useServerFn(analyzeMealText);
+  const uploadImg = useServerFn(uploadMealImage);
 
   const [person, setPerson] = useState<string>(PERSONS[0]);
   const [date, setDate] = useState<string>(todayIso());
@@ -162,6 +168,7 @@ function KostholdRoute() {
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [textInput, setTextInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -269,6 +276,8 @@ function KostholdRoute() {
       ai_notes: m.ai_notes ?? "",
       notes: m.notes ?? "",
       time: new Date(m.eaten_at).toTimeString().slice(0, 5),
+      image_url: m.image_url,
+      image_view_url: m.image_view_url ?? null,
     });
     setFormOpen(true);
   };
@@ -306,7 +315,11 @@ function KostholdRoute() {
         setForm({ ...EMPTY_FORM, time: new Date().toTimeString().slice(0, 5) });
         setFormOpen(true);
       }
-      const a = await analyzeImg({ data: { imageDataUrl: dataUrl } });
+      const [up, a] = await Promise.all([
+        uploadImg({ data: { dataUrl } }),
+        analyzeImg({ data: { imageDataUrl: dataUrl } }),
+      ]);
+      setForm((f) => ({ ...f, image_url: up.path, image_view_url: up.url }));
       applyAnalysis(a);
     } catch (e) {
       toast.error("AI-analyse feilet", {
@@ -360,6 +373,7 @@ function KostholdRoute() {
         lactose_free: form.lactose_free,
         ai_notes: form.ai_notes.trim() || null,
         notes: form.notes.trim() || null,
+        image_url: form.image_url,
         source: form.ai_notes ? "ai" : "manual",
       };
       if (editId) await patch({ data: { ...payload, id: editId } });
@@ -403,6 +417,7 @@ function KostholdRoute() {
           health_score: m.health_score,
           lactose_free: m.lactose_free,
           ai_notes: m.ai_notes,
+          image_url: m.image_url,
           source: m.source,
         },
       });
@@ -605,6 +620,21 @@ function KostholdRoute() {
                           key={m.id}
                           className="flex gap-3 items-start rounded-lg border border-border/60 p-2.5 bg-card/40"
                         >
+                          {m.image_view_url && (
+                            <button
+                              type="button"
+                              onClick={() => setLightbox(m.image_view_url ?? null)}
+                              className="shrink-0 rounded-md overflow-hidden ring-1 ring-border/60 hover:ring-primary/60 transition"
+                              aria-label="Vis bilde av måltidet"
+                            >
+                              <img
+                                src={m.image_view_url}
+                                alt={`Bilde av ${m.name}`}
+                                loading="lazy"
+                                className="h-14 w-14 object-cover"
+                              />
+                            </button>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-medium truncate">{m.name}</span>
