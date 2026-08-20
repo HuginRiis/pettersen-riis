@@ -207,6 +207,7 @@ export type TripStats = {
   byWeekday: { label: string; km: number; trips: number }[];
   byHour: { hour: string; trips: number; km: number }[];
   topPlaces: { place: string; visits: number; km: number; lat: number | null; lon: number | null }[];
+  allPlaces: { place: string; visits: number; km: number; lat: number | null; lon: number | null }[];
   longest: CarTrip | null;
   fastest: CarTrip | null;
   mostEfficient: CarTrip | null;
@@ -379,6 +380,15 @@ export function computeStats(trips: CarTrip[]): TripStats {
     topPlaces: [...placeMap.values()]
       .sort((a, b) => b.visits - a.visits)
       .slice(0, 10)
+      .map((p) => ({
+        place: p.place,
+        visits: p.visits,
+        km: p.km,
+        lat: p.geo ? p.latSum / p.geo : null,
+        lon: p.geo ? p.lonSum / p.geo : null,
+      })),
+    allPlaces: [...placeMap.values()]
+      .sort((a, b) => b.visits - a.visits)
       .map((p) => ({
         place: p.place,
         visits: p.visits,

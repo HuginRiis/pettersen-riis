@@ -50,6 +50,7 @@ import {
   fmtKm,
   fmtKwh,
   type Bucket,
+  type TripStats,
 } from "@/lib/car-trip-stats";
 import { PlacesMap } from "@/components/PlacesMap";
 import heroImg from "@/assets/got-jaguar.jpg";
@@ -444,9 +445,23 @@ function Oversikt({ stats }: { stats: ReturnType<typeof computeStats> }) {
         </div>
       </Panel>
 
+      <PlacesPanel stats={stats} />
+
+      <EfficiencyChart stats={stats} />
+
+    </div>
+  );
+}
+
+function PlacesPanel({ stats }: { stats: TripStats }) {
+  const [expanded, setExpanded] = useState(false);
+  const list = expanded ? stats.allPlaces : stats.topPlaces;
+  const rest = stats.allPlaces.length - stats.topPlaces.length;
+
+  return (
       <Panel title="Mest besøkte destinasjoner">
-        <ul className="space-y-2">
-          {stats.topPlaces.map((p) => (
+        <ul className={`space-y-2 ${expanded ? "max-h-[360px] overflow-y-auto pr-1" : ""}`}>
+          {list.map((p) => (
             <li key={p.place} className="flex items-center gap-3 text-sm">
               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
               <span className="flex-1 truncate">{p.place}</span>
@@ -455,17 +470,22 @@ function Oversikt({ stats }: { stats: ReturnType<typeof computeStats> }) {
             </li>
           ))}
         </ul>
+        {rest > 0 && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-3 w-full rounded-md border border-border bg-background/50 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+          >
+            {expanded ? "Vis kun topp 10" : `Vis alle ${stats.allPlaces.length} steder (+${rest})`}
+          </button>
+        )}
         <div className="mt-4 h-[320px]">
-          <PlacesMap places={stats.topPlaces} />
+          <PlacesMap places={list} />
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
           Størrelsen på punktene viser antall besøk. Klikk for detaljer.
         </p>
       </Panel>
-
-      <EfficiencyChart stats={stats} />
-
-    </div>
   );
 }
 
