@@ -175,6 +175,7 @@ async function callAi(messages: unknown[]): Promise<MealAnalysis> {
     throw new Error("AI-kredittene er brukt opp. Fyll på i Lovable for å fortsette.");
   if (!res.ok) throw new Error(`AI feilet (${res.status})`);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = (await res.json()) as any;
   const call = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!call) throw new Error("AI ga ikke noe svar å tolke.");
