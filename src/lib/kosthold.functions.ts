@@ -3,17 +3,22 @@ import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const __loadAdmin = createIsomorphicFn()
-  .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
-    import("@/integrations/supabase/client.server"),
+  .server(
+    (): Promise<typeof import("@/integrations/supabase/client.server")> =>
+      import("@/integrations/supabase/client.server"),
   )
   .client(
     (): Promise<typeof import("@/integrations/supabase/client.server")> =>
-      Promise.resolve({ supabaseAdmin: null } as unknown as typeof import("@/integrations/supabase/client.server")),
+      Promise.resolve({
+        supabaseAdmin: null,
+      } as unknown as typeof import("@/integrations/supabase/client.server")),
   );
 const { supabaseAdmin } = await __loadAdmin();
 
 const __loadAuth = createIsomorphicFn()
-  .server((): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"))
+  .server(
+    (): Promise<typeof import("@/lib/house-auth.server")> => import("@/lib/house-auth.server"),
+  )
   .client(
     (): Promise<typeof import("@/lib/house-auth.server")> =>
       Promise.resolve({
@@ -92,7 +97,10 @@ const NUTRITION_TOOL = {
           enum: ["Frokost", "Lunsj", "Snack", "Middag", "Kveld"],
           description: "Hvilken måltidstype dette mest sannsynlig er",
         },
-        amount_text: { type: "string", description: "Anslått mengde, f.eks. '1 tallerken, ca 350 g'" },
+        amount_text: {
+          type: "string",
+          description: "Anslått mengde, f.eks. '1 tallerken, ca 350 g'",
+        },
         kcal: { type: "number" },
         protein_g: { type: "number" },
         carbs_g: { type: "number" },
@@ -161,8 +169,10 @@ async function callAi(messages: unknown[]): Promise<MealAnalysis> {
     }),
   });
 
-  if (res.status === 429) throw new Error("For mange forespørsler mot AI akkurat nå — prøv igjen om litt.");
-  if (res.status === 402) throw new Error("AI-kredittene er brukt opp. Fyll på i Lovable for å fortsette.");
+  if (res.status === 429)
+    throw new Error("For mange forespørsler mot AI akkurat nå — prøv igjen om litt.");
+  if (res.status === 402)
+    throw new Error("AI-kredittene er brukt opp. Fyll på i Lovable for å fortsette.");
   if (!res.ok) throw new Error(`AI feilet (${res.status})`);
 
   const json = (await res.json()) as any;
@@ -234,7 +244,15 @@ const MealInput = z.object({
   lactose_free: z.boolean().nullable().optional(),
   health_score: z.number().nullable().optional(),
   ai_notes: z.string().nullable().optional(),
-  items: z.array(z.object({ name: z.string(), amount_g: z.number().nullable().optional(), calories: z.number().nullable().optional() })).optional(),
+  items: z
+    .array(
+      z.object({
+        name: z.string(),
+        amount_g: z.number().nullable().optional(),
+        calories: z.number().nullable().optional(),
+      }),
+    )
+    .optional(),
   image_url: z.string().nullable().optional(),
   source: z.string().default("manual"),
   notes: z.string().nullable().optional(),

@@ -429,7 +429,12 @@ function KostholdRoute() {
             ))}
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" onClick={() => shiftDay(-1)} aria-label="Forrige dag">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => shiftDay(-1)}
+              aria-label="Forrige dag"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Input
@@ -438,7 +443,12 @@ function KostholdRoute() {
               onChange={(e) => setDate(e.target.value || todayIso())}
               className="w-[150px] text-center"
             />
-            <Button variant="outline" size="icon" onClick={() => shiftDay(1)} aria-label="Neste dag">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => shiftDay(1)}
+              aria-label="Neste dag"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
             {!isToday && (
@@ -472,8 +482,16 @@ function KostholdRoute() {
 
         {/* Hurtighandlinger */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Button className="h-auto py-4 flex-col gap-1" onClick={() => fileRef.current?.click()} disabled={analyzing}>
-            {analyzing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+          <Button
+            className="h-auto py-4 flex-col gap-1"
+            onClick={() => fileRef.current?.click()}
+            disabled={analyzing}
+          >
+            {analyzing ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Camera className="h-5 w-5" />
+            )}
             <span className="text-xs uppercase tracking-widest">Ta bilde av mat</span>
           </Button>
           <input
@@ -489,7 +507,12 @@ function KostholdRoute() {
             }}
           />
           {(["Frokost", "Lunsj", "Middag"] as const).map((t) => (
-            <Button key={t} variant="outline" className="h-auto py-4 flex-col gap-1" onClick={() => openNew(t)}>
+            <Button
+              key={t}
+              variant="outline"
+              className="h-auto py-4 flex-col gap-1"
+              onClick={() => openNew(t)}
+            >
               <Plus className="h-5 w-5" />
               <span className="text-xs uppercase tracking-widest">{t}</span>
             </Button>
@@ -506,19 +529,36 @@ function KostholdRoute() {
             }}
             placeholder="Skriv hva du spiste – f.eks. «to brødskiver med ost og et eple»"
           />
-          <Button onClick={() => void handleText()} disabled={analyzing || textInput.trim().length < 2}>
-            {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          <Button
+            onClick={() => void handleText()}
+            disabled={analyzing || textInput.trim().length < 2}
+          >
+            {analyzing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
             <span className="ml-2 hidden sm:inline">Analyser</span>
           </Button>
         </div>
 
         <Tabs defaultValue="dag" className="w-full">
           <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto">
-            <TabsTrigger value="dag" className="text-xs uppercase tracking-widest">Dagbok</TabsTrigger>
-            <TabsTrigger value="trend" className="text-xs uppercase tracking-widest">Trend</TabsTrigger>
-            <TabsTrigger value="plan" className="text-xs uppercase tracking-widest">Ukeplan</TabsTrigger>
-            <TabsTrigger value="kilder" className="text-xs uppercase tracking-widest">Næring</TabsTrigger>
-            <TabsTrigger value="laktose" className="text-xs uppercase tracking-widest">Laktose</TabsTrigger>
+            <TabsTrigger value="dag" className="text-xs uppercase tracking-widest">
+              Dagbok
+            </TabsTrigger>
+            <TabsTrigger value="trend" className="text-xs uppercase tracking-widest">
+              Trend
+            </TabsTrigger>
+            <TabsTrigger value="plan" className="text-xs uppercase tracking-widest">
+              Ukeplan
+            </TabsTrigger>
+            <TabsTrigger value="kilder" className="text-xs uppercase tracking-widest">
+              Næring
+            </TabsTrigger>
+            <TabsTrigger value="laktose" className="text-xs uppercase tracking-widest">
+              Laktose
+            </TabsTrigger>
           </TabsList>
 
           {/* DAGBOK */}
@@ -544,7 +584,10 @@ function KostholdRoute() {
                     </CardHeader>
                     <CardContent className="space-y-2">
                       {list.map((m) => (
-                        <div key={m.id} className="flex gap-3 items-start rounded-lg border border-border/60 p-2.5 bg-card/40">
+                        <div
+                          key={m.id}
+                          className="flex gap-3 items-start rounded-lg border border-border/60 p-2.5 bg-card/40"
+                        >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-medium truncate">{m.name}</span>
@@ -571,11 +614,14 @@ function KostholdRoute() {
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">
-                              {r(num(m.kcal))} kcal · P {r(num(m.protein_g))}g · K {r(num(m.carbs_g))}g · F {r(num(m.fat_g))}g
+                              {r(num(m.kcal))} kcal · P {r(num(m.protein_g))}g · K{" "}
+                              {r(num(m.carbs_g))}g · F {r(num(m.fat_g))}g
                             </div>
                             {m.items && m.items.length > 0 && (
                               <div className="text-[11px] text-muted-foreground/80 mt-1 truncate">
-                                {m.items.map((i) => `${i.name}${i.amount_g ? ` ${r(i.amount_g)}g` : ""}`).join(" · ")}
+                                {m.items
+                                  .map((i) => `${i.name}${i.amount_g ? ` ${r(i.amount_g)}g` : ""}`)
+                                  .join(" · ")}
                               </div>
                             )}
                             {m.ai_notes && (
@@ -586,10 +632,20 @@ function KostholdRoute() {
                             )}
                           </div>
                           <div className="flex flex-col gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(m)} aria-label="Rediger">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(m)}
+                              aria-label="Rediger"
+                            >
                               <Pencil className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => void del(m)} aria-label="Slett">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => void del(m)}
+                              aria-label="Slett"
+                            >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
@@ -657,7 +713,9 @@ function KostholdRoute() {
                         onClick={() => setDate(d.iso)}
                         className="flex-1 flex flex-col items-center gap-1 group"
                       >
-                        <span className="text-[10px] tabular-nums text-muted-foreground">{r(d.kcal) || ""}</span>
+                        <span className="text-[10px] tabular-nums text-muted-foreground">
+                          {r(d.kcal) || ""}
+                        </span>
                         <div className="w-full flex-1 flex items-end">
                           <div
                             className={`w-full rounded-t-md transition-all ${over ? "bg-destructive/70" : "bg-primary/70"} ${
@@ -666,14 +724,19 @@ function KostholdRoute() {
                             style={{ height: `${Math.max(h, 2)}%` }}
                           />
                         </div>
-                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{d.label}</span>
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {d.label}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {[
-                    { label: "Snitt/dag", value: `${r(trend.reduce((s, t) => s + t.kcal, 0) / 7)} kcal` },
+                    {
+                      label: "Snitt/dag",
+                      value: `${r(trend.reduce((s, t) => s + t.kcal, 0) / 7)} kcal`,
+                    },
                     {
                       label: "Dager på mål",
                       value: `${trend.filter((t) => t.kcal > 0 && t.kcal <= g.calorie_goal).length}/7`,
@@ -681,7 +744,9 @@ function KostholdRoute() {
                     { label: "Måltider (35d)", value: String(personRows.length) },
                   ].map((s) => (
                     <div key={s.label} className="rounded-lg border border-border/60 p-3">
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{s.label}</div>
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {s.label}
+                      </div>
                       <div className="text-lg font-bold text-primary mt-1">{s.value}</div>
                     </div>
                   ))}
@@ -696,13 +761,20 @@ function KostholdRoute() {
               <Card key={plan.key}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm uppercase tracking-widest">{plan.title}</CardTitle>
-                  <p className="text-xs text-muted-foreground uppercase tracking-widest">{plan.subtitle}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-widest">
+                    {plan.subtitle}
+                  </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     {plan.principles.map((p) => (
-                      <div key={p.title} className="rounded-lg border border-border p-2.5 bg-card/40">
-                        <div className="text-[10px] uppercase tracking-widest text-primary">{p.title}</div>
+                      <div
+                        key={p.title}
+                        className="rounded-lg border border-border p-2.5 bg-card/40"
+                      >
+                        <div className="text-[10px] uppercase tracking-widest text-primary">
+                          {p.title}
+                        </div>
                         <div className="text-[11px] text-muted-foreground mt-1">{p.text}</div>
                       </div>
                     ))}
@@ -714,14 +786,18 @@ function KostholdRoute() {
                           <th className="text-left p-2">Dag</th>
                           <th className="text-left p-2">Frokost</th>
                           <th className="text-left p-2">Lunsj</th>
-                          {plan.days.some((d) => d.snack) && <th className="text-left p-2">Snack</th>}
+                          {plan.days.some((d) => d.snack) && (
+                            <th className="text-left p-2">Snack</th>
+                          )}
                           <th className="text-left p-2">Middag</th>
                         </tr>
                       </thead>
                       <tbody>
                         {plan.days.map((d) => (
                           <tr key={d.day} className="border-t border-border/50 align-top">
-                            <td className="p-2 font-medium text-primary whitespace-nowrap">{d.day}</td>
+                            <td className="p-2 font-medium text-primary whitespace-nowrap">
+                              {d.day}
+                            </td>
                             <td className="p-2 text-muted-foreground">{d.frokost}</td>
                             <td className="p-2 text-muted-foreground">{d.lunsj}</td>
                             {plan.days.some((x) => x.snack) && (
@@ -745,8 +821,12 @@ function KostholdRoute() {
               return (
                 <Card key={grp.key}>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm uppercase tracking-widest">Kilder til {grp.label}</CardTitle>
-                    <p className="text-xs text-muted-foreground uppercase tracking-widest">{grp.blurb}</p>
+                    <CardTitle className="text-sm uppercase tracking-widest">
+                      Kilder til {grp.label}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground uppercase tracking-widest">
+                      {grp.blurb}
+                    </p>
                   </CardHeader>
                   <CardContent className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
                     {grp.items.map((i) => (
@@ -760,7 +840,10 @@ function KostholdRoute() {
                           </span>
                         </div>
                         <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden mt-1">
-                          <div className="h-full bg-primary/70 rounded-full" style={{ width: `${(i.value / max) * 100}%` }} />
+                          <div
+                            className="h-full bg-primary/70 rounded-full"
+                            style={{ width: `${(i.value / max) * 100}%` }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -784,9 +867,9 @@ function KostholdRoute() {
               <CardContent className="text-xs text-muted-foreground space-y-2">
                 <p>
                   Denne oversikten er knyttet til{" "}
-                  <strong className="text-foreground">{LACTOSE_PERSON}</strong> og gjelder alle måltider
-                  som registreres på henne. Bruk listene når du planlegger ukemeny, handler eller lager
-                  mat til hele familien.
+                  <strong className="text-foreground">{LACTOSE_PERSON}</strong> og gjelder alle
+                  måltider som registreres på henne. Bruk listene når du planlegger ukemeny, handler
+                  eller lager mat til hele familien.
                 </p>
                 {person !== LACTOSE_PERSON && (
                   <button
@@ -838,7 +921,9 @@ function KostholdRoute() {
               <CardContent className="grid sm:grid-cols-2 gap-3">
                 {LACTOSE_TIPS.map((t) => (
                   <div key={t.title} className="rounded-md border border-border p-2">
-                    <div className="text-xs font-medium text-primary uppercase tracking-widest">{t.title}</div>
+                    <div className="text-xs font-medium text-primary uppercase tracking-widest">
+                      {t.title}
+                    </div>
                     <div className="text-[11px] text-muted-foreground mt-1">{t.text}</div>
                   </div>
                 ))}
@@ -861,14 +946,25 @@ function KostholdRoute() {
           </DialogHeader>
 
           <div className="space-y-3">
-            <Button variant="outline" className="w-full" onClick={() => fileRef.current?.click()} disabled={analyzing}>
-              {analyzing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Camera className="h-4 w-4 mr-2" />}
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => fileRef.current?.click()}
+              disabled={analyzing}
+            >
+              {analyzing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Camera className="h-4 w-4 mr-2" />
+              )}
               {analyzing ? "Analyserer…" : "Bilde + AI"}
             </Button>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Type</label>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Type
+                </label>
                 <select
                   value={form.meal_type}
                   onChange={(e) => setForm((f) => ({ ...f, meal_type: e.target.value }))}
@@ -880,13 +976,21 @@ function KostholdRoute() {
                 </select>
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Klokkeslett</label>
-                <Input type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} />
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Klokkeslett
+                </label>
+                <Input
+                  type="time"
+                  value={form.time}
+                  onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+                />
               </div>
             </div>
 
             <div>
-              <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Måltid</label>
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Måltid
+              </label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -905,7 +1009,9 @@ function KostholdRoute() {
                 ] as const
               ).map(([key, label]) => (
                 <div key={key}>
-                  <label className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</label>
+                  <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {label}
+                  </label>
                   <Input
                     type="number"
                     inputMode="decimal"
@@ -924,7 +1030,9 @@ function KostholdRoute() {
                     <span>
                       {i.name} {i.amount_g ? `· ${r(i.amount_g)} g` : ""}
                     </span>
-                    <span className="tabular-nums text-muted-foreground">{r(num(i.calories))} kcal</span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {r(num(i.calories))} kcal
+                    </span>
                   </div>
                 ))}
               </div>
@@ -938,8 +1046,14 @@ function KostholdRoute() {
             )}
 
             <div>
-              <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Notat</label>
-              <Textarea value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={2} />
+              <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                Notat
+              </label>
+              <Textarea
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                rows={2}
+              />
             </div>
 
             <Button className="w-full" onClick={() => void save()} disabled={saving}>
@@ -971,7 +1085,14 @@ function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} strokeWidth={stroke} className="stroke-muted/40" fill="none" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={stroke}
+          className="stroke-muted/40"
+          fill="none"
+        />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -980,13 +1101,21 @@ function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
           fill="none"
           strokeLinecap="round"
           className={over ? "stroke-destructive" : "stroke-primary"}
-          style={{ strokeDasharray: circ, strokeDashoffset: circ * (1 - Math.min(pct, 1)), transition: "stroke-dashoffset .6s ease" }}
+          style={{
+            strokeDasharray: circ,
+            strokeDashoffset: circ * (1 - Math.min(pct, 1)),
+            transition: "stroke-dashoffset .6s ease",
+          }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-2xl font-bold tabular-nums">{r(eaten)}</span>
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">av {r(goal)} kcal</span>
-        <span className={`text-[11px] tabular-nums mt-0.5 ${over ? "text-destructive" : "text-primary"}`}>
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+          av {r(goal)} kcal
+        </span>
+        <span
+          className={`text-[11px] tabular-nums mt-0.5 ${over ? "text-destructive" : "text-primary"}`}
+        >
           {over ? `+${r(eaten - goal)} over` : `${r(goal - eaten)} igjen`}
         </span>
       </div>
@@ -1005,7 +1134,10 @@ function MacroBar({ label, value, goal }: { label: string; value: number; goal: 
         </span>
       </div>
       <div className="h-2 rounded-full bg-muted/40 overflow-hidden mt-1">
-        <div className="h-full bg-primary/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        <div
+          className="h-full bg-primary/70 rounded-full transition-all"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -1071,14 +1203,20 @@ function GoalDialog({
       carbs_goal: res.carbs,
       fat_goal: res.fat,
     }));
-    toast.success("Beregnet", { description: `Vedlikehold ca. ${res.tdee} kcal · mål ${res.target} kcal` });
+    toast.success("Beregnet", {
+      description: `Vedlikehold ca. ${res.tdee} kcal · mål ${res.target} kcal`,
+    });
   };
 
   const submit = async () => {
     setSaving(true);
     try {
       const plan_type =
-        calc.goalType === "ned" ? "Ned i vekt" : calc.goalType === "opp" ? "Bygg muskler" : "Vedlikehold";
+        calc.goalType === "ned"
+          ? "Ned i vekt"
+          : calc.goalType === "opp"
+            ? "Bygg muskler"
+            : "Vedlikehold";
       await persist({ data: { person, plan_type, ...vals } });
       toast.success("Mål oppdatert");
       onOpenChange(false);
@@ -1142,7 +1280,12 @@ function GoalDialog({
               </select>
               <select
                 value={calc.goalType}
-                onChange={(e) => setCalc((c) => ({ ...c, goalType: e.target.value as "ned" | "vedlikehold" | "opp" }))}
+                onChange={(e) =>
+                  setCalc((c) => ({
+                    ...c,
+                    goalType: e.target.value as "ned" | "vedlikehold" | "opp",
+                  }))
+                }
                 className="h-10 rounded-md border border-input bg-background px-3 text-sm"
               >
                 <option value="ned">Ned i vekt</option>
@@ -1166,7 +1309,9 @@ function GoalDialog({
               ] as const
             ).map(([key, label]) => (
               <div key={key}>
-                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</label>
+                <label className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {label}
+                </label>
                 <Input
                   type="number"
                   value={vals[key]}
