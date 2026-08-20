@@ -94,6 +94,20 @@ const num = (v: number | null | undefined) => (typeof v === "number" && Number.i
 const r = (v: number) => Math.round(v);
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+function bmi(weightKg: number | null | undefined, heightCm: number | null | undefined): number | null {
+  const w = num(weightKg);
+  const h = num(heightCm) / 100;
+  if (!w || !h) return null;
+  return Math.round((w / (h * h)) * 10) / 10;
+}
+
+function bmiLabel(value: number): { label: string; color: string } {
+  if (value < 18.5) return { label: "Undervekt", color: "text-sky-500" };
+  if (value < 25) return { label: "Normalvekt", color: "text-emerald-500" };
+  if (value < 30) return { label: "Overvekt", color: "text-amber-500" };
+  return { label: "Fedme", color: "text-destructive" };
+}
+
 type Form = {
   meal_type: string;
   name: string;
@@ -478,6 +492,9 @@ function KostholdRoute() {
               </div>
             </div>
           </CardContent>
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 -mt-2">
+            <BmiBadge weightKg={goal?.weight_kg} heightCm={goal?.height_cm} />
+          </div>
         </Card>
 
         {/* Hurtighandlinger */}
@@ -1123,6 +1140,25 @@ function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
   );
 }
 
+function BmiBadge({ weightKg, heightCm }: { weightKg?: number | null; heightCm?: number | null }) {
+  const value = bmi(weightKg, heightCm);
+  if (value == null) {
+    return (
+      <div className="text-[11px] text-muted-foreground">
+        Fyll inn vekt og høyde under <strong>Endre mål</strong> for å se BMI.
+      </div>
+    );
+  }
+  const { label, color } = bmiLabel(value);
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-[10px] uppercase tracking-widest text-muted-foreground">BMI</span>
+      <span className="font-bold tabular-nums">{value}</span>
+      <span className={`text-xs font-medium ${color}`}>{label}</span>
+    </div>
+  );
+}
+
 function MacroBar({ label, value, goal }: { label: string; value: number; goal: number }) {
   const pct = Math.min((value / Math.max(goal, 1)) * 100, 100);
   return (
@@ -1177,10 +1213,10 @@ function GoalDialog({
   useEffect(() => {
     setCalc((c) => ({
       ...c,
-      sex: person === "Arne" ? "mann" : "kvinne",
-      age: "",
-      weightKg: "",
-      heightCm: "",
+      sex: (goal?.sex as "mann" | "kvinne") ?? (person === "Arne" ? "mann" : "kvinne"),
+      age: goal?.age?.toString() ?? "",
+      weightKg: goal?.weight_kg?.toString() ?? "",
+      heightCm: goal?.height_cm?.toString() ?? "",
     }));
     if (goal) {
       setVals({
@@ -1227,7 +1263,17 @@ function GoalDialog({
           : calc.goalType === "opp"
             ? "Bygg muskler"
             : "Vedlikehold";
-      await persist({ data: { person, plan_type, ...vals } });
+      await persist({
+        data: {
+          person,
+          plan_type,
+          ...vals,
+          weight_kg: calc.weightKg ? Number(calc.weightKg) : null,
+          height_cm: calc.heightCm ? Number(calc.heightCm) : null,
+          age: calc.age ? Number(calc.age) : null,
+          sex: calc.sex,
+        },
+      });
       toast.success("Mål oppdatert");
       onOpenChange(false);
       onSaved();

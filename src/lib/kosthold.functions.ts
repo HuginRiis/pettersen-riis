@@ -64,6 +64,10 @@ export type GoalRow = {
   carbs_goal: number;
   fat_goal: number;
   fiber_goal: number;
+  weight_kg: number | null;
+  height_cm: number | null;
+  age: number | null;
+  sex: string | null;
 };
 
 export type MealAnalysis = {
@@ -319,6 +323,10 @@ export const saveGoal = createServerFn({ method: "POST" })
         carbs_goal: z.number().int().min(0).max(1000),
         fat_goal: z.number().int().min(0).max(400),
         fiber_goal: z.number().int().min(0).max(150),
+        weight_kg: z.number().min(20).max(300).nullable().optional(),
+        height_cm: z.number().min(100).max(250).nullable().optional(),
+        age: z.number().int().min(2).max(120).nullable().optional(),
+        sex: z.enum(["mann", "kvinne"]).nullable().optional(),
       })
       .parse(input),
   )

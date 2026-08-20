@@ -2042,40 +2042,52 @@ export type Database = {
       }
       kosthold_goals: {
         Row: {
+          age: number | null
           calorie_goal: number
           carbs_goal: number
           created_at: string
           fat_goal: number
           fiber_goal: number
+          height_cm: number | null
           id: string
           person: string
           plan_type: string
           protein_goal: number
+          sex: string | null
           updated_at: string
+          weight_kg: number | null
         }
         Insert: {
+          age?: number | null
           calorie_goal?: number
           carbs_goal?: number
           created_at?: string
           fat_goal?: number
           fiber_goal?: number
+          height_cm?: number | null
           id?: string
           person: string
           plan_type?: string
           protein_goal?: number
+          sex?: string | null
           updated_at?: string
+          weight_kg?: number | null
         }
         Update: {
+          age?: number | null
           calorie_goal?: number
           carbs_goal?: number
           created_at?: string
           fat_goal?: number
           fiber_goal?: number
+          height_cm?: number | null
           id?: string
           person?: string
           plan_type?: string
           protein_goal?: number
+          sex?: string | null
           updated_at?: string
+          weight_kg?: number | null
         }
         Relationships: []
       }
