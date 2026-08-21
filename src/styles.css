@@ -1575,3 +1575,103 @@ main .container {
 @media (prefers-reduced-motion: reduce) {
   .hogwarts-candle { animation: none; opacity: 0.6; }
 }
+
+/* ── Galtvort: gjennomgående styling av flis, knapp, tall og graf ───────── */
+.theme-hogwarts .panel,
+.theme-hogwarts .rounded-lg.border,
+.theme-hogwarts [class*="bg-card"],
+.theme-hogwarts [class*="bg-background/"] {
+  border-color: var(--border);
+  background-color: oklch(0.20 0.035 285 / 0.72);
+  background-image: linear-gradient(
+    160deg,
+    oklch(0.80 0.15 85 / 0.06),
+    transparent 45%
+  );
+  box-shadow:
+    inset 0 1px 0 oklch(0.85 0.15 88 / 0.14),
+    0 8px 26px oklch(0.10 0.03 275 / 0.55);
+  backdrop-filter: blur(6px);
+}
+
+/* Tall / verdier får gullpreg */
+.theme-hogwarts .tabular-nums,
+.theme-hogwarts .text-display {
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 14px oklch(0.85 0.15 88 / 0.25);
+}
+
+/* Knapper: pergament-gull med rød glød ved hover */
+.theme-hogwarts button:not([data-no-theme]) {
+  border-color: var(--border);
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+.theme-hogwarts button:not([data-no-theme]):hover {
+  box-shadow: 0 0 0 1px oklch(0.80 0.15 85 / 0.45), 0 0 18px oklch(0.80 0.15 85 / 0.2);
+}
+.theme-hogwarts button:not([data-no-theme]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Inputs og select */
+.theme-hogwarts input,
+.theme-hogwarts select,
+.theme-hogwarts textarea {
+  background-color: oklch(0.24 0.04 285 / 0.8);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+/* Tabeller */
+.theme-hogwarts table th {
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.theme-hogwarts table td,
+.theme-hogwarts table th {
+  border-color: var(--border);
+}
+
+/* Recharts: akser, rutenett, tooltip og legende i gull/nattblå */
+.theme-hogwarts .recharts-cartesian-axis-tick text,
+.theme-hogwarts .recharts-text,
+.theme-hogwarts .recharts-label {
+  fill: oklch(0.86 0.09 85) !important;
+  font-size: 10px;
+}
+.theme-hogwarts .recharts-cartesian-grid line,
+.theme-hogwarts .recharts-cartesian-axis-line,
+.theme-hogwarts .recharts-cartesian-axis-tick-line {
+  stroke: oklch(0.80 0.15 85 / 0.22) !important;
+}
+.theme-hogwarts .recharts-polar-grid line,
+.theme-hogwarts .recharts-polar-angle-axis line {
+  stroke: oklch(0.80 0.15 85 / 0.25) !important;
+}
+.theme-hogwarts .recharts-reference-line line {
+  stroke: oklch(0.84 0.15 88 / 0.5) !important;
+}
+.theme-hogwarts .recharts-tooltip-wrapper .recharts-default-tooltip,
+.theme-hogwarts .recharts-tooltip-wrapper > div {
+  background: oklch(0.18 0.035 285 / 0.96) !important;
+  border: 1px solid oklch(0.80 0.15 85 / 0.55) !important;
+  border-radius: 10px !important;
+  color: var(--foreground) !important;
+  box-shadow: 0 10px 30px oklch(0.08 0.02 275 / 0.6) !important;
+}
+.theme-hogwarts .recharts-legend-item-text {
+  color: oklch(0.88 0.07 85) !important;
+}
+
+/* Progress / meter-barer */
+.theme-hogwarts [role="progressbar"] {
+  background-color: oklch(0.28 0.04 285);
+}
+.theme-hogwarts [role="progressbar"] > * {
+  background-image: var(--gradient-gold);
+}
