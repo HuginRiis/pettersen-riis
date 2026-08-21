@@ -38,12 +38,15 @@ function PollenPage() {
 
   return (
     <PageShell>
+      <div className="theme-hogwarts relative">
+        <FloatingCandles />
       <PageHero
-        eyebrow="Skien & Numedal · Norge"
+        eyebrow="Astronomitårnet · Skien & Numedal"
         title="Luftkvalitet"
-        subtitle="Pollen, UV, svevestøv, ozon og gasser — time-for-time fra Open-Meteo."
+        subtitle="Pollen, UV, svevestøv, ozon og gasser — trolldom lest av maesteren time for time."
         image={heroImg}
       />
+
 
       <section className="container mx-auto px-4 pt-6 flex flex-col items-center gap-3">
         <p className="max-w-2xl text-center text-xs text-muted-foreground leading-relaxed">
