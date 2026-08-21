@@ -5,11 +5,13 @@ import { AirQualityPanel } from "@/components/AirQualityPanel";
 import { AirQualityDashboard } from "@/components/AirQualityDashboard";
 import { UvCloudPanel } from "@/components/UvCloudPanel";
 import { IndoorAirSection } from "@/components/IndoorAirSection";
+import { FloatingCandles } from "@/components/FloatingCandles";
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
-import heroImg from "@/assets/got-pollen.jpg";
+import heroImg from "@/assets/hogwarts-luftkvalitet.jpg";
 
 const BORGEN_TOLLNES = { lat: 59.1789, lon: 9.5732 };
 const HYTTA_NUMEDAL = { lat: 59.91, lon: 9.07 };
+
 
 export const Route = createFileRoute("/pollen")({
   head: () => ({
