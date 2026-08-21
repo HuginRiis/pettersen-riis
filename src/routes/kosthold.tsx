@@ -38,6 +38,7 @@ import heroAsset from "@/assets/hogwarts-kosthold.jpg.asset.json";
 import {
   addMeal,
   analyzeMealImage,
+  identifyMealImage,
   analyzeMealText,
   deleteMeal,
   listGoals,
@@ -152,6 +153,7 @@ function KostholdRoute() {
   const patch = useServerFn(updateMeal);
   const remove = useServerFn(deleteMeal);
   const analyzeImg = useServerFn(analyzeMealImage);
+  const identifyImg = useServerFn(identifyMealImage);
   const analyzeTxt = useServerFn(analyzeMealText);
   const uploadImg = useServerFn(uploadMealImage);
 
@@ -169,6 +171,15 @@ function KostholdRoute() {
   const [textInput, setTextInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [sizeAsk, setSizeAsk] = useState<{
+    dataUrl: string;
+    path: string;
+    url: string;
+    guess: string;
+    question: string;
+    suggestions: string[];
+  } | null>(null);
+  const [sizeText, setSizeText] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -310,16 +321,46 @@ function KostholdRoute() {
         fr.onerror = () => reject(new Error("Kunne ikke lese bildet"));
         fr.readAsDataURL(small);
       });
-      if (!formOpen) {
-        setEditId(null);
-        setForm({ ...EMPTY_FORM, time: new Date().toTimeString().slice(0, 5) });
-        setFormOpen(true);
-      }
-      const [up, a] = await Promise.all([
+      const [up, ident] = await Promise.all([
         uploadImg({ data: { dataUrl } }),
-        analyzeImg({ data: { imageDataUrl: dataUrl } }),
+        identifyImg({ data: { imageDataUrl: dataUrl } }),
       ]);
-      setForm((f) => ({ ...f, image_url: up.path, image_view_url: up.url }));
+      setSizeText("");
+      setSizeAsk({
+        dataUrl,
+        path: up.path,
+        url: up.url,
+        guess: ident.guess,
+        question: ident.question,
+        suggestions: ident.suggestions,
+      });
+    } catch (e) {
+      toast.error("AI-analyse feilet", {
+        description: e instanceof Error ? e.message : "Ukjent feil",
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const runPhotoAnalysis = async (hintText: string) => {
+    const ask = sizeAsk;
+    if (!ask) return;
+    setAnalyzing(true);
+    try {
+      const hint = [ask.guess, hintText.trim()].filter(Boolean).join(" – ");
+      const a = await analyzeImg({
+        data: { imageDataUrl: ask.dataUrl, hint: hint || undefined },
+      });
+      setEditId(null);
+      setForm({
+        ...EMPTY_FORM,
+        time: new Date().toTimeString().slice(0, 5),
+        image_url: ask.path,
+        image_view_url: ask.url,
+      });
+      setFormOpen(true);
+      setSizeAsk(null);
       applyAnalysis(a);
     } catch (e) {
       toast.error("AI-analyse feilet", {
@@ -540,7 +581,7 @@ function KostholdRoute() {
               e.target.value = "";
             }}
           />
-          {(["Frokost", "Lunsj", "Middag"] as const).map((t) => (
+          {(["Frokost", "Lunsj", "Middag", "Snack", "Drikke"] as const).map((t) => (
             <Button
               key={t}
               variant="outline"
@@ -1135,6 +1176,67 @@ function KostholdRoute() {
         goal={goal}
         onSaved={() => void load()}
       />
+
+      <Dialog
+        open={!!sizeAsk}
+        onOpenChange={(o) => {
+          if (!o && !analyzing) setSizeAsk(null);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="uppercase tracking-widest">
+              {sizeAsk?.guess || "Hva er dette?"}
+            </DialogTitle>
+            <DialogDescription>
+              {sizeAsk?.question ?? "Hvor stor er porsjonen?"}
+            </DialogDescription>
+          </DialogHeader>
+          {sizeAsk?.url && (
+            <img
+              src={sizeAsk.url}
+              alt={sizeAsk.guess}
+              className="w-full max-h-48 object-cover rounded-md border border-border"
+            />
+          )}
+          {!!sizeAsk?.suggestions.length && (
+            <div className="flex flex-wrap gap-2">
+              {sizeAsk.suggestions.map((sug) => (
+                <Button
+                  key={sug}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSizeText(sug)}
+                  disabled={analyzing}
+                >
+                  {sug}
+                </Button>
+              ))}
+            </div>
+          )}
+          <Input
+            autoFocus
+            value={sizeText}
+            onChange={(e) => setSizeText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void runPhotoAnalysis(sizeText);
+            }}
+            placeholder="F.eks. «hamburger 150 gram» eller «stor tallerken»"
+          />
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => void runPhotoAnalysis("")}
+              disabled={analyzing}
+            >
+              Hopp over
+            </Button>
+            <Button onClick={() => void runPhotoAnalysis(sizeText)} disabled={analyzing}>
+              {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Analyser med AI"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!lightbox} onOpenChange={(o) => !o && setLightbox(null)}>
         <DialogContent className="max-w-[95vw] sm:max-w-2xl p-2">
