@@ -158,8 +158,9 @@ function PollenPage() {
           </div>
         </div>
       </section>
-
+      </div>
     </PageShell>
+
   );
 }
 
