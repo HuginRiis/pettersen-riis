@@ -101,7 +101,7 @@ const NUTRITION_TOOL = {
         name: { type: "string", description: "Kort norsk navn på måltidet" },
         meal_type: {
           type: "string",
-          enum: ["Frokost", "Lunsj", "Snack", "Middag", "Kveld"],
+          enum: ["Frokost", "Lunsj", "Snack", "Middag", "Kveld", "Drikke"],
           description: "Hvilken måltidstype dette mest sannsynlig er",
         },
         amount_text: {

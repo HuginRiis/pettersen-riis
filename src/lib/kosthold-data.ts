@@ -6,7 +6,7 @@ export type Person = (typeof PERSONS)[number];
 
 export const LACTOSE_PERSON = "Nora";
 
-export const MEAL_TYPES = ["Frokost", "Lunsj", "Snack", "Middag", "Kveld"] as const;
+export const MEAL_TYPES = ["Frokost", "Lunsj", "Snack", "Middag", "Kveld", "Drikke"] as const;
 export type MealType = (typeof MEAL_TYPES)[number];
 
 export type SourceItem = { name: string; portion: string; value: number };
