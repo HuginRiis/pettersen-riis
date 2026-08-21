@@ -213,6 +213,84 @@ export const analyzeMealImage = createServerFn({ method: "POST" })
     ]);
   });
 
+const IDENTIFY_TOOL = {
+  type: "function",
+  function: {
+    name: "identify_meal",
+    description: "Identifiser maten på bildet og hva som mangler av mengdeinfo",
+    parameters: {
+      type: "object",
+      properties: {
+        guess: { type: "string", description: "Kort norsk navn på maten du ser" },
+        question: {
+          type: "string",
+          description:
+            "Ett kort norsk spørsmål om mengde/størrelse eller annen relevant info du trenger",
+        },
+        suggestions: {
+          type: "array",
+          description: "3-5 realistiske svaralternativer, f.eks. 'Hamburger 150 g'",
+          items: { type: "string" },
+        },
+      },
+      required: ["guess", "question", "suggestions"],
+      additionalProperties: false,
+    },
+  },
+} as const;
+
+export type MealIdentification = { guess: string; question: string; suggestions: string[] };
+
+export const identifyMealImage = createServerFn({ method: "POST" })
+  .inputValidator((input: { imageDataUrl: string }) =>
+    z.object({ imageDataUrl: z.string().min(20) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<MealIdentification> => {
+    await requireHouseAuth();
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: VISION_MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Du er en norsk ernæringsfysiolog. Se på matbildet, si hva du tror det er, " +
+              "og still ETT kort spørsmål om mengde/vekt/størrelse (eller annen info du mangler) " +
+              "for å kunne regne ut kalorier presist. Gi realistiske forslag. Svar KUN via verktøyet.",
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Hva er dette, og hva trenger du å vite om mengden?" },
+              { type: "image_url", image_url: { url: data.imageDataUrl } },
+            ],
+          },
+        ],
+        tools: [IDENTIFY_TOOL],
+        tool_choice: { type: "function", function: { name: "identify_meal" } },
+      }),
+    });
+    if (res.status === 429)
+      throw new Error("For mange forespørsler mot AI akkurat nå — prøv igjen om litt.");
+    if (res.status === 402)
+      throw new Error("AI-kredittene er brukt opp. Fyll på i Lovable for å fortsette.");
+    if (!res.ok) throw new Error(`AI feilet (${res.status})`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const json = (await res.json()) as any;
+    const call = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!call) throw new Error("AI ga ikke noe svar å tolke.");
+    const parsed = JSON.parse(call) as MealIdentification;
+    return {
+      guess: parsed.guess ?? "",
+      question: parsed.question || "Hvor stor porsjon er dette?",
+      suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 5) : [],
+    };
+  });
+
 export const analyzeMealText = createServerFn({ method: "POST" })
   .inputValidator((input: { text: string }) => z.object({ text: z.string().min(2) }).parse(input))
   .handler(async ({ data }): Promise<MealAnalysis> => {
