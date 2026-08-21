@@ -595,27 +595,59 @@ function KostholdRoute() {
         </div>
 
         {/* Beskriv måltid med tekst */}
-        <div className="flex gap-2">
-          <Input
+        <div className="rounded-xl border border-primary/30 bg-card/60 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-xs uppercase tracking-widest text-primary">
+              Skriv hva du spiste — AI regner ut resten
+            </span>
+          </div>
+          <Textarea
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
+            rows={3}
             onKeyDown={(e) => {
-              if (e.key === "Enter") void handleText();
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void handleText();
             }}
-            placeholder="Skriv hva du spiste – f.eks. «to brødskiver med ost og et eple»"
+            placeholder="F.eks. «to brødskiver med brunost, et eple og en kopp kaffe med melk» eller «hamburger 150 g med pommes frites»"
           />
-          <Button
-            onClick={() => void handleText()}
-            disabled={analyzing || textInput.trim().length < 2}
-          >
-            {analyzing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="h-4 w-4" />
-            )}
-            <span className="ml-2 hidden sm:inline">Analyser</span>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "To brødskiver med brunost",
+              "Hamburger 150 g med pommes frites",
+              "Skål havregrøt med bær",
+              "Kyllingsalat, stor porsjon",
+            ].map((ex) => (
+              <Button
+                key={ex}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                onClick={() => setTextInput(ex)}
+                disabled={analyzing}
+              >
+                {ex}
+              </Button>
+            ))}
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-foreground">
+              Beskriv mengde/vekt for best treff. ⌘/Ctrl + Enter analyserer.
+            </span>
+            <Button
+              onClick={() => void handleText()}
+              disabled={analyzing || textInput.trim().length < 2}
+            >
+              {analyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              <span className="ml-2">Analyser tekst</span>
+            </Button>
+          </div>
         </div>
+
 
         <Tabs defaultValue="dag" className="w-full">
           <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto">
