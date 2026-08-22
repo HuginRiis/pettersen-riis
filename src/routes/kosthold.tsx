@@ -174,7 +174,17 @@ function KostholdRoute() {
   const analyzeTxt = useServerFn(analyzeMealText);
   const uploadImg = useServerFn(uploadMealImage);
 
+  const who = useCurrentWho();
   const [person, setPerson] = useState<string>(PERSONS[0]);
+  const [personTouched, setPersonTouched] = useState(false);
+
+  // Følg innlogget profil automatisk til brukeren evt. velger noen andre manuelt.
+  useEffect(() => {
+    if (personTouched) return;
+    const match = PERSONS.find((p) => p.toLowerCase() === (who || "").toLowerCase());
+    if (match) setPerson(match);
+  }, [who, personTouched]);
+
   const [date, setDate] = useState<string>(todayIso());
   const [rows, setRows] = useState<MealRow[]>([]);
   const [goals, setGoals] = useState<Record<string, GoalRow>>({});
