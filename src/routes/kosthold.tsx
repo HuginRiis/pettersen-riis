@@ -248,8 +248,17 @@ function KostholdRoute() {
     [meals],
   );
 
+  const restingKcal = useMemo(() => bmrFor(g), [g]);
+
   const trend = useMemo(() => {
-    const days: { label: string; iso: string; kcal: number }[] = [];
+    const days: {
+      label: string;
+      iso: string;
+      kcal: number;
+      rest: number;
+      active: number;
+      burned: number;
+    }[] = [];
     const base = new Date(date + "T00:00:00");
     for (let i = 6; i >= 0; i--) {
       const d = new Date(base);
@@ -258,12 +267,31 @@ function KostholdRoute() {
       const kcal = personRows
         .filter((m) => m.eaten_at.slice(0, 10) === iso)
         .reduce((s, m) => s + num(m.kcal), 0);
-      days.push({ label: ["Sø", "Ma", "Ti", "On", "To", "Fr", "Lø"][d.getDay()], iso, kcal });
+      const gd = burnDays[iso];
+      const active = gd?.active ?? 0;
+      const rest =
+        gd?.total != null && gd.active != null
+          ? Math.max(0, gd.total - gd.active)
+          : (restingKcal ?? 0);
+      days.push({
+        label: ["Sø", "Ma", "Ti", "On", "To", "Fr", "Lø"][d.getDay()],
+        iso,
+        kcal,
+        rest,
+        active,
+        burned: rest + active,
+      });
     }
     return days;
-  }, [personRows, date]);
+  }, [personRows, date, burnDays, restingKcal]);
 
-  const trendMax = Math.max(g.calorie_goal, ...trend.map((t) => t.kcal), 1);
+  const trendMax = Math.max(
+    g.calorie_goal,
+    ...trend.map((t) => t.kcal),
+    ...trend.map((t) => t.burned),
+    1,
+  );
+
 
   const frequent = useMemo(() => {
     const map = new Map<string, { meal: MealRow; count: number }>();
