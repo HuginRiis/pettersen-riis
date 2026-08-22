@@ -908,26 +908,64 @@ function KostholdRoute() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-3 rounded-sm bg-primary/70" /> Spist
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-3 rounded-sm bg-sky-500/50" /> Hvile
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-3 rounded-sm bg-amber-500/80" /> Aktiv
+                  </span>
+                  {!garminOwner && (
+                    <span className="normal-case tracking-normal">
+                      {restingKcal
+                        ? "Ingen treningsdata — kun hvilekalorier vises"
+                        : "Fyll inn vekt, høyde og alder under «Endre mål» for hvilekalorier"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-end gap-2 h-44">
                   {trend.map((d) => {
                     const h = (d.kcal / trendMax) * 100;
                     const over = d.kcal > g.calorie_goal;
+                    const restH = (d.rest / trendMax) * 100;
+                    const actH = (d.active / trendMax) * 100;
                     return (
                       <button
                         key={d.iso}
                         onClick={() => setDate(d.iso)}
                         className="flex-1 flex flex-col items-center gap-1 group"
+                        title={`Spist ${r(d.kcal)} kcal · Forbrent ${r(d.burned)} kcal (hvile ${r(d.rest)} + aktiv ${r(d.active)})`}
                       >
                         <span className="text-[10px] tabular-nums text-muted-foreground">
                           {r(d.kcal) || ""}
                         </span>
-                        <div className="w-full flex-1 flex items-end">
+                        <div className="w-full flex-1 flex items-end justify-center gap-[3px]">
                           <div
-                            className={`w-full rounded-t-md transition-all ${over ? "bg-destructive/70" : "bg-primary/70"} ${
+                            className={`flex-1 rounded-t-md transition-all ${over ? "bg-destructive/70" : "bg-primary/70"} ${
                               d.iso === date ? "opacity-100 ring-2 ring-primary" : "opacity-70"
                             }`}
                             style={{ height: `${Math.max(h, 2)}%` }}
                           />
+                          <div
+                            className={`flex-1 flex flex-col justify-end ${d.iso === date ? "opacity-100" : "opacity-70"}`}
+                            style={{ height: "100%" }}
+                          >
+                            {d.active > 0 && (
+                              <div
+                                className="w-full rounded-t-md bg-amber-500/80 transition-all"
+                                style={{ height: `${Math.max(actH, 1)}%` }}
+                              />
+                            )}
+                            {d.rest > 0 && (
+                              <div
+                                className={`w-full bg-sky-500/50 transition-all ${d.active > 0 ? "" : "rounded-t-md"}`}
+                                style={{ height: `${Math.max(restH, 2)}%` }}
+                              />
+                            )}
+                          </div>
                         </div>
                         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                           {d.label}
@@ -936,17 +974,24 @@ function KostholdRoute() {
                     );
                   })}
                 </div>
-                <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                   {[
                     {
-                      label: "Snitt/dag",
+                      label: "Spist/dag",
                       value: `${r(trend.reduce((s, t) => s + t.kcal, 0) / 7)} kcal`,
+                    },
+                    {
+                      label: "Forbrent/dag",
+                      value: `${r(trend.reduce((s, t) => s + t.burned, 0) / 7)} kcal`,
+                    },
+                    {
+                      label: "Netto/dag",
+                      value: `${r(trend.reduce((s, t) => s + (t.kcal - t.burned), 0) / 7)} kcal`,
                     },
                     {
                       label: "Dager på mål",
                       value: `${trend.filter((t) => t.kcal > 0 && t.kcal <= g.calorie_goal).length}/7`,
                     },
-                    { label: "Måltider (35d)", value: String(personRows.length) },
                   ].map((s) => (
                     <div key={s.label} className="rounded-lg border border-border/60 p-3">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -956,6 +1001,7 @@ function KostholdRoute() {
                     </div>
                   ))}
                 </div>
+
               </CardContent>
             </Card>
           </TabsContent>
