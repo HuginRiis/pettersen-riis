@@ -197,6 +197,10 @@ function KostholdRoute() {
     suggestions: string[];
   } | null>(null);
   const [sizeText, setSizeText] = useState("");
+  const [burnDays, setBurnDays] = useState<
+    Record<string, { active: number | null; total: number | null }>
+  >({});
+
 
   const load = useCallback(async () => {
     setLoading(true);
