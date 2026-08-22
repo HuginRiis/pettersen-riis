@@ -50,6 +50,7 @@ import {
   type MealItem,
   type MealRow,
 } from "@/lib/kosthold.functions";
+import { getGarminOverview } from "@/lib/garmin.functions";
 import {
   LACTOSE_AVOID,
   LACTOSE_PERSON,
@@ -109,6 +110,22 @@ function bmiLabel(value: number): { label: string; color: string } {
   if (value < 30) return { label: "Overvekt", color: "text-amber-500" };
   return { label: "Fedme", color: "text-destructive" };
 }
+
+/** Hvilekalorier (BMR) via Mifflin-St Jeor. Null når vi mangler data. */
+function bmrFor(goal: { weight_kg?: number | null; height_cm?: number | null; age?: number | null; sex?: string | null }): number | null {
+  const w = num(goal.weight_kg);
+  const h = num(goal.height_cm);
+  const a = num(goal.age);
+  if (!w || !h || !a) return null;
+  const base = 10 * w + 6.25 * h - 5 * a;
+  return Math.round(goal.sex === "kvinne" ? base - 161 : base + 5);
+}
+
+/** Personer med Garmin-klokke — resten får kun hvilekalorier. */
+const GARMIN_OWNER_BY_PERSON: Record<string, "arne" | "rebekka"> = {
+  Arne: "arne",
+  Rebekka: "rebekka",
+};
 
 type Form = {
   meal_type: string;
@@ -180,6 +197,10 @@ function KostholdRoute() {
     suggestions: string[];
   } | null>(null);
   const [sizeText, setSizeText] = useState("");
+  const [burnDays, setBurnDays] = useState<
+    Record<string, { active: number | null; total: number | null }>
+  >({});
+
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -202,6 +223,40 @@ function KostholdRoute() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const garminOwner = GARMIN_OWNER_BY_PERSON[person] ?? null;
+  const fetchGarmin = useServerFn(getGarminOverview);
+
+  useEffect(() => {
+    if (!garminOwner) {
+      setBurnDays({});
+      return;
+    }
+    let alive = true;
+    void (async () => {
+      try {
+        const res = (await fetchGarmin({ data: { owner: garminOwner } })) as {
+          daily: { day: string; active_kilocalories: number | null; total_kilocalories: number | null }[];
+        };
+        if (!alive) return;
+        const map: Record<string, { active: number | null; total: number | null }> = {};
+        (res.daily ?? []).forEach((d) => {
+          map[String(d.day).slice(0, 10)] = {
+            active: d.active_kilocalories ?? null,
+            total: d.total_kilocalories ?? null,
+          };
+        });
+        setBurnDays(map);
+      } catch {
+        if (alive) setBurnDays({});
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [garminOwner, fetchGarmin]);
+
+
 
   const goal = goals[person];
   const g = { ...DEFAULT_GOAL, ...(goal ?? {}) };
@@ -227,8 +282,17 @@ function KostholdRoute() {
     [meals],
   );
 
+  const restingKcal = useMemo(() => bmrFor(g), [g]);
+
   const trend = useMemo(() => {
-    const days: { label: string; iso: string; kcal: number }[] = [];
+    const days: {
+      label: string;
+      iso: string;
+      kcal: number;
+      rest: number;
+      active: number;
+      burned: number;
+    }[] = [];
     const base = new Date(date + "T00:00:00");
     for (let i = 6; i >= 0; i--) {
       const d = new Date(base);
@@ -237,12 +301,31 @@ function KostholdRoute() {
       const kcal = personRows
         .filter((m) => m.eaten_at.slice(0, 10) === iso)
         .reduce((s, m) => s + num(m.kcal), 0);
-      days.push({ label: ["Sø", "Ma", "Ti", "On", "To", "Fr", "Lø"][d.getDay()], iso, kcal });
+      const gd = burnDays[iso];
+      const active = gd?.active ?? 0;
+      const rest =
+        gd?.total != null && gd.active != null
+          ? Math.max(0, gd.total - gd.active)
+          : (restingKcal ?? 0);
+      days.push({
+        label: ["Sø", "Ma", "Ti", "On", "To", "Fr", "Lø"][d.getDay()],
+        iso,
+        kcal,
+        rest,
+        active,
+        burned: rest + active,
+      });
     }
     return days;
-  }, [personRows, date]);
+  }, [personRows, date, burnDays, restingKcal]);
 
-  const trendMax = Math.max(g.calorie_goal, ...trend.map((t) => t.kcal), 1);
+  const trendMax = Math.max(
+    g.calorie_goal,
+    ...trend.map((t) => t.kcal),
+    ...trend.map((t) => t.burned),
+    1,
+  );
+
 
   const frequent = useMemo(() => {
     const map = new Map<string, { meal: MealRow; count: number }>();
@@ -825,26 +908,64 @@ function KostholdRoute() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-3 rounded-sm bg-primary/70" /> Spist
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-3 rounded-sm bg-sky-500/50" /> Hvile
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <i className="h-2 w-3 rounded-sm bg-amber-500/80" /> Aktiv
+                  </span>
+                  {!garminOwner && (
+                    <span className="normal-case tracking-normal">
+                      {restingKcal
+                        ? "Ingen treningsdata — kun hvilekalorier vises"
+                        : "Fyll inn vekt, høyde og alder under «Endre mål» for hvilekalorier"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-end gap-2 h-44">
                   {trend.map((d) => {
                     const h = (d.kcal / trendMax) * 100;
                     const over = d.kcal > g.calorie_goal;
+                    const restH = (d.rest / trendMax) * 100;
+                    const actH = (d.active / trendMax) * 100;
                     return (
                       <button
                         key={d.iso}
                         onClick={() => setDate(d.iso)}
                         className="flex-1 flex flex-col items-center gap-1 group"
+                        title={`Spist ${r(d.kcal)} kcal · Forbrent ${r(d.burned)} kcal (hvile ${r(d.rest)} + aktiv ${r(d.active)})`}
                       >
                         <span className="text-[10px] tabular-nums text-muted-foreground">
                           {r(d.kcal) || ""}
                         </span>
-                        <div className="w-full flex-1 flex items-end">
+                        <div className="w-full flex-1 flex items-end justify-center gap-[3px]">
                           <div
-                            className={`w-full rounded-t-md transition-all ${over ? "bg-destructive/70" : "bg-primary/70"} ${
+                            className={`flex-1 rounded-t-md transition-all ${over ? "bg-destructive/70" : "bg-primary/70"} ${
                               d.iso === date ? "opacity-100 ring-2 ring-primary" : "opacity-70"
                             }`}
                             style={{ height: `${Math.max(h, 2)}%` }}
                           />
+                          <div
+                            className={`flex-1 flex flex-col justify-end ${d.iso === date ? "opacity-100" : "opacity-70"}`}
+                            style={{ height: "100%" }}
+                          >
+                            {d.active > 0 && (
+                              <div
+                                className="w-full rounded-t-md bg-amber-500/80 transition-all"
+                                style={{ height: `${Math.max(actH, 1)}%` }}
+                              />
+                            )}
+                            {d.rest > 0 && (
+                              <div
+                                className={`w-full bg-sky-500/50 transition-all ${d.active > 0 ? "" : "rounded-t-md"}`}
+                                style={{ height: `${Math.max(restH, 2)}%` }}
+                              />
+                            )}
+                          </div>
                         </div>
                         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                           {d.label}
@@ -853,17 +974,24 @@ function KostholdRoute() {
                     );
                   })}
                 </div>
-                <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                   {[
                     {
-                      label: "Snitt/dag",
+                      label: "Spist/dag",
                       value: `${r(trend.reduce((s, t) => s + t.kcal, 0) / 7)} kcal`,
+                    },
+                    {
+                      label: "Forbrent/dag",
+                      value: `${r(trend.reduce((s, t) => s + t.burned, 0) / 7)} kcal`,
+                    },
+                    {
+                      label: "Netto/dag",
+                      value: `${r(trend.reduce((s, t) => s + (t.kcal - t.burned), 0) / 7)} kcal`,
                     },
                     {
                       label: "Dager på mål",
                       value: `${trend.filter((t) => t.kcal > 0 && t.kcal <= g.calorie_goal).length}/7`,
                     },
-                    { label: "Måltider (35d)", value: String(personRows.length) },
                   ].map((s) => (
                     <div key={s.label} className="rounded-lg border border-border/60 p-3">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -873,6 +1001,7 @@ function KostholdRoute() {
                     </div>
                   ))}
                 </div>
+
               </CardContent>
             </Card>
           </TabsContent>
