@@ -1437,28 +1437,21 @@ function KostholdRoute() {
 }
 
 function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
-  const pct = Math.min(eaten / Math.max(goal, 1), 1);
-  const size = 180;
-  const stroke = 16;
+  const pct = Math.min(eaten / Math.max(goal, 1), 1.35);
+  const size = 148;
+  const stroke = 12;
   const radius = (size - stroke) / 2;
   const circ = 2 * Math.PI * radius;
   const over = eaten > goal;
-  const remaining = Math.max(goal - eaten, 0);
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size}>
-        <defs>
-          <linearGradient id="calorieRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
-            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.65} />
-          </linearGradient>
-        </defs>
+      <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           strokeWidth={stroke}
-          className="stroke-muted/30"
+          className="stroke-muted/40"
           fill="none"
         />
         <circle
@@ -1468,29 +1461,23 @@ function CalorieRing({ eaten, goal }: { eaten: number; goal: number }) {
           strokeWidth={stroke}
           fill="none"
           strokeLinecap="round"
-          stroke={over ? "hsl(var(--destructive))" : "url(#calorieRingGrad)"}
+          className={over ? "stroke-destructive" : "stroke-primary"}
           style={{
             strokeDasharray: circ,
-            strokeDashoffset: circ * (1 - pct),
-            transition: "stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)",
-            transform: "rotate(-90deg)",
-            transformOrigin: "center",
+            strokeDashoffset: circ * (1 - Math.min(pct, 1)),
+            transition: "stroke-dashoffset .6s ease",
           }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl sm:text-5xl font-bold tabular-nums tracking-tight leading-none">
-          {r(eaten)}
-        </span>
-        <span className="text-[11px] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mt-1">
+        <span className="text-2xl font-bold tabular-nums">{r(eaten)}</span>
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
           av {r(goal)} kcal
         </span>
         <span
-          className={`text-sm sm:text-base font-semibold tabular-nums mt-0.5 ${
-            over ? "text-destructive" : "text-primary"
-          }`}
+          className={`text-[11px] tabular-nums mt-0.5 ${over ? "text-destructive" : "text-primary"}`}
         >
-          {over ? `+${r(eaten - goal)} over` : `${r(remaining)} igjen`}
+          {over ? `+${r(eaten - goal)} over` : `${r(goal - eaten)} igjen`}
         </span>
       </div>
     </div>
