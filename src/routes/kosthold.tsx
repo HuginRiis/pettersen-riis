@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCurrentWho } from "@/hooks/use-current-who";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -582,7 +583,7 @@ function KostholdRoute() {
             {PERSONS.map((p) => (
               <button
                 key={p}
-                onClick={() => setPerson(p)}
+                onClick={() => { setPersonTouched(true); setPerson(p); }}
                 className={`px-3.5 py-1.5 rounded-full text-xs uppercase tracking-widest transition-colors ${
                   person === p
                     ? "bg-primary text-primary-foreground"
