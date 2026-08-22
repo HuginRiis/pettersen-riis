@@ -1675,3 +1675,60 @@ main .container {
 .theme-hogwarts [role="progressbar"] > * {
   background-image: var(--gradient-gold);
 }
+
+/* ── Galtvort, lysere variant (Borgens Ildsteder) ───────────────────────── */
+.theme-hogwarts.theme-hogwarts-light {
+  --background: oklch(0.30 0.035 275);
+  --foreground: oklch(0.97 0.02 88);
+  --card: oklch(0.38 0.04 280 / 0.82);
+  --card-foreground: oklch(0.97 0.02 88);
+  --popover: oklch(0.34 0.04 280);
+  --popover-foreground: oklch(0.97 0.02 88);
+  --primary: oklch(0.88 0.15 88);
+  --primary-foreground: oklch(0.26 0.03 275);
+  --secondary: oklch(0.42 0.07 22);
+  --muted: oklch(0.40 0.035 282);
+  --muted-foreground: oklch(0.86 0.03 82);
+  --accent: oklch(0.55 0.15 24);
+  --border: oklch(0.86 0.13 88 / 38%);
+  --input: oklch(0.42 0.04 282);
+  --ring: oklch(0.88 0.15 88);
+  --gold: oklch(0.90 0.14 88);
+  --gradient-gold: linear-gradient(135deg, oklch(0.92 0.14 90), oklch(0.68 0.13 62));
+  --gradient-overlay: linear-gradient(
+    180deg,
+    oklch(0.28 0.03 275 / 0.18) 0%,
+    oklch(0.28 0.03 275 / 0.66) 68%,
+    oklch(0.30 0.035 275) 100%
+  );
+  background-image:
+    radial-gradient(ellipse at 15% 0%, oklch(0.72 0.14 60 / 0.28), transparent 58%),
+    radial-gradient(ellipse at 85% 10%, oklch(0.90 0.14 88 / 0.22), transparent 58%),
+    radial-gradient(circle at 50% 100%, oklch(0.46 0.05 285 / 0.55), transparent 72%);
+}
+
+.theme-hogwarts.theme-hogwarts-light .panel,
+.theme-hogwarts.theme-hogwarts-light .rounded-lg.border,
+.theme-hogwarts.theme-hogwarts-light [class*="bg-card"],
+.theme-hogwarts.theme-hogwarts-light [class*="bg-background/"] {
+  background-color: oklch(0.40 0.04 282 / 0.74);
+  background-image: linear-gradient(160deg, oklch(0.90 0.14 88 / 0.12), transparent 48%);
+  box-shadow:
+    inset 0 1px 0 oklch(0.92 0.14 90 / 0.22),
+    0 8px 24px oklch(0.20 0.03 275 / 0.4);
+}
+
+.theme-hogwarts.theme-hogwarts-light input,
+.theme-hogwarts.theme-hogwarts-light select,
+.theme-hogwarts.theme-hogwarts-light textarea {
+  background-color: oklch(0.44 0.04 282 / 0.85);
+}
+
+.theme-hogwarts.theme-hogwarts-light .recharts-tooltip-wrapper .recharts-default-tooltip,
+.theme-hogwarts.theme-hogwarts-light .recharts-tooltip-wrapper > div {
+  background: oklch(0.34 0.04 282 / 0.96) !important;
+}
+
+.theme-hogwarts.theme-hogwarts-light [role="progressbar"] {
+  background-color: oklch(0.46 0.04 285);
+}
