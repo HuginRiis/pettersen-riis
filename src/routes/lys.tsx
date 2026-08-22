@@ -387,6 +387,8 @@ function LysPage() {
 
   return (
     <PageShell>
+      <div className="theme-hogwarts theme-hogwarts-light relative">
+        <FloatingCandles />
       <PageHero
         eyebrow="Krøniken om"
         title="Borgens Ildsteder"
