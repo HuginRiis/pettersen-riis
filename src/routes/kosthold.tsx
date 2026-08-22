@@ -224,6 +224,40 @@ function KostholdRoute() {
     void load();
   }, [load]);
 
+  const garminOwner = GARMIN_OWNER_BY_PERSON[person] ?? null;
+  const fetchGarmin = useServerFn(getGarminOverview);
+
+  useEffect(() => {
+    if (!garminOwner) {
+      setBurnDays({});
+      return;
+    }
+    let alive = true;
+    void (async () => {
+      try {
+        const res = (await fetchGarmin({ data: { owner: garminOwner } })) as {
+          daily: { day: string; active_kilocalories: number | null; total_kilocalories: number | null }[];
+        };
+        if (!alive) return;
+        const map: Record<string, { active: number | null; total: number | null }> = {};
+        (res.daily ?? []).forEach((d) => {
+          map[String(d.day).slice(0, 10)] = {
+            active: d.active_kilocalories ?? null,
+            total: d.total_kilocalories ?? null,
+          };
+        });
+        setBurnDays(map);
+      } catch {
+        if (alive) setBurnDays({});
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [garminOwner, fetchGarmin]);
+
+
+
   const goal = goals[person];
   const g = { ...DEFAULT_GOAL, ...(goal ?? {}) };
 
