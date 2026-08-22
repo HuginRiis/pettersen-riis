@@ -633,9 +633,15 @@ function KostholdRoute() {
               </div>
             </div>
           </CardContent>
-          <div className="px-4 pb-4 sm:px-6 sm:pb-6 -mt-2">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 -mt-2 space-y-3">
             <BmiBadge weightKg={goal?.weight_kg} heightCm={goal?.height_cm} />
+            <DayBurnPanel
+              eaten={totals.kcal}
+              rest={trend[trend.length - 1]?.rest ?? 0}
+              active={trend[trend.length - 1]?.active ?? 0}
+            />
           </div>
+
         </Card>
 
         {/* Hurtighandlinger */}
@@ -1485,6 +1491,45 @@ function BmiBadge({ weightKg, heightCm }: { weightKg?: number | null; heightCm?:
     </div>
   );
 }
+
+/** Forbrenning i dag: hvile + aktiv, samt netto mot spist. */
+function DayBurnPanel({ eaten, rest, active }: { eaten: number; rest: number; active: number }) {
+  const burned = rest + active;
+  const net = eaten - burned;
+  const total = Math.max(burned, 1);
+  const restPct = (rest / total) * 100;
+  const activePct = (active / total) * 100;
+  return (
+    <div className="rounded-lg border border-border/60 bg-muted/20 p-3 space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <span className="uppercase tracking-widest text-muted-foreground">Forbrenning i dag</span>
+        <span className="font-bold tabular-nums">{Math.round(burned)} kcal</span>
+      </div>
+      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden flex">
+        <div className="h-full bg-primary/40" style={{ width: `${restPct}%` }} />
+        <div className="h-full bg-primary" style={{ width: `${activePct}%` }} />
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-primary/40" /> Hvile{" "}
+          <strong className="text-foreground tabular-nums">{Math.round(rest)}</strong>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-primary" /> Aktiv{" "}
+          <strong className="text-foreground tabular-nums">{Math.round(active)}</strong>
+        </span>
+        <span className="ml-auto">
+          Netto{" "}
+          <strong className={net > 0 ? "text-orange-400" : "text-emerald-400"}>
+            {net > 0 ? "+" : ""}
+            {Math.round(net)} kcal
+          </strong>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 
 function MacroBar({ label, value, goal }: { label: string; value: number; goal: number }) {
   const pct = Math.min((value / Math.max(goal, 1)) * 100, 100);
