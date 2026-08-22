@@ -633,9 +633,15 @@ function KostholdRoute() {
               </div>
             </div>
           </CardContent>
-          <div className="px-4 pb-4 sm:px-6 sm:pb-6 -mt-2">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 -mt-2 space-y-3">
             <BmiBadge weightKg={goal?.weight_kg} heightCm={goal?.height_cm} />
+            <DayBurnPanel
+              eaten={totals.kcal}
+              rest={trend[trend.length - 1]?.rest ?? 0}
+              active={trend[trend.length - 1]?.active ?? 0}
+            />
           </div>
+
         </Card>
 
         {/* Hurtighandlinger */}
