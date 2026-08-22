@@ -50,6 +50,7 @@ import {
   type MealItem,
   type MealRow,
 } from "@/lib/kosthold.functions";
+import { getGarminOverview } from "@/lib/garmin.functions";
 import {
   LACTOSE_AVOID,
   LACTOSE_PERSON,
