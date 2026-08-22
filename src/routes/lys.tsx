@@ -41,17 +41,20 @@ export const Route = createFileRoute("/lys")({
   component: LysPage,
   errorComponent: ({ error }) => (
     <PageShell>
-      <PageHero
-        eyebrow="Mørke i borgen"
-        title="Borgens Ildsteder"
-        subtitle="Ravnene fra Homey nådde ikke fram."
-        image={heroImg}
-      />
-      <section className="container mx-auto px-4 py-12">
-        <div className="panel rounded-lg p-6">
-          <p className="text-sm text-muted-foreground">{error.message}</p>
-        </div>
-      </section>
+      <div className="theme-hogwarts theme-hogwarts-light relative">
+        <FloatingCandles />
+        <PageHero
+          eyebrow="Mørke i borgen"
+          title="Borgens Ildsteder"
+          subtitle="Ravnene fra Homey nådde ikke fram."
+          image={heroImg}
+        />
+        <section className="container mx-auto px-4 py-12">
+          <div className="panel rounded-lg p-6">
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+          </div>
+        </section>
+      </div>
     </PageShell>
   ),
 });
