@@ -13,7 +13,8 @@ import {
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import { Slider } from "@/components/ui/slider";
 import { MarqueeText } from "@/components/MarqueeText";
-import heroImg from "@/assets/got-lys.jpg";
+import { FloatingCandles } from "@/components/FloatingCandles";
+import heroImg from "@/assets/hogwarts-ildsteder.jpg";
 
 export const Route = createFileRoute("/lys")({
   head: () => ({
@@ -40,17 +41,20 @@ export const Route = createFileRoute("/lys")({
   component: LysPage,
   errorComponent: ({ error }) => (
     <PageShell>
-      <PageHero
-        eyebrow="Mørke i borgen"
-        title="Borgens Ildsteder"
-        subtitle="Ravnene fra Homey nådde ikke fram."
-        image={heroImg}
-      />
-      <section className="container mx-auto px-4 py-12">
-        <div className="panel rounded-lg p-6">
-          <p className="text-sm text-muted-foreground">{error.message}</p>
-        </div>
-      </section>
+      <div className="theme-hogwarts theme-hogwarts-light relative">
+        <FloatingCandles />
+        <PageHero
+          eyebrow="Mørke i borgen"
+          title="Borgens Ildsteder"
+          subtitle="Ravnene fra Homey nådde ikke fram."
+          image={heroImg}
+        />
+        <section className="container mx-auto px-4 py-12">
+          <div className="panel rounded-lg p-6">
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+          </div>
+        </section>
+      </div>
     </PageShell>
   ),
 });
@@ -148,25 +152,28 @@ function LysPage() {
   if (!data.ok) {
     return (
       <PageShell>
-        <PageHero
-          eyebrow="Krøniken om"
-          title="Borgens Ildsteder"
-          subtitle="Bind ravnene til Homey for å se flammene."
-          image={heroImg}
-        />
-        <section className="container mx-auto px-4 py-12">
-          <div className="panel rounded-lg p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              {data.needsConnect ? "Ingen Homey-tilkobling." : data.error}
-            </p>
-            <Link
-              to="/smarthus"
-              className="inline-block mt-4 px-4 py-2 rounded border border-primary text-primary text-xs tracking-[0.3em] uppercase hover:bg-primary/10 transition-colors"
-            >
-              ✦ Til Smartborg
-            </Link>
-          </div>
-        </section>
+        <div className="theme-hogwarts theme-hogwarts-light relative">
+          <FloatingCandles />
+          <PageHero
+            eyebrow="Krøniken om"
+            title="Borgens Ildsteder"
+            subtitle="Bind ravnene til Homey for å se flammene."
+            image={heroImg}
+          />
+          <section className="container mx-auto px-4 py-12">
+            <div className="panel rounded-lg p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                {data.needsConnect ? "Ingen Homey-tilkobling." : data.error}
+              </p>
+              <Link
+                to="/smarthus"
+                className="inline-block mt-4 px-4 py-2 rounded border border-primary text-primary text-xs tracking-[0.3em] uppercase hover:bg-primary/10 transition-colors"
+              >
+                ✦ Til Smartborg
+              </Link>
+            </div>
+          </section>
+        </div>
       </PageShell>
     );
   }
@@ -380,6 +387,8 @@ function LysPage() {
 
   return (
     <PageShell>
+      <div className="theme-hogwarts theme-hogwarts-light relative">
+        <FloatingCandles />
       <PageHero
         eyebrow="Krøniken om"
         title="Borgens Ildsteder"
@@ -842,6 +851,7 @@ function LysPage() {
           </div>
         )}
       </section>
+      </div>
     </PageShell>
   );
 }
