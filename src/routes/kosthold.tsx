@@ -111,6 +111,22 @@ function bmiLabel(value: number): { label: string; color: string } {
   return { label: "Fedme", color: "text-destructive" };
 }
 
+/** Hvilekalorier (BMR) via Mifflin-St Jeor. Null når vi mangler data. */
+function bmrFor(goal: { weight_kg?: number | null; height_cm?: number | null; age?: number | null; sex?: string | null }): number | null {
+  const w = num(goal.weight_kg);
+  const h = num(goal.height_cm);
+  const a = num(goal.age);
+  if (!w || !h || !a) return null;
+  const base = 10 * w + 6.25 * h - 5 * a;
+  return Math.round(goal.sex === "kvinne" ? base - 161 : base + 5);
+}
+
+/** Personer med Garmin-klokke — resten får kun hvilekalorier. */
+const GARMIN_OWNER_BY_PERSON: Record<string, "arne" | "rebekka"> = {
+  Arne: "arne",
+  Rebekka: "rebekka",
+};
+
 type Form = {
   meal_type: string;
   name: string;
