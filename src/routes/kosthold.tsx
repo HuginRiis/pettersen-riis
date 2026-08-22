@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCurrentWho } from "@/hooks/use-current-who";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -174,7 +175,17 @@ function KostholdRoute() {
   const analyzeTxt = useServerFn(analyzeMealText);
   const uploadImg = useServerFn(uploadMealImage);
 
+  const who = useCurrentWho();
   const [person, setPerson] = useState<string>(PERSONS[0]);
+  const [personTouched, setPersonTouched] = useState(false);
+
+  // Følg innlogget profil automatisk til brukeren evt. velger noen andre manuelt.
+  useEffect(() => {
+    if (personTouched) return;
+    const match = PERSONS.find((p) => p.toLowerCase() === (who || "").toLowerCase());
+    if (match) setPerson(match);
+  }, [who, personTouched]);
+
   const [date, setDate] = useState<string>(todayIso());
   const [rows, setRows] = useState<MealRow[]>([]);
   const [goals, setGoals] = useState<Record<string, GoalRow>>({});
@@ -572,7 +583,7 @@ function KostholdRoute() {
             {PERSONS.map((p) => (
               <button
                 key={p}
-                onClick={() => setPerson(p)}
+                onClick={() => { setPersonTouched(true); setPerson(p); }}
                 className={`px-3.5 py-1.5 rounded-full text-xs uppercase tracking-widest transition-colors ${
                   person === p
                     ? "bg-primary text-primary-foreground"
