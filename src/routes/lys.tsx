@@ -13,7 +13,8 @@ import {
 import { recordHomeyApiCall } from "@/lib/homey-api-tracker";
 import { Slider } from "@/components/ui/slider";
 import { MarqueeText } from "@/components/MarqueeText";
-import heroImg from "@/assets/got-lys.jpg";
+import { FloatingCandles } from "@/components/FloatingCandles";
+import heroImg from "@/assets/hogwarts-ildsteder.jpg";
 
 export const Route = createFileRoute("/lys")({
   head: () => ({
