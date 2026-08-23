@@ -493,6 +493,28 @@ main .container {
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5),
 .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(5n+5) * { color: var(--chart-series-5) !important; }
 
+/* === Kosthold: kalorigrafer med faste farger (overstyrer serie-paletten) === */
+/* Linje 1 = Forbrent (gul), linje 2 = Kalorimål (rød, stiplet) */
+.chart-kcal .recharts-layer.recharts-line:nth-child(1 of .recharts-layer.recharts-line) .recharts-curve,
+.chart-kcal .recharts-layer.recharts-line:nth-child(1 of .recharts-layer.recharts-line) .recharts-line-dot { stroke: #f59e0b !important; }
+.chart-kcal .recharts-layer.recharts-line:nth-child(2 of .recharts-layer.recharts-line) .recharts-curve,
+.chart-kcal .recharts-layer.recharts-line:nth-child(2 of .recharts-layer.recharts-line) .recharts-line-dot { stroke: #ef4444 !important; }
+/* Søyler: 1 = Spist (grønn), 2 = Aktiv (gul) */
+.chart-kcal .recharts-layer.recharts-bar:nth-child(1 of .recharts-layer.recharts-bar) .recharts-rectangle { fill: #4ade80 !important; }
+.chart-kcal .recharts-layer.recharts-bar:nth-child(2 of .recharts-layer.recharts-bar) .recharts-rectangle { fill: #f59e0b !important; }
+/* Legend/tooltip i samme rekkefølge: Spist, Forbrent, Kalorimål */
+.chart-kcal .recharts-default-legend .recharts-legend-item:nth-of-type(1) .recharts-surface path,
+.chart-kcal .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(1),
+.chart-kcal .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(1) * { fill: #4ade80 !important; stroke: #4ade80 !important; color: #4ade80 !important; }
+.chart-kcal .recharts-default-legend .recharts-legend-item:nth-of-type(2) .recharts-surface path,
+.chart-kcal .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(2),
+.chart-kcal .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(2) * { fill: #f59e0b !important; stroke: #f59e0b !important; color: #f59e0b !important; }
+.chart-kcal .recharts-default-legend .recharts-legend-item:nth-of-type(3) .recharts-surface path,
+.chart-kcal .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(3),
+.chart-kcal .recharts-default-tooltip .recharts-tooltip-item:nth-of-type(3) * { fill: #ef4444 !important; stroke: #ef4444 !important; color: #ef4444 !important; }
+
+
+
 /* ===== Vær-siden — flis-tone (4 nivåer) ===== */
 .tile-tone-0 { --tile-fg: oklch(0.20 0.02 260); --tile-fg-muted: oklch(0.20 0.02 260 / 0.7); --tile-fg-subtle: oklch(0.20 0.02 260 / 0.5); --tile-bg-strong: oklch(0.20 0.02 260 / 0.12); --tile-border-inner: oklch(0.20 0.02 260 / 0.2); }
 .tile-tone-1 { --tile-fg: oklch(0.20 0.02 260); --tile-fg-muted: oklch(0.20 0.02 260 / 0.7); --tile-fg-subtle: oklch(0.20 0.02 260 / 0.5); --tile-bg-strong: oklch(0.20 0.02 260 / 0.15); --tile-border-inner: oklch(0.20 0.02 260 / 0.2); }

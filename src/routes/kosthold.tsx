@@ -1007,14 +1007,15 @@ function KostholdRoute() {
               <CardContent>
                 <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-3 rounded-sm bg-primary/70" /> Spist
+                    <i className="h-2 w-3 rounded-sm" style={{ background: "#4ade80" }} /> Spist
                   </span>
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-3 rounded-sm bg-sky-500/50" /> Hvile
+                    <i className="h-2 w-3 rounded-sm" style={{ background: "#f59e0b" }} /> Forbrent
                   </span>
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-3 rounded-sm bg-amber-500/80" /> Aktiv
+                    <i className="h-2 w-3 rounded-sm" style={{ background: "#ef4444" }} /> Kalorimål
                   </span>
+
                   {!garminOwner && (
                     <span className="normal-case tracking-normal">
                       {restingKcal
@@ -1023,54 +1024,61 @@ function KostholdRoute() {
                     </span>
                   )}
                 </div>
-                <div className="flex items-end gap-2 h-44">
-                  {trend.map((d) => {
-                    const h = (d.kcal / trendMax) * 100;
-                    const over = d.kcal > g.calorie_goal;
-                    const restH = (d.rest / trendMax) * 100;
-                    const actH = (d.active / trendMax) * 100;
-                    return (
-                      <button
-                        key={d.iso}
-                        onClick={() => setDate(d.iso)}
-                        className="flex-1 flex flex-col items-center gap-1 group"
-                        title={`Spist ${r(d.kcal)} kcal · Forbrent ${r(d.burned)} kcal (hvile ${r(d.rest)} + aktiv ${r(d.active)})`}
-                      >
-                        <span className="text-[10px] tabular-nums text-muted-foreground">
-                          {r(d.kcal) || ""}
-                        </span>
-                        <div className="w-full flex-1 flex items-end justify-center gap-[3px]">
-                          <div
-                            className={`flex-1 rounded-t-md transition-all ${over ? "bg-destructive/70" : "bg-primary/70"} ${
-                              d.iso === date ? "opacity-100 ring-2 ring-primary" : "opacity-70"
-                            }`}
-                            style={{ height: `${Math.max(h, 2)}%` }}
-                          />
-                          <div
-                            className={`flex-1 flex flex-col justify-end ${d.iso === date ? "opacity-100" : "opacity-70"}`}
-                            style={{ height: "100%" }}
-                          >
-                            {d.active > 0 && (
-                              <div
-                                className="w-full rounded-t-md bg-amber-500/80 transition-all"
-                                style={{ height: `${Math.max(actH, 1)}%` }}
-                              />
-                            )}
-                            {d.rest > 0 && (
-                              <div
-                                className={`w-full bg-sky-500/50 transition-all ${d.active > 0 ? "" : "rounded-t-md"}`}
-                                style={{ height: `${Math.max(restH, 2)}%` }}
-                              />
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                          {d.label}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <div className="h-56 w-full chart-kcal">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart
+                      data={trend.map((d) => ({ ...d, mal: g.calorie_goal }))}
+                      margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
+                      onClick={(e: { activePayload?: { payload?: { iso?: string } }[] }) => {
+                        const iso = e?.activePayload?.[0]?.payload?.iso;
+                        if (iso) setDate(iso);
+                      }}
+                    >
+                      <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.35} vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={44}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                        formatter={(v: number, n: string) => [`${r(Number(v))} kcal`, n]}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar name="Spist" dataKey="kcal" fill="#4ade80" radius={[3, 3, 0, 0]} />
+                      <Line
+                        name="Forbrent"
+                        type="monotone"
+                        dataKey="burned"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        dot={{ r: 2 }}
+                      />
+                      <Line
+                        name="Kalorimål"
+                        type="monotone"
+                        dataKey="mal"
+                        stroke="#ef4444"
+                        strokeDasharray="4 4"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
                 </div>
+
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                   {[
                     {
@@ -1110,7 +1118,7 @@ function KostholdRoute() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64 w-full">
+                <div className="h-64 w-full chart-kcal">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={trend30} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                       <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.35} vertical={false} />
@@ -1137,7 +1145,7 @@ function KostholdRoute() {
                         formatter={(v: number, n: string) => [`${r(Number(v))} kcal`, n]}
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar name="Spist" dataKey="kcal" fill="hsl(var(--primary))" fillOpacity={0.7} radius={[3, 3, 0, 0]} />
+                      <Bar name="Spist" dataKey="kcal" fill="#4ade80" radius={[3, 3, 0, 0]} />
                       <Line
                         name="Forbrent"
                         type="monotone"
@@ -1147,7 +1155,8 @@ function KostholdRoute() {
                         dot={false}
                       />
                       <Line
-                        name="Kaloimål"
+                        name="Kalorimål"
+
                         type="monotone"
                         dataKey="mal"
                         stroke="#ef4444"
