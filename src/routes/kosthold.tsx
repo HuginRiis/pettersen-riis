@@ -1150,9 +1150,9 @@ function KostholdRoute() {
                         name="Kaloimål"
                         type="monotone"
                         dataKey="mal"
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="#ef4444"
                         strokeDasharray="4 4"
-                        strokeWidth={1.5}
+                        strokeWidth={2}
                         dot={false}
                       />
                     </ComposedChart>
