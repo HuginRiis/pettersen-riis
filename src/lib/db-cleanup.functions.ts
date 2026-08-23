@@ -305,3 +305,61 @@ export const reclaimDbSpace = createServerFn({ method: "POST" }).handler(
     };
   },
 );
+
+// ── Full oversikt: hva består databasen faktisk av? ───────────────────
+export type DbBreakdownRow = {
+  table: string;
+  bytes: number;
+  tableBytes: number;
+  indexBytes: number;
+  toastBytes: number;
+  rows: number;
+};
+
+export type DbBreakdown = {
+  dbBytes: number;
+  tables: DbBreakdownRow[];
+  /** Sum av alle public-tabeller (inkl. indekser og toast). */
+  tablesBytes: number;
+  /** pg_net responscache. */
+  pgnetBytes: number;
+  /** Alt annet: systemkataloger, storage-metadata, cron-historikk, WAL-overhead m.m. */
+  otherBytes: number;
+};
+
+export const getDbBreakdown = createServerFn({ method: "GET" }).handler(
+  async (): Promise<DbBreakdown> => {
+    await requireHouseAuth();
+    const sb = supabaseAdmin as any;
+
+    let dbBytes = 0;
+    let tables: DbBreakdownRow[] = [];
+    try {
+      const { data, error } = await sb.rpc("get_db_detail_stats");
+      if (error) throw new Error(error.message);
+      dbBytes = Number(data?.db_bytes ?? 0);
+      tables = ((data?.tables ?? []) as any[])
+        .map((t) => ({
+          table: String(t.table),
+          bytes: Number(t.bytes ?? 0),
+          tableBytes: Number(t.table_bytes ?? 0),
+          indexBytes: Number(t.index_bytes ?? 0),
+          toastBytes: Number(t.toast_bytes ?? 0),
+          rows: Number(t.rows ?? 0),
+        }))
+        .sort((a, b) => b.bytes - a.bytes);
+    } catch (e) {
+      console.warn("[db-breakdown] detail stats failed", e);
+    }
+
+    let pgnetBytes = 0;
+    try {
+      const { data } = await sb.rpc("get_pgnet_cache_size");
+      pgnetBytes = Number(data?.bytes ?? 0);
+    } catch {}
+
+    const tablesBytes = tables.reduce((s, t) => s + t.bytes, 0);
+    const otherBytes = Math.max(0, dbBytes - tablesBytes - pgnetBytes);
+    return { dbBytes, tables, tablesBytes, pgnetBytes, otherBytes };
+  },
+);
