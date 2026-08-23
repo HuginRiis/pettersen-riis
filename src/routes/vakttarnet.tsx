@@ -384,7 +384,13 @@ function VakttarnetPage() {
             collapsible
             defaultOpen={false}
           >
-            <DbCleanupPanel />
+            <div className="space-y-6">
+              <DbCleanupPanel />
+              <div className="border-t border-border/40 pt-4">
+                <DbBreakdownPanel />
+              </div>
+            </div>
+
           </Panel>
         </section>
 
