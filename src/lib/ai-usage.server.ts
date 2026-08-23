@@ -198,17 +198,18 @@ export type LogAiSearchInput = {
   promptTokens?: number | null;
   completionTokens?: number | null;
   totalTokens?: number | null;
+  /** Overstyr kostnadsestimatet (USD) når vi har en fast pris per kall. */
+  costUsd?: number | null;
 };
 
 export async function logAiSearch(input: LogAiSearchInput): Promise<void> {
   try {
     const ip = readClientIp();
     const ua = readUserAgent();
-    const cost = estimateCostUsd(
-      input.model,
-      input.promptTokens,
-      input.completionTokens,
-    );
+    const cost =
+      input.costUsd ??
+      estimateCostUsd(input.model, input.promptTokens, input.completionTokens);
+
     await supabaseAdmin.from("ai_search_log").insert({
       feature: input.feature,
       query: input.query?.slice(0, 500) ?? null,
