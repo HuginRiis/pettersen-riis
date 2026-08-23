@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getDbCleanupEstimate, runDbCleanup, reclaimDbSpace, type DbCleanupEstimate } from "@/lib/db-cleanup.functions";
 import { Database, Trash2, Sparkles, CalendarClock, Layers, Loader2, Zap, HardDrive } from "lucide-react";
+import { useDbProgress, DbProgressBar } from "@/components/DbProgress";
 
 function pretty(b: number): string {
   if (!b) return "0 B";
@@ -22,6 +23,7 @@ export function DbCleanupPanel() {
   const [reclaiming, setReclaiming] = useState(false);
   const [scanning, setScanning] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<Record<string, { bytes: number; at: number }>>({});
+  const progress = useDbProgress();
 
 
 
@@ -39,6 +41,7 @@ export function DbCleanupPanel() {
     setReclaiming(true);
     try {
       const res = await reclaimFn({});
+      progress.trackReclaim();
       if (!silent) {
         alert(`Diskplass frigis nå: ${res.scheduledCount} tabeller planlagt for VACUUM FULL.\n\n${res.message}\n\nDatabase-størrelsen oppdateres innen få minutter.`);
       }
@@ -59,17 +62,22 @@ export function DbCleanupPanel() {
     }
     if (!confirm(`Slette ${label}? Dette kan ikke angres.`)) return;
     setBusy(mode);
+    progress.setPhase(`Sletter ${label}…`, 25, "Dette kan ta litt tid på store tabeller.");
     try {
       const res = await runFn({ data: { mode } });
+      progress.setPhase("Sletting ferdig", 60, `${res.totalDeleted.toLocaleString("no-NO")} rader slettet.`);
       // Auto-frigi diskplass etter sletting (unntatt pgnet som frigir selv)
       if (mode !== "pgnet" && res.totalDeleted > 0) {
         await handleReclaim(true);
+        progress.trackReclaim();
         alert(`Slettet ${res.totalDeleted} rader.\n\nDiskplass frigis nå i bakgrunnen (VACUUM FULL). Størrelsen oppdateres innen få minutter.`);
       } else {
         alert(`Slettet ${res.totalDeleted} rader.`);
+        progress.finish("Ferdig", `${res.totalDeleted.toLocaleString("no-NO")} rader slettet.`);
       }
       load();
     } catch (e: any) {
+      progress.hide();
       alert("Feil: " + (e?.message ?? "ukjent"));
     } finally {
       setBusy(null);
@@ -169,6 +177,8 @@ export function DbCleanupPanel() {
           Frigi diskplass nå
         </button>
       </div>
+
+      <DbProgressBar state={progress.state} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {boxes.map((b) => {
