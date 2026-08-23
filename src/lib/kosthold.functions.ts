@@ -28,7 +28,23 @@ const __loadAuth = createIsomorphicFn()
   );
 const { requireHouseAuth } = await __loadAuth();
 
+const __loadAiUsage = createIsomorphicFn()
+  .server(
+    (): Promise<typeof import("@/lib/ai-usage.server")> => import("@/lib/ai-usage.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/lib/ai-usage.server")> =>
+      Promise.resolve({
+        logAiSearch: async () => {},
+      } as unknown as typeof import("@/lib/ai-usage.server")),
+  );
+const { logAiSearch } = await __loadAiUsage();
+
 const VISION_MODEL = "google/gemini-2.5-flash";
+
+/** Fast estimert kostnad per AI-kall på kosthold (bilde- eller tekst-skann). */
+const KOSTHOLD_COST_USD = 0.05;
+
 
 export type MealItem = { name: string; amount_g?: number | null; calories?: number | null };
 
@@ -161,7 +177,30 @@ const SYSTEM_PROMPT =
   "Marker lactose_free=false hvis måltidet trolig inneholder melk, fløte, ost (unntatt lagret ost som parmesan), is eller melkepulver. " +
   "Svar KUN via verktøyet estimate_nutrition.";
 
-async function callAi(messages: unknown[]): Promise<MealAnalysis> {
+async function logKosthold(
+  feature: string,
+  query: string | null,
+  status: "ok" | "rate_limited" | "error",
+  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number },
+) {
+  try {
+    await logAiSearch({
+      feature,
+      query,
+      model: VISION_MODEL,
+      authenticated: true,
+      status,
+      promptTokens: usage?.prompt_tokens ?? null,
+      completionTokens: usage?.completion_tokens ?? null,
+      totalTokens: usage?.total_tokens ?? null,
+      costUsd: status === "ok" ? KOSTHOLD_COST_USD : 0,
+    });
+  } catch {
+    /* logging skal aldri velte kallet */
+  }
+}
+
+async function callAi(messages: unknown[], feature: string, query: string | null): Promise<MealAnalysis> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("LOVABLE_API_KEY mangler");
 
@@ -176,6 +215,9 @@ async function callAi(messages: unknown[]): Promise<MealAnalysis> {
     }),
   });
 
+  if (!res.ok) {
+    await logKosthold(feature, query, res.status === 429 ? "rate_limited" : "error");
+  }
   if (res.status === 429)
     throw new Error("For mange forespørsler mot AI akkurat nå — prøv igjen om litt.");
   if (res.status === 402)
@@ -184,11 +226,13 @@ async function callAi(messages: unknown[]): Promise<MealAnalysis> {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const json = (await res.json()) as any;
+  await logKosthold(feature, query, "ok", json?.usage);
   const call = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!call) throw new Error("AI ga ikke noe svar å tolke.");
   const parsed = JSON.parse(call) as MealAnalysis;
   return { ...parsed, items: Array.isArray(parsed.items) ? parsed.items : [] };
 }
+
 
 export const analyzeMealImage = createServerFn({ method: "POST" })
   .inputValidator((input: { imageDataUrl: string; hint?: string }) =>
@@ -196,21 +240,26 @@ export const analyzeMealImage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<MealAnalysis> => {
     await requireHouseAuth();
-    return callAi([
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text:
-              "Analyser matbildet og anslå kalorier og næringsstoffer for hele porsjonen." +
-              (data.hint ? ` Tilleggsinfo fra brukeren: ${data.hint}` : ""),
-          },
-          { type: "image_url", image_url: { url: data.imageDataUrl } },
-        ],
-      },
-    ]);
+    return callAi(
+      [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text:
+                "Analyser matbildet og anslå kalorier og næringsstoffer for hele porsjonen." +
+                (data.hint ? ` Tilleggsinfo fra brukeren: ${data.hint}` : ""),
+            },
+            { type: "image_url", image_url: { url: data.imageDataUrl } },
+          ],
+        },
+      ],
+      "kosthold-bilde",
+      data.hint ?? "matbilde",
+    );
+
   });
 
 const IDENTIFY_TOOL = {
@@ -295,10 +344,15 @@ export const analyzeMealText = createServerFn({ method: "POST" })
   .inputValidator((input: { text: string }) => z.object({ text: z.string().min(2) }).parse(input))
   .handler(async ({ data }): Promise<MealAnalysis> => {
     await requireHouseAuth();
-    return callAi([
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Anslå næringsinnhold for dette måltidet: ${data.text}` },
-    ]);
+    return callAi(
+      [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Anslå næringsinnhold for dette måltidet: ${data.text}` },
+      ],
+      "kosthold-tekst",
+      data.text.slice(0, 200),
+    );
+
   });
 
 export const listMeals = createServerFn({ method: "GET" })
