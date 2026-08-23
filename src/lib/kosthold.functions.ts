@@ -28,7 +28,23 @@ const __loadAuth = createIsomorphicFn()
   );
 const { requireHouseAuth } = await __loadAuth();
 
+const __loadAiUsage = createIsomorphicFn()
+  .server(
+    (): Promise<typeof import("@/lib/ai-usage.server")> => import("@/lib/ai-usage.server"),
+  )
+  .client(
+    (): Promise<typeof import("@/lib/ai-usage.server")> =>
+      Promise.resolve({
+        logAiSearch: async () => {},
+      } as unknown as typeof import("@/lib/ai-usage.server")),
+  );
+const { logAiSearch } = await __loadAiUsage();
+
 const VISION_MODEL = "google/gemini-2.5-flash";
+
+/** Fast estimert kostnad per AI-kall på kosthold (bilde- eller tekst-skann). */
+const KOSTHOLD_COST_USD = 0.05;
+
 
 export type MealItem = { name: string; amount_g?: number | null; calories?: number | null };
 
