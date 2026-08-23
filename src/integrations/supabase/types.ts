@@ -3891,6 +3891,7 @@ export type Database = {
       get_db_detail_stats: { Args: never; Returns: Json }
       get_db_usage_stats: { Args: never; Returns: Json }
       get_pgnet_cache_size: { Args: never; Returns: Json }
+      get_reclaim_progress: { Args: never; Returns: Json }
       get_storage_usage_stats: { Args: never; Returns: Json }
       get_table_bytes: { Args: { _table: string }; Returns: number }
       reclaim_space: { Args: never; Returns: Json }

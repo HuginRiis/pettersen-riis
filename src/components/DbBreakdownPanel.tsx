@@ -6,6 +6,7 @@ import {
   type DbBreakdown,
 } from "@/lib/db-cleanup.functions";
 import { Database, Loader2, PackageOpen, RefreshCw } from "lucide-react";
+import { useDbProgress, DbProgressBar } from "@/components/DbProgress";
 
 function pretty(b: number): string {
   if (!b) return "0 B";
@@ -31,6 +32,7 @@ export function DbBreakdownPanel() {
   const [loading, setLoading] = useState(true);
   const [compressing, setCompressing] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const progress = useDbProgress();
 
   const load = () => {
     setLoading(true);
@@ -54,10 +56,12 @@ export function DbBreakdownPanel() {
     setCompressing(true);
     try {
       const res = await reclaimFn({});
+      progress.trackReclaim();
       alert(
         `Komprimering startet: ${res.scheduledCount} tabeller planlagt.\n\n${res.message}\n\nStørrelsen oppdateres innen få minutter.`,
       );
     } catch (e: any) {
+      progress.hide();
       alert("Komprimering feilet: " + (e?.message ?? "ukjent"));
     } finally {
       setCompressing(false);
@@ -114,6 +118,8 @@ export function DbBreakdownPanel() {
           </button>
         </div>
       </div>
+
+      <DbProgressBar state={progress.state} />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[

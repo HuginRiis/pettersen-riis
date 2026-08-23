@@ -363,3 +363,30 @@ export const getDbBreakdown = createServerFn({ method: "GET" }).handler(
     return { dbBytes, tables, tablesBytes, pgnetBytes, otherBytes };
   },
 );
+
+// ── Fremdrift for komprimering (VACUUM FULL via pg_cron) ──────────────
+export type ReclaimProgress = {
+  active: boolean;
+  total: number;
+  done: number;
+  running: number;
+  currentTable: string | null;
+  dbBytes: number;
+};
+
+export const getReclaimProgress = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ReclaimProgress> => {
+    await requireHouseAuth();
+    const sb = supabaseAdmin as any;
+    const { data, error } = await sb.rpc("get_reclaim_progress");
+    if (error) throw new Error(error.message);
+    return {
+      active: Boolean(data?.active),
+      total: Number(data?.total ?? 0),
+      done: Number(data?.done ?? 0),
+      running: Number(data?.running ?? 0),
+      currentTable: (data?.current_table ?? null) as string | null,
+      dbBytes: Number(data?.db_bytes ?? 0),
+    };
+  },
+);
