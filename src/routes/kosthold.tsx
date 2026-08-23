@@ -1117,7 +1117,7 @@ function KostholdRoute() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64 w-full">
+                <div className="h-64 w-full chart-kcal">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={trend30} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                       <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.35} vertical={false} />
