@@ -344,10 +344,15 @@ export const analyzeMealText = createServerFn({ method: "POST" })
   .inputValidator((input: { text: string }) => z.object({ text: z.string().min(2) }).parse(input))
   .handler(async ({ data }): Promise<MealAnalysis> => {
     await requireHouseAuth();
-    return callAi([
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Anslå næringsinnhold for dette måltidet: ${data.text}` },
-    ]);
+    return callAi(
+      [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Anslå næringsinnhold for dette måltidet: ${data.text}` },
+      ],
+      "kosthold-tekst",
+      data.text.slice(0, 200),
+    );
+
   });
 
 export const listMeals = createServerFn({ method: "GET" })
