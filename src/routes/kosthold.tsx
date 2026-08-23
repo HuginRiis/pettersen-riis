@@ -1144,7 +1144,7 @@ function KostholdRoute() {
                         formatter={(v: number, n: string) => [`${r(Number(v))} kcal`, n]}
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar name="Spist" dataKey="kcal" fill="hsl(var(--primary))" fillOpacity={0.7} radius={[3, 3, 0, 0]} />
+                      <Bar name="Spist" dataKey="kcal" fill="#4ade80" radius={[3, 3, 0, 0]} />
                       <Line
                         name="Forbrent"
                         type="monotone"
@@ -1154,7 +1154,8 @@ function KostholdRoute() {
                         dot={false}
                       />
                       <Line
-                        name="Kaloimål"
+                        name="Kalorimål"
+
                         type="monotone"
                         dataKey="mal"
                         stroke="#ef4444"
