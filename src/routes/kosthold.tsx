@@ -1007,14 +1007,15 @@ function KostholdRoute() {
               <CardContent>
                 <div className="flex flex-wrap items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground mb-3">
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-3 rounded-sm bg-primary/70" /> Spist
+                    <i className="h-2 w-3 rounded-sm" style={{ background: "#4ade80" }} /> Spist
                   </span>
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-3 rounded-sm bg-sky-500/50" /> Hvile
+                    <i className="h-2 w-3 rounded-sm" style={{ background: "#f59e0b" }} /> Forbrent
                   </span>
                   <span className="flex items-center gap-1">
-                    <i className="h-2 w-3 rounded-sm bg-amber-500/80" /> Aktiv
+                    <i className="h-2 w-3 rounded-sm" style={{ background: "#ef4444" }} /> Kalorimål
                   </span>
+
                   {!garminOwner && (
                     <span className="normal-case tracking-normal">
                       {restingKcal
