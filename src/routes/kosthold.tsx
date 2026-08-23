@@ -1087,7 +1087,212 @@ function KostholdRoute() {
 
               </CardContent>
             </Card>
+
+            {/* Graf: inntak vs forbruk, 30 dager */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" /> Inntak vs forbruk · 30 dager
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={trend30} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                      <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.35} vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        interval={4}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={44}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                        formatter={(v: number, n: string) => [`${r(Number(v))} kcal`, n]}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar name="Spist" dataKey="kcal" fill="hsl(var(--primary))" fillOpacity={0.7} radius={[3, 3, 0, 0]} />
+                      <Line
+                        name="Forbrent"
+                        type="monotone"
+                        dataKey="burned"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        name="Kaloimål"
+                        type="monotone"
+                        dataKey="mal"
+                        stroke="hsl(var(--muted-foreground))"
+                        strokeDasharray="4 4"
+                        strokeWidth={1.5}
+                        dot={false}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="h-40 w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={trend30} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ef4444" stopOpacity={0.65} />
+                          <stop offset="50%" stopColor="#ef4444" stopOpacity={0.05} />
+                          <stop offset="50%" stopColor="#22c55e" stopOpacity={0.05} />
+                          <stop offset="100%" stopColor="#22c55e" stopOpacity={0.65} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.35} vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        interval={4}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={44}
+                      />
+                      <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                        formatter={(v: number) => [
+                          `${Number(v) > 0 ? "+" : ""}${r(Number(v))} kcal`,
+                          Number(v) > 0 ? "Overskudd" : "Underskudd",
+                        ]}
+                      />
+                      <Area
+                        name="Netto"
+                        type="monotone"
+                        dataKey="net"
+                        stroke="#94a3b8"
+                        strokeWidth={1.5}
+                        fill="url(#netGrad)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                  {[
+                    { label: "Dager i overskudd", value: `${netStats.over}` },
+                    { label: "Dager i underskudd", value: `${netStats.under}` },
+                    { label: "Netto/dag", value: `${netStats.snitt > 0 ? "+" : ""}${netStats.snitt} kcal` },
+                    { label: "Vektendring (est.)", value: `${Number(netStats.kg) > 0 ? "+" : ""}${netStats.kg} kg` },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-lg border border-border/60 p-3">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {s.label}
+                      </div>
+                      <div className="text-lg font-bold text-primary mt-1">{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Graf: trening / aktive kalorier */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" /> Trening · aktive kalorier
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!garminOwner && (
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Ingen treningsdata koblet for {person} — grafen viser 0 aktive kalorier.
+                  </p>
+                )}
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={trend30} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                      <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.35} vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        interval={4}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={44}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                        formatter={(v: number, n: string) => [`${r(Number(v))} kcal`, n]}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar
+                        name="Aktive kalorier"
+                        dataKey="active"
+                        fill="#f59e0b"
+                        fillOpacity={0.85}
+                        radius={[3, 3, 0, 0]}
+                      />
+                      <Line
+                        name="Hvile"
+                        type="monotone"
+                        dataKey="rest"
+                        stroke="#38bdf8"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                  {[
+                    { label: "Aktive/dag", value: `${activeStats.snitt} kcal` },
+                    { label: "Aktive dager", value: `${activeStats.days}/30` },
+                    { label: "Beste dag", value: `${activeStats.best} kcal` },
+                    {
+                      label: "Trend siste uke",
+                      value: `${activeStats.delta > 0 ? "+" : ""}${activeStats.delta} kcal/dag`,
+                    },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-lg border border-border/60 p-3">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {s.label}
+                      </div>
+                      <div className="text-lg font-bold text-primary mt-1">{s.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
+
 
           {/* UKEPLAN */}
           <TabsContent value="plan" className="space-y-4 mt-4">
