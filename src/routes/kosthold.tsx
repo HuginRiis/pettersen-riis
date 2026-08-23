@@ -337,6 +337,72 @@ function KostholdRoute() {
     1,
   );
 
+  /** 30 dagers serie for grafene i Trend-fanen */
+  const trend30 = useMemo(() => {
+    const base = new Date(date + "T00:00:00");
+    const out: {
+      iso: string;
+      label: string;
+      kcal: number;
+      rest: number;
+      active: number;
+      burned: number;
+      net: number;
+      mal: number;
+    }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(base);
+      d.setDate(d.getDate() - i);
+      const iso = d.toISOString().slice(0, 10);
+      const kcal = personRows
+        .filter((m) => m.eaten_at.slice(0, 10) === iso)
+        .reduce((s, m) => s + num(m.kcal), 0);
+      const gd = burnDays[iso];
+      const active = gd?.active ?? 0;
+      const rest =
+        gd?.total != null && gd.active != null
+          ? Math.max(0, gd.total - gd.active)
+          : (restingKcal ?? 0);
+      const burned = rest + active;
+      out.push({
+        iso,
+        label: `${d.getDate()}.${d.getMonth() + 1}`,
+        kcal: r(kcal),
+        rest: r(rest),
+        active: r(active),
+        burned: r(burned),
+        net: r(kcal - burned),
+        mal: g.calorie_goal,
+      });
+    }
+    return out;
+  }, [personRows, date, burnDays, restingKcal, g.calorie_goal]);
+
+  const activeStats = useMemo(() => {
+    const act = trend30.map((d) => d.active);
+    const days = act.filter((a) => a > 0).length;
+    const sum = act.reduce((s, a) => s + a, 0);
+    const last7 = act.slice(-7).reduce((s, a) => s + a, 0) / 7;
+    const prev7 = act.slice(-14, -7).reduce((s, a) => s + a, 0) / 7;
+    return {
+      sum: r(sum),
+      snitt: r(sum / 30),
+      days,
+      best: r(Math.max(0, ...act)),
+      delta: r(last7 - prev7),
+    };
+  }, [trend30]);
+
+  const netStats = useMemo(() => {
+    const nets = trend30.map((d) => d.net);
+    const over = nets.filter((n) => n > 0).length;
+    const under = nets.filter((n) => n < 0).length;
+    const sum = nets.reduce((s, n) => s + n, 0);
+    return { over, under, snitt: r(sum / 30), sum: r(sum), kg: (sum / 7700).toFixed(2) };
+  }, [trend30]);
+
+
+
 
   const frequent = useMemo(() => {
     const map = new Map<string, { meal: MealRow; count: number }>();
