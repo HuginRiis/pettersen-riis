@@ -240,21 +240,26 @@ export const analyzeMealImage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<MealAnalysis> => {
     await requireHouseAuth();
-    return callAi([
-      { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text:
-              "Analyser matbildet og anslå kalorier og næringsstoffer for hele porsjonen." +
-              (data.hint ? ` Tilleggsinfo fra brukeren: ${data.hint}` : ""),
-          },
-          { type: "image_url", image_url: { url: data.imageDataUrl } },
-        ],
-      },
-    ]);
+    return callAi(
+      [
+        { role: "system", content: SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text:
+                "Analyser matbildet og anslå kalorier og næringsstoffer for hele porsjonen." +
+                (data.hint ? ` Tilleggsinfo fra brukeren: ${data.hint}` : ""),
+            },
+            { type: "image_url", image_url: { url: data.imageDataUrl } },
+          ],
+        },
+      ],
+      "kosthold-bilde",
+      data.hint ?? "matbilde",
+    );
+
   });
 
 const IDENTIFY_TOOL = {
