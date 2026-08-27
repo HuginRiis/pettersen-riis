@@ -30,6 +30,20 @@ export async function saveHomeyTargetCache(
   if (error) throw new Error(error.message);
 }
 
+/** Nullstill lagret Homey-target (brukes når Homey byttes ut / adressen er død). */
+export async function clearHomeyTargetCache(id: string) {
+  const { error } = await supabaseAdmin
+    .from("homey_connections")
+    .update({
+      homey_id: null,
+      homey_name: null,
+      homey_base_url: null,
+      homey_target_cached_at: null,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
 export async function getHomeyConnection(): Promise<HomeyConnection | null> {
   const { data, error } = await supabaseAdmin
     .from("homey_connections")
