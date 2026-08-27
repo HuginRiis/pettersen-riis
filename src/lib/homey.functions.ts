@@ -327,21 +327,46 @@ async function resolveHomeyTargetRaw(accessToken: string): Promise<HomeyTarget |
   };
 }
 
-async function getResolvedHomeyTarget(conn: HomeyConnection): Promise<HomeyTarget | null> {
-  const key = getHomeyCacheKey(conn);
-  const cached = getCacheEntry(homeyTargetCache, key);
-  if (cached) return cached.value;
-  if (homeyTargetInflight?.key === key) return await homeyTargetInflight.promise;
+/** Adressen finnes ikke lenger (byttet Homey, ny sky-URL, DNS-feil). */
+function isHomeyTargetGoneError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /(^|[^\d])(404|502|503)([^\d]|$)|ENOTFOUND|getaddrinfo|fetch failed|Could not resolve|no such host|not found/i.test(
+    message,
+  );
+}
 
-  // DB-cachet target — overlever cold starts og deles på tvers av Worker-instanser
-  if (conn.homey_id && conn.homey_base_url) {
-    const target: HomeyTarget = {
-      id: conn.homey_id,
-      name: conn.homey_name ?? null,
-      baseUrl: normalizeBaseUrl(conn.homey_base_url),
-    };
-    homeyTargetCache = { key, value: target, expiresAt: Date.now() + HOMEY_TARGET_TTL_MS };
-    return target;
+async function invalidateHomeyTarget(conn: HomeyConnection) {
+  homeyTargetCache = null;
+  homeyTargetInflight = null;
+  clearHomeySessionCaches();
+  try {
+    const { clearHomeyTargetCache } = await loadConnModule();
+    await clearHomeyTargetCache(conn.id);
+  } catch (e) {
+    console.warn("[homey] kunne ikke nullstille target-cache:", e);
+  }
+}
+
+async function getResolvedHomeyTarget(
+  conn: HomeyConnection,
+  opts?: { forceRefresh?: boolean },
+): Promise<HomeyTarget | null> {
+  const key = getHomeyCacheKey(conn);
+  if (!opts?.forceRefresh) {
+    const cached = getCacheEntry(homeyTargetCache, key);
+    if (cached) return cached.value;
+    if (homeyTargetInflight?.key === key) return await homeyTargetInflight.promise;
+
+    // DB-cachet target — overlever cold starts og deles på tvers av Worker-instanser
+    if (conn.homey_id && conn.homey_base_url) {
+      const target: HomeyTarget = {
+        id: conn.homey_id,
+        name: conn.homey_name ?? null,
+        baseUrl: normalizeBaseUrl(conn.homey_base_url),
+      };
+      homeyTargetCache = { key, value: target, expiresAt: Date.now() + HOMEY_TARGET_TTL_MS };
+      return target;
+    }
   }
 
   const promise = resolveHomeyTargetRaw(conn.access_token)
@@ -408,11 +433,28 @@ export async function getHomeySessionContext(conn: HomeyConnection): Promise<Hom
   if (homeySessionInflight?.key === key) return await homeySessionInflight.promise;
 
   const promise = (async () => {
-    const target = await getResolvedHomeyTarget(conn);
-    if (!target) return null;
-    const delegationToken = await createDelegationToken(conn.access_token);
-    const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
-    const context = { target, sessionToken };
+    const buildSession = async (forceRefresh: boolean) => {
+      const target = await getResolvedHomeyTarget(conn, { forceRefresh });
+      if (!target) return null;
+      const delegationToken = await createDelegationToken(conn.access_token);
+      const sessionToken = await createSessionToken(target.baseUrl, delegationToken);
+      return { target, sessionToken };
+    };
+
+    let context: HomeySessionContext | null;
+    try {
+      context = await buildSession(false);
+    } catch (error) {
+      // Ny Homey / endret sky-adresse: den lagrede adressen svarer ikke lenger.
+      // Nullstill target og slå opp på nytt hos Athom én gang.
+      if (isHomeyTargetGoneError(error) || isHomeyAuthError(error)) {
+        await invalidateHomeyTarget(conn);
+        context = await buildSession(true);
+      } else {
+        throw error;
+      }
+    }
+    if (!context) return null;
     homeySessionCache = {
       key,
       value: context,
@@ -544,11 +586,12 @@ export async function getHomeyRawSnapshot(conn: HomeyConnection, opts?: { force?
     };
     return raw;
   })()
-    .catch((error) => {
+    .catch(async (error) => {
       const stale = getCacheEntry(homeySnapshotCache, key, true);
       const message = error instanceof Error ? error.message : String(error ?? "");
       if (stale && isRateLimitedMessage(message)) return stale.value;
       if (isHomeyAuthError(error)) clearHomeySessionCaches();
+      else if (isHomeyTargetGoneError(error)) await invalidateHomeyTarget(conn);
       throw error;
     })
     .finally(() => {
@@ -577,8 +620,9 @@ export const getHomeySnapshot = createServerFn({ method: "GET" })
       if (!raw) {
         return {
           ok: false,
-          needsConnect: false,
-          error: "Fant ingen Homey knyttet til kontoen.",
+          needsConnect: true,
+          error:
+            "Athom-kontoen har ingen Homey knyttet til denne tilkoblingen (byttet du Homey?). Koble til Homey på nytt.",
         };
       }
       return mapSnapshotFromRaw(raw);
