@@ -618,12 +618,7 @@ export const getHomeySnapshot = createServerFn({ method: "GET" })
     try {
       const raw = await getHomeyRawSnapshot(conn, { force: data?.force === true });
       if (!raw) {
-        return {
-          ok: false,
-          needsConnect: true,
-          error:
-            "Athom-kontoen har ingen Homey knyttet til denne tilkoblingen (byttet du Homey?). Koble til Homey på nytt.",
-        };
+        return { ok: false, needsConnect: true };
       }
       return mapSnapshotFromRaw(raw);
     } catch (e: any) {
