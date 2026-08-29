@@ -4082,11 +4082,262 @@ function VisibilityBeamFX({ vis }: { vis: number }) {
 // Netatmo tiles
 // ============================================================
 
+// ============================================================
+// NETATMO TOLLNES — egne fliser (ute / regn / vind) med animasjon
+// ============================================================
+
+/** Varme-/kuldeflimmer som følger temperaturen på utemodulen. */
+function NetatmoTempFX({ temp }: { temp: number }) {
+  const cold = temp <= 0;
+  const level = Math.max(0, Math.min(1, Math.abs(temp) / 25));
+  const bits = useMemo(
+    () =>
+      Array.from({ length: 14 }).map((_, i) => ({
+        left: 4 + ((i * 31) % 92),
+        dur: 5 + ((i * 13) % 45) / 10,
+        delay: -((i * 17) % 60) / 10,
+        size: 3 + ((i * 7) % 5),
+        op: 0.18 + ((i * 11) % 25) / 100,
+      })),
+    [],
+  );
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+      <div
+        className="absolute inset-0"
+        style={{
+          background: cold
+            ? `radial-gradient(120% 80% at 50% 110%, rgba(125,200,255,${0.10 + level * 0.22}), transparent 70%)`
+            : `radial-gradient(120% 80% at 50% 110%, rgba(255,170,90,${0.10 + level * 0.25}), transparent 70%)`,
+        }}
+      />
+      {bits.map((b, i) => (
+        <span
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: `${b.left}%`,
+            bottom: -8,
+            width: b.size,
+            height: b.size,
+            background: cold ? "rgba(190,225,255,0.9)" : "rgba(255,200,140,0.9)",
+            opacity: b.op,
+            filter: "blur(0.5px)",
+            animation: `nt-rise ${b.dur}s linear ${b.delay}s infinite`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes nt-rise {
+          0%   { transform: translateY(0) translateX(0); opacity: 0; }
+          20%  { opacity: .8; }
+          100% { transform: translateY(-120px) translateX(10px); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) { [style*="nt-rise"] { animation: none !important; } }
+      `}</style>
+    </div>
+  );
+}
+
+/** Dråper + krusninger som skalerer med målt regn siste time / døgn. */
+function NetatmoRainFX({ mmHour, mmDay }: { mmHour: number; mmDay: number }) {
+  const level = Math.max(0, Math.min(1, Math.max(mmHour / 4, mmDay / 20)));
+  const count = Math.round(6 + level * 46);
+  const drops = useMemo(
+    () =>
+      Array.from({ length: count }).map((_, i) => ({
+        left: (i * 37.7) % 100,
+        dur: 0.9 + ((i * 13) % 9) / 10 - level * 0.3,
+        delay: -((i * 23) % 30) / 10,
+        h: 8 + ((i * 7) % 14),
+        op: 0.25 + ((i * 17) % 45) / 100,
+      })),
+    [count, level],
+  );
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+      {drops.map((d, i) => (
+        <span
+          key={i}
+          className="absolute w-px"
+          style={{
+            left: `${d.left}%`,
+            top: -20,
+            height: d.h,
+            background: "linear-gradient(to bottom, transparent, rgba(180,220,255,0.95))",
+            opacity: d.op,
+            animation: `nt-drop ${Math.max(0.5, d.dur)}s linear ${d.delay}s infinite`,
+          }}
+        />
+      ))}
+      <div
+        className="absolute inset-x-0 bottom-0 h-6"
+        style={{ background: `linear-gradient(to top, rgba(120,180,235,${0.10 + level * 0.3}), transparent)` }}
+      />
+      <style>{`
+        @keyframes nt-drop {
+          0%   { transform: translateY(0); opacity: 0; }
+          10%  { opacity: 1; }
+          100% { transform: translateY(180px); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) { [style*="nt-drop"] { animation: none !important; } }
+      `}</style>
+    </div>
+  );
+}
+
+/** Vindstriper som går raskere jo sterkere det blåser (km/h fra Netatmo). */
+function NetatmoWindFX({ kmh }: { kmh: number }) {
+  const level = Math.max(0.05, Math.min(1, kmh / 60));
+  const lines = useMemo(
+    () =>
+      Array.from({ length: 12 }).map((_, i) => ({
+        top: 6 + ((i * 8.3) % 88),
+        w: 30 + ((i * 29) % 60),
+        delay: -((i * 19) % 40) / 10,
+        op: 0.15 + ((i * 13) % 40) / 100,
+      })),
+    [],
+  );
+  const dur = 3.6 - level * 2.6;
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+      {lines.map((l, i) => (
+        <span
+          key={i}
+          className="absolute h-px rounded-full"
+          style={{
+            top: `${l.top}%`,
+            left: "-40%",
+            width: `${l.w}%`,
+            background: "linear-gradient(to right, transparent, rgba(255,255,255,0.9), transparent)",
+            opacity: l.op,
+            animation: `nt-gust ${dur}s linear ${l.delay}s infinite`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes nt-gust {
+          0%   { transform: translateX(0); opacity: 0; }
+          15%  { opacity: 1; }
+          100% { transform: translateX(190%); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) { [style*="nt-gust"] { animation: none !important; } }
+      `}</style>
+    </div>
+  );
+}
+
+function compassLabel(angle: number | null | undefined): string {
+  if (angle === null || angle === undefined || !Number.isFinite(angle) || angle < 0) return "—";
+  const dirs = ["N", "NNØ", "NØ", "ØNØ", "Ø", "ØSØ", "SØ", "SSØ", "S", "SSV", "SV", "VSV", "V", "VNV", "NV", "NNV"];
+  return dirs[Math.round(((angle % 360) / 22.5)) % 16];
+}
+
+function NetatmoLiveTiles({ modules, fetchedAt }: { modules: WeatherModule[]; fetchedAt: string }) {
+  const [wUnit] = useWindUnit();
+  const [tUnit] = useTempUnit();
+  const outdoor = modules.find((m) => m.type === "NAModule1");
+  const wind = modules.find((m) => m.type === "NAModule2");
+  const rain = modules.find((m) => m.type === "NAModule3");
+  if (!outdoor && !wind && !rain) return null;
+
+  const temp = outdoor?.metrics.temperature ?? null;
+  const tMin = outdoor?.metrics.minTemp ?? null;
+  const tMax = outdoor?.metrics.maxTemp ?? null;
+  const hum = outdoor?.metrics.humidity ?? null;
+  const rainNow = rain?.metrics.rain ?? null;
+  const rainHour = rain?.metrics.rainHour ?? null;
+  const rainDay = rain?.metrics.rainDay ?? null;
+  const windNow = wind?.metrics.windStrength ?? null;
+  const gust = wind?.metrics.gustStrength ?? null;
+  const windAngle = wind?.metrics.windAngle ?? null;
+
+  const stamp = new Date(fetchedAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-1 pt-1">
+        <div className="text-[11px] tracking-[0.15em] font-semibold text-white/70 uppercase">
+          Netatmo · Tollnes ute
+        </div>
+        <div className="text-[10px] text-white/50 tabular-nums">oppdatert {stamp}</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {temp !== null && (
+          <GlassCard eyebrow="Ute · Tollnes" icon={<Thermometer size={14} />} fx={<NetatmoTempFX temp={temp} />}>
+            <div className="text-3xl font-light tabular-nums">{formatTemp(temp, tUnit, { digits: 1 })}</div>
+            <div className="text-sm text-white/85">Netatmo utemodul</div>
+            <div className="mt-2 flex items-center gap-3 text-[12px] text-white/75 tabular-nums">
+              {tMin !== null && (
+                <span className="inline-flex items-center gap-1"><ArrowDown size={12} className="text-sky-300" />{formatTemp(tMin, tUnit, { digits: 1 })}</span>
+              )}
+              {tMax !== null && (
+                <span className="inline-flex items-center gap-1"><ArrowUp size={12} className="text-orange-300" />{formatTemp(tMax, tUnit, { digits: 1 })}</span>
+              )}
+            </div>
+            {hum !== null && (
+              <div className="text-[12px] text-white/75 mt-1">Luftfuktighet {Math.round(hum)} %</div>
+            )}
+          </GlassCard>
+        )}
+
+        {(rainDay !== null || rainHour !== null || rainNow !== null) && (
+          <GlassCard
+            eyebrow="Regn · Tollnes"
+            icon={<CloudRain size={14} />}
+            fx={<NetatmoRainFX mmHour={rainHour ?? 0} mmDay={rainDay ?? 0} />}
+          >
+            <div className="text-3xl font-light tabular-nums">{(rainDay ?? 0).toFixed(1)} mm</div>
+            <div className="text-sm text-white/85">Siste døgn</div>
+            <div className="text-[12px] text-white/75 mt-2 leading-snug">
+              Siste time {(rainHour ?? 0).toFixed(1)} mm
+              {rainNow !== null && <> · nå {rainNow.toFixed(1)} mm</>}
+            </div>
+          </GlassCard>
+        )}
+      </div>
+
+      {(windNow !== null || gust !== null) && (
+        <GlassCard
+          eyebrow="Vind · Tollnes"
+          icon={<Wind size={14} />}
+          fx={<NetatmoWindFX kmh={gust ?? windNow ?? 0} />}
+        >
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <div className="text-3xl font-light tabular-nums">
+                {formatWindFromKmh(windNow ?? 0, wUnit, { digits: 0, withUnit: false })}
+                <span className="text-sm text-white/70 ml-1">{windUnitShort(wUnit)}</span>
+              </div>
+              <div className="text-sm text-white/85">Vind nå</div>
+              <div className="text-[12px] text-white/75 mt-2 leading-snug">
+                Kast {formatWindFromKmh(gust ?? windNow ?? 0, wUnit, { digits: 0 })} · retning {compassLabel(windAngle)}
+              </div>
+            </div>
+            <div className="relative w-16 h-16 shrink-0">
+              <div className="absolute inset-0 rounded-full border border-white/25" />
+              <div
+                className="absolute inset-0 flex items-center justify-center transition-transform duration-700"
+                style={{ transform: `rotate(${(windAngle ?? 0) + 180}deg)` }}
+              >
+                <Navigation size={22} className="text-white/90" />
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+    </>
+  );
+}
+
 function NetatmoTile({
   label, temp, wind, rain, humidity, pressure,
 }: {
   label: string; temp: number | null; wind: number | null; rain: number | null; humidity: number | null; pressure: number | null;
 }) {
+
   const [unit] = useWindUnit();
   const [tUnit] = useTempUnit();
   return (
