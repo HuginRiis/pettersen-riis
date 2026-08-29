@@ -680,7 +680,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* NETATMO TOLLNES — egne fliser med live-animasjon */}
           {netatmoData?.ok === true && (
-            <NetatmoLiveTiles modules={netatmoModules} fetchedAt={netatmoData.fetchedAt} />
+            <NetatmoLiveTiles modules={netatmoData.modules} fetchedAt={netatmoData.fetchedAt} />
           )}
 
 
