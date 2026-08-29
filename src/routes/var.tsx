@@ -678,6 +678,12 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
             </GlassCard>
           )}
 
+          {/* NETATMO TOLLNES — egne fliser med live-animasjon */}
+          {netatmoData?.ok === true && (
+            <NetatmoLiveTiles modules={netatmoModules} fetchedAt={netatmoData.fetchedAt} />
+          )}
+
+
           {/* UV-indeks · iOS-style */}
           <IosUvCard lat={userLoc.active.lat} lon={userLoc.active.lon} now={now} />
 
