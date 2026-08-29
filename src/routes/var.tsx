@@ -54,7 +54,7 @@ import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } fro
 import { AnimTogglesProvider, AnimTogglesPanel, useAnimToggles } from "@/components/weather/AnimToggles";
 import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
 import moonRealAsset from "@/assets/moon-real.png.asset.json";
-import { useWindUnit, formatWind, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
+import { useWindUnit, formatWind, formatWindFromKmh, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
 import { useTempUnit, formatTemp, TEMP_UNITS } from "@/hooks/use-temp-unit";
 
 export const Route = createFileRoute("/var")({
