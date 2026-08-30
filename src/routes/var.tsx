@@ -6,6 +6,8 @@ import { getHomeySnapshot } from "@/lib/homey.functions";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/lib/lightning.functions";
 import { getNetatmoWeatherStation, type WeatherModule } from "@/lib/netatmo-weather.functions";
+import { getNetatmoOutdoorWeek } from "@/lib/netatmo-history";
+
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
@@ -4234,9 +4236,146 @@ function compassLabel(angle: number | null | undefined): string {
   return dirs[Math.round(((angle % 360) / 22.5)) % 16];
 }
 
+function BatteryPill({ pct }: { pct: number | null | undefined }) {
+  if (pct === null || pct === undefined || !Number.isFinite(pct)) return null;
+  const p = Math.max(0, Math.min(100, Math.round(pct)));
+  const color = p <= 15 ? "#f87171" : p <= 35 ? "#fbbf24" : "#4ade80";
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] text-white/80 tabular-nums">
+      <span className="relative inline-flex items-center">
+        <span className="w-6 h-3 rounded-[3px] border border-white/45 p-[1px] flex">
+          <span
+            className="rounded-[1px] transition-all duration-500"
+            style={{ width: `${p}%`, background: color }}
+          />
+        </span>
+        <span className="ml-[1px] w-[2px] h-[6px] rounded-r bg-white/45" />
+      </span>
+      {p} %
+    </span>
+  );
+}
+
+/** Enkel sparkline (SVG) for uke-serier. */
+function WeekSpark({
+  points,
+  color,
+  unitLabel,
+  kind = "line",
+  format,
+}: {
+  points: Array<{ t: number; v: number | null }>;
+  color: string;
+  unitLabel: string;
+  kind?: "line" | "bars";
+  format: (v: number) => string;
+}) {
+  const vals = points.filter((p) => p.v !== null) as Array<{ t: number; v: number }>;
+  if (vals.length < 2) {
+    return <div className="text-[11px] text-white/60 italic py-4">Ingen ukesdata tilgjengelig.</div>;
+  }
+  const W = 300;
+  const H = 70;
+  const min = Math.min(...vals.map((p) => p.v));
+  const max = Math.max(...vals.map((p) => p.v));
+  const lo = kind === "bars" ? 0 : min - (max - min || 1) * 0.15;
+  const hi = max + (max - lo || 1) * 0.15;
+  const x = (i: number) => (i / (vals.length - 1)) * W;
+  const y = (v: number) => H - ((v - lo) / (hi - lo || 1)) * H;
+
+  const last = vals[vals.length - 1];
+  const avg = vals.reduce((s, p) => s + p.v, 0) / vals.length;
+
+  const dayTicks = vals
+    .map((p, i) => ({ i, d: new Date(p.t) }))
+    .filter((p, idx, arr) => idx === 0 || p.d.getDate() !== new Date(arr[idx - 1].d).getDate());
+
+  return (
+    <div className="mt-3 rounded-xl bg-black/20 border border-white/10 p-3">
+      <div className="flex items-center justify-between text-[11px] text-white/70 mb-1.5">
+        <span className="uppercase tracking-wider">Siste 7 dager</span>
+        <span className="tabular-nums">
+          min {format(min)} · snitt {format(avg)} · maks {format(max)} {unitLabel}
+        </span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-[70px]" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`spark-${color.replace(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.45" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {dayTicks.map((d) => (
+          <line
+            key={d.i}
+            x1={x(d.i)}
+            y1={0}
+            x2={x(d.i)}
+            y2={H}
+            stroke="rgba(255,255,255,0.10)"
+            strokeDasharray="2 3"
+          />
+        ))}
+        {kind === "bars" ? (
+          vals.map((p, i) => {
+            const h = Math.max(p.v > 0 ? 1.5 : 0, H - y(p.v));
+            return (
+              <rect
+                key={p.t}
+                x={x(i) - W / vals.length / 2 + 0.5}
+                y={H - h}
+                width={Math.max(1.5, W / vals.length - 1)}
+                height={h}
+                fill={color}
+                opacity={0.85}
+              />
+            );
+          })
+        ) : (
+          <>
+            <path
+              d={`M ${x(0)} ${H} ${vals.map((p, i) => `L ${x(i)} ${y(p.v)}`).join(" ")} L ${x(vals.length - 1)} ${H} Z`}
+              fill={`url(#spark-${color.replace(/[^a-z0-9]/gi, "")})`}
+            />
+            <path
+              d={vals.map((p, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(p.v)}`).join(" ")}
+              fill="none"
+              stroke={color}
+              strokeWidth={1.8}
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </>
+        )}
+      </svg>
+      <div className="flex items-center justify-between text-[10px] text-white/55 mt-1 tabular-nums">
+        <span>{new Date(vals[0].t).toLocaleDateString("nb-NO", { weekday: "short", day: "numeric" })}</span>
+        <span>
+          nå {format(last.v)} {unitLabel}
+        </span>
+        <span>{new Date(last.t).toLocaleDateString("nb-NO", { weekday: "short", day: "numeric" })}</span>
+      </div>
+    </div>
+  );
+}
+
 function NetatmoLiveTiles({ modules, fetchedAt }: { modules: WeatherModule[]; fetchedAt: string }) {
   const [wUnit] = useWindUnit();
   const [tUnit] = useTempUnit();
+  const [open, setOpen] = useState<null | "temp" | "rain" | "wind">(null);
+  const [week, setWeek] = useState<any>(null);
+  const [weekLoading, setWeekLoading] = useState(false);
+  const fetchWeek = useServerFn(getNetatmoOutdoorWeek);
+
+  useEffect(() => {
+    if (!open || week || weekLoading) return;
+    setWeekLoading(true);
+    fetchWeek({ data: { stationMatch: "tollnes" } })
+      .then((r: any) => setWeek(r))
+      .catch(() => setWeek({ ok: false }))
+      .finally(() => setWeekLoading(false));
+  }, [open, week, weekLoading, fetchWeek]);
+
   const outdoor = modules.find((m) => m.type === "NAModule1");
   const wind = modules.find((m) => m.type === "NAModule2");
   const rain = modules.find((m) => m.type === "NAModule3");
@@ -4254,6 +4393,15 @@ function NetatmoLiveTiles({ modules, fetchedAt }: { modules: WeatherModule[]; fe
   const windAngle = wind?.metrics.windAngle ?? null;
 
   const stamp = new Date(fetchedAt).toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" });
+  const toggle = (k: "temp" | "rain" | "wind") => setOpen((o) => (o === k ? null : k));
+  const hint = (k: "temp" | "rain" | "wind") => (
+    <div className="mt-2 text-[10px] text-white/50">
+      {open === k ? "Trykk for å skjule ukesgraf" : "Trykk for ukesgraf"}
+    </div>
+  );
+  const loadingRow = weekLoading && !week ? (
+    <div className="mt-3 text-[11px] text-white/60 italic">Henter ukesdata…</div>
+  ) : null;
 
   return (
     <>
@@ -4264,73 +4412,121 @@ function NetatmoLiveTiles({ modules, fetchedAt }: { modules: WeatherModule[]; fe
         <div className="text-[10px] text-white/50 tabular-nums">oppdatert {stamp}</div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {temp !== null && (
+      {temp !== null && (
+        <div role="button" tabIndex={0} onClick={() => toggle("temp")} onKeyDown={(e) => e.key === "Enter" && toggle("temp")} className="cursor-pointer">
           <GlassCard eyebrow="Ute · Tollnes" icon={<Thermometer size={14} />} fx={<NetatmoTempFX temp={temp} />}>
-            <div className="text-3xl font-light tabular-nums">{formatTemp(temp, tUnit, { digits: 1 })}</div>
-            <div className="text-sm text-white/85">Netatmo utemodul</div>
-            <div className="mt-2 flex items-center gap-3 text-[12px] text-white/75 tabular-nums">
-              {tMin !== null && (
-                <span className="inline-flex items-center gap-1"><ArrowDown size={12} className="text-sky-300" />{formatTemp(tMin, tUnit, { digits: 1 })}</span>
-              )}
-              {tMax !== null && (
-                <span className="inline-flex items-center gap-1"><ArrowUp size={12} className="text-orange-300" />{formatTemp(tMax, tUnit, { digits: 1 })}</span>
-              )}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-4xl font-light tabular-nums">{formatTemp(temp, tUnit, { digits: 1 })}</div>
+                <div className="text-sm text-white/85">Netatmo utemodul</div>
+                <div className="mt-2 flex items-center gap-3 text-[12px] text-white/75 tabular-nums">
+                  {tMin !== null && (
+                    <span className="inline-flex items-center gap-1"><ArrowDown size={12} className="text-sky-300" />{formatTemp(tMin, tUnit, { digits: 1 })}</span>
+                  )}
+                  {tMax !== null && (
+                    <span className="inline-flex items-center gap-1"><ArrowUp size={12} className="text-orange-300" />{formatTemp(tMax, tUnit, { digits: 1 })}</span>
+                  )}
+                  {hum !== null && <span>Fukt {Math.round(hum)} %</span>}
+                </div>
+              </div>
+              <BatteryPill pct={outdoor?.battery} />
             </div>
-            {hum !== null && (
-              <div className="text-[12px] text-white/75 mt-1">Luftfuktighet {Math.round(hum)} %</div>
-            )}
+            {open === "temp" && (loadingRow ?? (week?.ok ? (
+              <WeekSpark
+                points={week.temp}
+                color="#fb923c"
+                unitLabel={tUnit === "f" ? "°F" : "°C"}
+                format={(v) => formatTemp(v, tUnit, { digits: 1, withDegree: false })}
+              />
+            ) : (
+              <div className="mt-3 text-[11px] text-white/60 italic">Kunne ikke hente ukesdata.</div>
+            )))}
+            {hint("temp")}
           </GlassCard>
-        )}
+        </div>
+      )}
 
-        {(rainDay !== null || rainHour !== null || rainNow !== null) && (
+      {(rainDay !== null || rainHour !== null || rainNow !== null) && (
+        <div role="button" tabIndex={0} onClick={() => toggle("rain")} onKeyDown={(e) => e.key === "Enter" && toggle("rain")} className="cursor-pointer">
           <GlassCard
             eyebrow="Regn · Tollnes"
             icon={<CloudRain size={14} />}
             fx={<NetatmoRainFX mmHour={rainHour ?? 0} mmDay={rainDay ?? 0} />}
           >
-            <div className="text-3xl font-light tabular-nums">{(rainDay ?? 0).toFixed(1)} mm</div>
-            <div className="text-sm text-white/85">Siste døgn</div>
-            <div className="text-[12px] text-white/75 mt-2 leading-snug">
-              Siste time {(rainHour ?? 0).toFixed(1)} mm
-              {rainNow !== null && <> · nå {rainNow.toFixed(1)} mm</>}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-4xl font-light tabular-nums">{(rainDay ?? 0).toFixed(1)} mm</div>
+                <div className="text-sm text-white/85">Siste døgn</div>
+                <div className="text-[12px] text-white/75 mt-2 leading-snug">
+                  Siste time {(rainHour ?? 0).toFixed(1)} mm
+                  {rainNow !== null && <> · nå {rainNow.toFixed(1)} mm</>}
+                </div>
+              </div>
+              <BatteryPill pct={rain?.battery} />
             </div>
+            {open === "rain" && (loadingRow ?? (week?.ok ? (
+              <WeekSpark
+                points={week.rain}
+                color="#38bdf8"
+                unitLabel="mm"
+                kind="bars"
+                format={(v) => v.toFixed(1)}
+              />
+            ) : (
+              <div className="mt-3 text-[11px] text-white/60 italic">Kunne ikke hente ukesdata.</div>
+            )))}
+            {hint("rain")}
           </GlassCard>
-        )}
-      </div>
+        </div>
+      )}
 
       {(windNow !== null || gust !== null) && (
-        <GlassCard
-          eyebrow="Vind · Tollnes"
-          icon={<Wind size={14} />}
-          fx={<NetatmoWindFX kmh={gust ?? windNow ?? 0} />}
-        >
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <div className="text-3xl font-light tabular-nums">
-                {formatWindFromKmh(windNow ?? 0, wUnit, { digits: 0, withUnit: false })}
-                <span className="text-sm text-white/70 ml-1">{windUnitShort(wUnit)}</span>
+        <div role="button" tabIndex={0} onClick={() => toggle("wind")} onKeyDown={(e) => e.key === "Enter" && toggle("wind")} className="cursor-pointer">
+          <GlassCard
+            eyebrow="Vind · Tollnes"
+            icon={<Wind size={14} />}
+            fx={<NetatmoWindFX kmh={gust ?? windNow ?? 0} />}
+          >
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <div className="text-4xl font-light tabular-nums">
+                  {formatWindFromKmh(windNow ?? 0, wUnit, { digits: 0, withUnit: false })}
+                  <span className="text-sm text-white/70 ml-1">{windUnitShort(wUnit)}</span>
+                </div>
+                <div className="text-sm text-white/85">Vind nå</div>
+                <div className="text-[12px] text-white/75 mt-2 leading-snug">
+                  Kast {formatWindFromKmh(gust ?? windNow ?? 0, wUnit, { digits: 0 })} · retning {compassLabel(windAngle)}
+                </div>
+                <div className="mt-2"><BatteryPill pct={wind?.battery} /></div>
               </div>
-              <div className="text-sm text-white/85">Vind nå</div>
-              <div className="text-[12px] text-white/75 mt-2 leading-snug">
-                Kast {formatWindFromKmh(gust ?? windNow ?? 0, wUnit, { digits: 0 })} · retning {compassLabel(windAngle)}
+              <div className="relative w-16 h-16 shrink-0">
+                <div className="absolute inset-0 rounded-full border border-white/25" />
+                <div
+                  className="absolute inset-0 flex items-center justify-center transition-transform duration-700"
+                  style={{ transform: `rotate(${(windAngle ?? 0) + 180}deg)` }}
+                >
+                  <Navigation size={22} className="text-white/90" />
+                </div>
               </div>
             </div>
-            <div className="relative w-16 h-16 shrink-0">
-              <div className="absolute inset-0 rounded-full border border-white/25" />
-              <div
-                className="absolute inset-0 flex items-center justify-center transition-transform duration-700"
-                style={{ transform: `rotate(${(windAngle ?? 0) + 180}deg)` }}
-              >
-                <Navigation size={22} className="text-white/90" />
-              </div>
-            </div>
-          </div>
-        </GlassCard>
+            {open === "wind" && (loadingRow ?? (week?.ok ? (
+              <WeekSpark
+                points={week.gust?.some((p: any) => p.v !== null) ? week.gust : week.wind}
+                color="#a78bfa"
+                unitLabel={windUnitShort(wUnit)}
+                format={(v) => formatWindFromKmh(v, wUnit, { digits: 0, withUnit: false })}
+              />
+            ) : (
+              <div className="mt-3 text-[11px] text-white/60 italic">Kunne ikke hente ukesdata.</div>
+            )))}
+            {hint("wind")}
+          </GlassCard>
+        </div>
       )}
     </>
   );
 }
+
 
 function NetatmoTile({
   label, temp, wind, rain, humidity, pressure,

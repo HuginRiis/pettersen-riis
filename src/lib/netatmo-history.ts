@@ -679,3 +679,143 @@ export const getNetatmoLiveTrend = createServerFn({ method: "GET" })
       yesterdayInT: full.yesterdaySameTime.inT,
     };
   });
+
+// ============================================================
+// Uke-historikk for utemodul / vind / regn (brukes av værsidens
+// Netatmo-fliser når man klikker på dem).
+// ============================================================
+
+export type NetatmoWeekPoint = { t: number; v: number | null };
+export type NetatmoWeekResult =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      fetchedAt: string;
+      temp: NetatmoWeekPoint[];
+      wind: NetatmoWeekPoint[];
+      gust: NetatmoWeekPoint[];
+      rain: NetatmoWeekPoint[];
+    };
+
+const WEEK_TTL_MS = 60 * 60_000;
+const weekCache = new Map<string, { at: number; data: NetatmoWeekResult }>();
+const weekInFlight = new Map<string, Promise<NetatmoWeekResult>>();
+
+async function loadWeekDb(key: string): Promise<{ at: number; data: NetatmoWeekResult } | null> {
+  try {
+    const { data } = await supabaseAdmin
+      .from(DB_CACHE_TABLE as any)
+      .select("data, updated_at")
+      .eq("cache_key", key)
+      .maybeSingle();
+    if (!data) return null;
+    const payload = (data as any).data as NetatmoWeekResult;
+    if (payload && (payload as any).ok) {
+      return { at: Date.parse((data as any).updated_at), data: payload };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export const getNetatmoOutdoorWeek = createServerFn({ method: "GET" })
+  .inputValidator((d: { stationMatch?: string }) => d ?? {})
+  .handler(
+    withApiLog("netatmo", "getNetatmoOutdoorWeek", async ({ data }: { data: { stationMatch?: string } }): Promise<NetatmoWeekResult> => {
+      const match = (data?.stationMatch ?? "").toLowerCase().trim();
+      const key = `netatmo_week_${match || "default"}`;
+
+      const mem = weekCache.get(key);
+      if (mem && Date.now() - mem.at < WEEK_TTL_MS) return mem.data;
+      const running = weekInFlight.get(key);
+      if (running) return running;
+
+      const db = await loadWeekDb(key);
+      if (db && Date.now() - db.at < WEEK_TTL_MS) {
+        weekCache.set(key, db);
+        return db.data;
+      }
+
+      const promise = (async (): Promise<NetatmoWeekResult> => {
+        try {
+          const token = await getAccessToken();
+          const stations = await netatmoFetch(
+            `${NETATMO_BASE}/api/getstationsdata?get_favorites=false`,
+            token,
+          );
+          const devices: any[] = stations?.body?.devices ?? [];
+          if (devices.length === 0) throw new Error("Ingen værstasjoner");
+          const dev =
+            devices.find((d: any) =>
+              match
+                ? `${d.station_name ?? ""} ${d.module_name ?? ""}`.toLowerCase().includes(match)
+                : true,
+            ) ?? devices[0];
+          const mods: any[] = dev.modules ?? [];
+          const outdoor = mods.find((m: any) => m.type === "NAModule1");
+          const windMod = mods.find((m: any) => m.type === "NAModule2");
+          const rainMod = mods.find((m: any) => m.type === "NAModule3");
+          const begin = Math.floor(Date.now() / 1000) - 7 * 24 * 3600;
+          const base = `${NETATMO_BASE}/api/getmeasure?device_id=${dev._id}`;
+
+          const fetchSeries = async (moduleId: string | undefined, types: string) => {
+            if (!moduleId) return [] as Array<{ ts: number; values: number[] }>;
+            try {
+              const json = await netatmoFetch(
+                `${base}&module_id=${moduleId}&scale=3hours&type=${types}&date_begin=${begin}&optimize=false&real_time=true`,
+                token,
+              );
+              return parseMeasure(json);
+            } catch {
+              return [] as Array<{ ts: number; values: number[] }>;
+            }
+          };
+
+          const [tRaw, wRaw, rRaw] = await Promise.all([
+            fetchSeries(outdoor?._id, "Temperature"),
+            fetchSeries(windMod?._id, "WindStrength,GustStrength"),
+            fetchSeries(rainMod?._id, "sum_rain"),
+          ]);
+
+          const num = (v: any) => (typeof v === "number" ? v : null);
+          const out: NetatmoWeekResult = {
+            ok: true,
+            fetchedAt: new Date().toISOString(),
+            temp: tRaw.map((p) => ({ t: p.ts, v: num(p.values[0]) })),
+            wind: wRaw.map((p) => ({ t: p.ts, v: num(p.values[0]) })),
+            gust: wRaw.map((p) => ({ t: p.ts, v: num(p.values[1]) })),
+            rain: rRaw.map((p) => ({ t: p.ts, v: num(p.values[0]) })),
+          };
+
+          if (out.temp.length === 0 && out.wind.length === 0 && out.rain.length === 0) {
+            if (db) return db.data;
+            return { ok: false, error: "Netatmo returnerte ingen uke-data" };
+          }
+
+          weekCache.set(key, { at: Date.now(), data: out });
+          try {
+            await supabaseAdmin
+              .from(DB_CACHE_TABLE as any)
+              .upsert(
+                { cache_key: key, data: out as any, updated_at: new Date().toISOString() } as any,
+                { onConflict: "cache_key" },
+              );
+          } catch {
+            /* best effort */
+          }
+          return out;
+        } catch (e: any) {
+          if (db) return db.data;
+          return { ok: false, error: e?.message ?? "Ukjent feil" };
+        }
+      })();
+
+      weekInFlight.set(key, promise);
+      try {
+        return await promise;
+      } finally {
+        weekInFlight.delete(key);
+      }
+    }),
+  );
