@@ -6,6 +6,8 @@ import { getHomeySnapshot } from "@/lib/homey.functions";
 import { findDeviceFuzzy, type DeviceLike } from "@/lib/homey-match";
 import { getTollnesAlerts, type AlertsResult, type MetAlert } from "@/lib/lightning.functions";
 import { getNetatmoWeatherStation, type WeatherModule } from "@/lib/netatmo-weather.functions";
+import { getNetatmoOutdoorWeek } from "@/lib/netatmo-history";
+
 import { useUserLocation, UserLocationBar } from "@/hooks/use-user-location";
 import { useUvSun, uvLevel } from "@/hooks/use-uv-sun";
 import { usePerUserPersistedState } from "@/hooks/use-per-user-persisted-state";
