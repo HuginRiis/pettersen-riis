@@ -846,6 +846,10 @@ function KostholdRoute() {
             <TabsTrigger value="laktose" className="text-xs uppercase tracking-widest">
               Laktose
             </TabsTrigger>
+            <TabsTrigger value="sug" className="text-xs uppercase tracking-widest">
+              Sug
+            </TabsTrigger>
+
           </TabsList>
 
           {/* DAGBOK */}
