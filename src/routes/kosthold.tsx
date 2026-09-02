@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CravingsPanel } from "@/components/kosthold/CravingsPanel";
 import {
   Area,
   AreaChart,
@@ -830,7 +831,7 @@ function KostholdRoute() {
 
 
         <Tabs defaultValue="dag" className="w-full">
-          <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto">
+          <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto">
             <TabsTrigger value="dag" className="text-xs uppercase tracking-widest">
               Dagbok
             </TabsTrigger>
@@ -846,6 +847,10 @@ function KostholdRoute() {
             <TabsTrigger value="laktose" className="text-xs uppercase tracking-widest">
               Laktose
             </TabsTrigger>
+            <TabsTrigger value="sug" className="text-xs uppercase tracking-widest">
+              Sug
+            </TabsTrigger>
+
           </TabsList>
 
           {/* DAGBOK */}
@@ -1492,7 +1497,13 @@ function KostholdRoute() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* SUG */}
+          <TabsContent value="sug" className="space-y-4 mt-4">
+            <CravingsPanel />
+          </TabsContent>
         </Tabs>
+
       </div>
 
       {/* Måltid-dialog */}
