@@ -830,7 +830,7 @@ function KostholdRoute() {
 
 
         <Tabs defaultValue="dag" className="w-full">
-          <TabsList className="grid grid-cols-3 sm:grid-cols-5 w-full h-auto">
+          <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto">
             <TabsTrigger value="dag" className="text-xs uppercase tracking-widest">
               Dagbok
             </TabsTrigger>
