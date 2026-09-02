@@ -1496,7 +1496,13 @@ function KostholdRoute() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* SUG */}
+          <TabsContent value="sug" className="space-y-4 mt-4">
+            <CravingsPanel />
+          </TabsContent>
         </Tabs>
+
       </div>
 
       {/* Måltid-dialog */}
