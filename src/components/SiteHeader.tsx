@@ -60,7 +60,8 @@ type RoutePath =
   | "/stovsugeren"
   
   | "/roborock"
-  | "/ytelse"
+  | "/ytelse";
+
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
