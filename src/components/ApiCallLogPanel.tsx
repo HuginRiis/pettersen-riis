@@ -73,7 +73,6 @@ const SOURCE_LABELS: Record<string, string> = {
   netatmo: "Netatmo",
   tibber: "Tibber",
   met: "Met.no",
-  nrk: "NRK trafikk",
   spot: "Spotpris",
   lightning: "Lyn / radar",
   garbage: "Renovasjon",
@@ -84,7 +83,6 @@ const SOURCE_LABELS: Record<string, string> = {
   roborock: "Roborock",
   posten: "Posten",
   geoip: "GeoIP",
-  flights: "Fly · OpenSky/adsb.lol",
 
 };
 

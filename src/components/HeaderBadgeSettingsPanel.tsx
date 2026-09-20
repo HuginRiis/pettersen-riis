@@ -14,7 +14,6 @@ const BADGE_KEY_LABELS: Record<string, string> = {
   "push-today-count": "Push i dag",
   "lights-on-text": "Lys tent",
   "alarm-state": "Alarm-status",
-  "alerts-severity": "Farevarsler",
   "power-vs-yesterday-pct": "Strøm i dag vs i går",
   "mower-status": "Gressklipper-status",
   "garbage-next-pickups": "Neste søppeltømming",

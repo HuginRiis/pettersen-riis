@@ -174,10 +174,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
     } else if (source === "met") {
       const m = await import("@/lib/met-alerts.functions");
       await tryRun("getTelemarkAlerts", () => m.getTelemarkAlerts());
-    } else if (source === "nrk") {
-      const m = await import("@/lib/nrk-traffic");
-      await tryRun("getNrkTraffic", () => m.getNrkTraffic());
-    } else if (source === "spot") {
+} else if (source === "spot") {
       const m = await import("@/lib/spot-price");
       await tryRun("getSpotPrices", () => m.getSpotPrices());
     } else if (source === "lightning") {
@@ -186,15 +183,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
         m.getMetRadarSouthernNorway(),
       );
       await tryRun("getTollnesAlerts", () => m.getTollnesAlerts());
-    } else if (source === "flights") {
-      const m = await import("@/lib/flights.functions");
-      await tryRun("getNearbyFlights[tollnes]", () =>
-        m.getNearbyFlights({ data: { location: "tollnes" } }),
-      );
-      await tryRun("getNearbyFlights[hytta]", () =>
-        m.getNearbyFlights({ data: { location: "hytta" } }),
-      );
-    } else if (source === "open-meteo" || source === "air-quality" || source === "uv") {
+} else if (source === "open-meteo" || source === "air-quality" || source === "uv") {
 
 
       // Triggrer cache-oppvarmingen for Open-Meteo (pollen, luftkvalitet, UV).

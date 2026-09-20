@@ -12,8 +12,6 @@ import { HeaderBadgeSettingsPanel } from "@/components/HeaderBadgeSettingsPanel"
 import { FavoritesManagerPanel } from "@/components/FavoritesManagerPanel";
 import { LightScenesPanel } from "@/components/LightScenesPanel";
 import { FavoriteZonesPanel } from "@/components/FavoriteZonesPanel";
-import { MetAlertNotificationSettings } from "@/components/MetAlertNotificationSettings";
-import { NSMNotificationSettings } from "@/components/NSMNotificationSettings";
 import { LightIdleNotificationSettings } from "@/components/LightIdleNotificationSettings";
 import { UvNotificationSettings } from "@/components/UvNotificationSettings";
 import { AirQualityNotificationSettings } from "@/components/AirQualityNotificationSettings";
@@ -79,8 +77,6 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-scener", label: "Lys-scener", emoji: "🎬" },
   { id: "sec-scheduling", label: "Push-tidsplan", emoji: "⏰" },
   { id: "sec-tibber", label: "Tibber-cron", emoji: "⚡" },
-  { id: "sec-farevarsel", label: "Farevarsel", emoji: "⚠️" },
-  { id: "sec-nsm", label: "NSM Sikkerhet (cyber)", emoji: "🛡️" },
   { id: "sec-klima", label: "Klima — for varmt/kaldt", emoji: "🌡️" },
   { id: "sec-basseng", label: "Basseng — temp-endring", emoji: "🏊" },
   { id: "sec-basseng-auto", label: "Basseng — automatikk (stue/watt/varmepumpe)", emoji: "♨️" },
@@ -108,7 +104,6 @@ const TOC_ITEMS: { id: string; label: string; emoji: string }[] = [
   { id: "sec-garantiprefs", label: "Garanti pr bruker", emoji: "👥" },
   { id: "sec-abonnementer", label: "Abonnement", emoji: "🔔" },
   { id: "sec-abonnenter", label: "Enheter", emoji: "📱" },
-  { id: "sec-planter", label: "Planter & Trær", emoji: "🌿" },
   
   { id: "sec-sensor-dashboard", label: "Sensor-dashboard", emoji: "📡" },
   { id: "sec-homey-pause", label: "Homey API — pause", emoji: "🐦‍⬛" },
@@ -183,8 +178,6 @@ function PushSettingsPage() {
       <SettingsBox id="sec-scheduling" title="⏰ Push-tidsplan"><PushSchedulingSettings /></SettingsBox>
       <SettingsBox id="sec-tibber" title="⚡ Tibber-cron"><TibberCronStatusPanel /></SettingsBox>
       
-      <SettingsBox id="sec-farevarsel" title="⚠️ Vær farevarsel — av/på" accent="border-orange-500/40"><MetAlertNotificationSettings /></SettingsBox>
-      <SettingsBox id="sec-nsm" title="🛡️ NSM Sikkerhet — cybervarsler" accent="border-blue-500/40"><NSMNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-klima" title="🌡️ Klima — for varmt / for kaldt (Borgen & Hytta)"><ClimateNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-basseng" title="🏊 Basseng — varsel ved temperaturendring"><BassengNotificationSettings /></SettingsBox>
       <SettingsBox id="sec-basseng-auto" title="♨️ Basseng — automatikk (stue → bryter av + varmepumpe på)"><BassengAutomationSettings /></SettingsBox>
@@ -278,14 +271,6 @@ function PushSettingsPage() {
 
         <SettingsBox id="sec-abonnenter" title="📱 Enheter" inGrid><SubscribersListPanel /></SettingsBox>
 
-        <SettingsBox id="sec-planter" title="🌿 Planter & Trær" inGrid>
-          <p className="text-sm text-muted-foreground mb-3">
-            Per-plante varsler for vanning, gjødsling, sesong og Mi&nbsp;Flora sensorterskler administreres på Planter-siden.
-          </p>
-          <a href="/planter" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-border/60 text-xs hover:border-primary/60 hover:text-primary transition">
-            Åpne Planter & Trær →
-          </a>
-        </SettingsBox>
       </div>
     </PageShell>
   );

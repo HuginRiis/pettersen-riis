@@ -36,7 +36,6 @@ export const HEADER_BADGE_DEFS: { id: string; label: string }[] = [
   { id: "gardena_signal", label: "Gardena signalstyrke · meny: Gressklipper" },
   { id: "alarm_state", label: "Alarm-status · meny: Vakttårnet" },
   { id: "utgangsdoren_lock", label: "Utgangsdøren låst/åpen · meny: Vakttårnet" },
-  { id: "alerts_severity", label: "Farevarsler · meny: Varsler" },
   { id: "power_vs_yesterday", label: "Strøm i dag vs i går · meny: Strømkroniken" },
   { id: "steps_arne", label: "Skritt Arne · meny: Trening" },
   { id: "steps_rebekka", label: "Skritt Rebekka · meny: Trening" },

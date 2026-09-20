@@ -19,7 +19,7 @@ import { useMenuPrefs } from "@/hooks/use-menu-prefs";
 import { getNetatmoWeatherStation } from "@/lib/netatmo-weather.functions";
 import { getNetatmoLiveTrend } from "@/lib/netatmo-history";
 import { useLastGood } from "@/hooks/use-last-good";
-import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, WeatherDaysBadge, AlarmStateBadge, PowerVsYesterdayBadge, TrainingLast4WeeksBadge, UtgangsdorenLockBadge, StepsTodayBadge, MowerStatusBadge, BassengTempBadge, CurrentTempBadge, GarbageNextPickupBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge } from "@/components/HallBadges";
 import { useHeaderBadgeSettings, isBadgeVisible } from "@/hooks/use-header-badge-settings";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
 import { useWebFavoritesMenu } from "@/hooks/use-web-favorites-menu";
@@ -34,14 +34,11 @@ type RoutePath =
   | "/agenda"
   | "/push-varslinger"
   | "/var"
-  | "/varet-her"
   | "/pollen"
   | "/vakttarnet"
   | "/hytta"
   | "/trening"
-  | "/turer"
   | "/stromkroniken"
-  | "/varsler"
   | "/smarthus"
   | "/smart-dashbord"
   | "/iphone-app"
@@ -53,8 +50,6 @@ type RoutePath =
   | "/regnskap"
   | "/budsjett"
   | "/utlan"
-  | "/batterier"
-  | "/internett"
   | "/bruksanvisning"
   | "/linketur"
   | "/jaguar"
@@ -65,11 +60,8 @@ type RoutePath =
   | "/stovsugeren"
   
   | "/roborock"
-  | "/planter"
-  | "/fly"
-  | "/ytelse"
-  | "/ssb-statistikk"
-  | "/nsm-sikkerhet";
+  | "/ytelse";
+
 
 
 type NavLink = { to: RoutePath; label: string; public?: boolean };
@@ -86,8 +78,6 @@ const isAlwaysLast = (p: RoutePath) => ALWAYS_LAST_SET.has(p);
 const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number; className?: string; color?: string; fill?: string; strokeWidth?: number }>>> = {
   "/": Home,
   "/var": Sun,
-  "/varet-her": LocateFixed,
-  "/turer": Compass,
   "/agenda": CalendarDays,
   "/push-varslinger": BellRing,
   "/vakttarnet": Eye,
@@ -100,15 +90,12 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/regnskap": Wallet,
   "/budsjett": PiggyBank,
   "/utlan": PackageOpen,
-  "/batterier": BatteryCharging,
-  "/internett": Wifi,
   "/bruksanvisning": BookOpen,
   "/linketur": Gamepad2,
   "/jaguar": Car,
   "/kosthold": Salad,
   
   "/trening": Dumbbell,
-  "/varsler": AlertTriangle,
   "/steintavle": ScrollText,
   "/steintavle-2": ScrollText,
   "/skatte-utregningen": Coins,
@@ -116,12 +103,8 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
   "/stovsugeren": Bot,
   
   "/roborock": Bot,
-  "/planter": TreePine,
-  "/fly": Plane,
   "/ytelse": Gauge,
   "/iphone-app": Smartphone,
-  "/ssb-statistikk": BarChart3,
-  "/nsm-sikkerhet": Shield,
 };
 
 
@@ -129,8 +112,6 @@ const ROUTE_ICON: Partial<Record<RoutePath, React.ComponentType<{ size?: number;
 const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/": "#d4af37",
   "/var": "#fbbf24",
-  "/varet-her": "#38bdf8",
-  "/turer": "#34d399",
   "/agenda": "#f472b6",
   "/push-varslinger": "#fb923c",
   "/vakttarnet": "#22d3ee",
@@ -143,15 +124,12 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/regnskap": "#d4af37",
   "/budsjett": "#34d399",
   "/utlan": "#c084fc",
-  "/batterier": "#22c55e",
-  "/internett": "#22d3ee",
   "/bruksanvisning": "#e0b978",
   "/linketur": "#f472b6",
   "/jaguar": "#38bdf8",
   "/kosthold": "#4ade80",
   
   "/trening": "#ef4444",
-  "/varsler": "#dc2626",
   "/steintavle": "#cbd5e1",
   "/steintavle-2": "#94a3b8",
   "/skatte-utregningen": "#d4af37",
@@ -159,12 +137,8 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
   "/stovsugeren": "#38bdf8",
   
   "/roborock": "#a78bfa",
-  "/planter": "#22c55e",
-  "/fly": "#38bdf8",
   "/ytelse": "#22d3ee",
   "/iphone-app": "#60a5fa",
-  "/ssb-statistikk": "#f59e0b",
-  "/nsm-sikkerhet": "#3b82f6",
 };
 
 
@@ -173,9 +147,7 @@ const ROUTE_ICON_COLOR: Partial<Record<RoutePath, string>> = {
 const navLinks: NavLink[] = [
   { to: "/", label: "Hjem", public: true },
   { to: "/var", label: "Vær", public: true },
-  { to: "/varet-her", label: "Været her", public: true },
   { to: "/pollen", label: "Luftkvalitet", public: true },
-  { to: "/turer", label: "Ferden", public: true },
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
@@ -192,8 +164,6 @@ const navLinks: NavLink[] = [
   { to: "/regnskap", label: "Regnskap" },
   { to: "/budsjett", label: "Regnskap og budsjett" },
   { to: "/utlan", label: "Utlån & Lånt" },
-  { to: "/batterier", label: "Batterier i huset" },
-  { to: "/internett", label: "Internett-test" },
   { to: "/bruksanvisning", label: "Bruksanvisning" },
   { to: "/linketur", label: "Linketur" },
   { to: "/jaguar", label: "Jaguar" },
@@ -201,22 +171,16 @@ const navLinks: NavLink[] = [
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
-  { to: "/varsler", label: "Farevarsler", public: true },
-  { to: "/nsm-sikkerhet", label: "NSM Sikkerhet", public: true },
   
   { to: "/roborock", label: "Roborock" },
-  { to: "/planter", label: "Planter & Trær" },
-  { to: "/fly", label: "Fly i nærheten", public: true },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/iphone-app", label: "iPhone App" },
-  { to: "/ssb-statistikk", label: "Norges-statistikk" },
 ];
 
 const EXTRA_PAGE_TITLES: Record<string, string> = {
   "/varfavoritter": "Værfavoritter",
   "/varkart": "Værkart",
-  "/varet-her": "Været her",
 };
 
 function pageTitleForPath(pathname: string): string | null {
@@ -448,7 +412,6 @@ export function SiteHeader() {
           {l.to === "/gressklipper" && <>{showB("gardena_status") && <GardenaStatusBadge inline />}{showB("gardena_battery") && <GardenaBatteryBadge inline />}{showB("gardena_signal") && <GardenaSignalBadge inline />}</>}
           {l.to === "/stovsugeren" && <>{showB("roborock_hjemme_status") && <RoborockStatusBadge inline match="hjem" name="Hjemme" />}{showB("roborock_hytta_status") && <RoborockStatusBadge inline match="hytt" name="Hytta" />}</>}
           {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
-          {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
           {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
           {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline owner="arne" />}{showB("training_4w_rebekka") && <TrainingLast4WeeksBadge inline owner="rebekka" />}</>}
           {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}
@@ -635,7 +598,6 @@ export function SiteHeader() {
                   {l.to === "/gressklipper" && <>{showB("gardena_status") && <GardenaStatusBadge inline />}{showB("gardena_battery") && <GardenaBatteryBadge inline />}{showB("gardena_signal") && <GardenaSignalBadge inline />}</>}
                   {l.to === "/stovsugeren" && <>{showB("roborock_hjemme_status") && <RoborockStatusBadge inline match="hjem" name="Hjemme" />}{showB("roborock_hytta_status") && <RoborockStatusBadge inline match="hytt" name="Hytta" />}</>}
                   {l.to === "/vakttarnet" && <>{showB("alarm_state") && <AlarmStateBadge inline />}{showB("utgangsdoren_lock") && <UtgangsdorenLockBadge inline />}</>}
-                  {l.to === "/varsler" && showB("alerts_severity") && <AlertsSeverityBadge inline />}
                   {l.to === "/stromkroniken" && showB("power_vs_yesterday") && <PowerVsYesterdayBadge inline />}
                   {l.to === "/trening" && <>{showB("steps_arne") && <StepsTodayBadge inline owner="arne" />}{showB("steps_rebekka") && <StepsTodayBadge inline owner="rebekka" />}{showB("training_4w") && <TrainingLast4WeeksBadge inline owner="arne" />}{showB("training_4w_rebekka") && <TrainingLast4WeeksBadge inline owner="rebekka" />}</>}
                   {l.to === "/agenda" && showB("garbage_next") && <GarbageNextPickupBadge inline />}

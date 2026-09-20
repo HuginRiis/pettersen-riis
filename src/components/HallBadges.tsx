@@ -6,7 +6,6 @@ import { getUpcomingWeatherEvaluations } from "@/lib/weather-push.functions";
 import { getUpcomingUvEvaluations } from "@/lib/uv-push.functions";
 import { getGarbageOverview } from "@/lib/garbage-collection";
 import { getHomeySnapshot, getHomeAlarmStatus, getDoorsLocksSnapshot } from "@/lib/homey.functions";
-import { getTelemarkAlerts } from "@/lib/met-alerts.functions";
 // Strava-dashboard hentes via @/lib/strava-cache (15-min delt cache).
 import { getGarminOverview } from "@/lib/garmin.functions";
 import { useBadgeCache } from "@/lib/badge-cache";
@@ -373,42 +372,6 @@ export function AlarmStateBadge({ inline }: { inline?: boolean } = {}) {
   );
 }
 
-/** Antall aktive farevarsler etter alvorlighet (rød/oransje/gul). 0 vises ikke. */
-export function AlertsSeverityBadge({ inline }: { inline?: boolean } = {}) {
-  const counts = useBadgeCache<{ red: number; orange: number; yellow: number }>(
-    "alerts-severity",
-    async () => {
-      const r = await getTelemarkAlerts();
-      let red = 0, orange = 0, yellow = 0;
-      for (const a of r.alerts ?? []) {
-        if (a.riskMatrixColor === "Red") red++;
-        else if (a.riskMatrixColor === "Orange") orange++;
-        else if (a.riskMatrixColor === "Yellow") yellow++;
-      }
-      return { red, orange, yellow };
-    },
-    { ttlMs: 10 * 60_000 },
-  );
-  if (!counts) return null;
-  const items: Array<{ n: number; cls: string; title: string }> = [];
-  if (counts.red > 0) items.push({ n: counts.red, cls: "bg-destructive/30 text-destructive border-destructive/50", title: "Røde varsler" });
-  if (counts.orange > 0) items.push({ n: counts.orange, cls: "bg-orange-500/25 text-orange-300 border-orange-500/50", title: "Oransje varsler" });
-  if (counts.yellow > 0) items.push({ n: counts.yellow, cls: "bg-yellow-500/25 text-yellow-300 border-yellow-500/50", title: "Gule varsler" });
-  if (items.length === 0) return null;
-  return (
-    <span className={inline ? "ml-1 inline-flex items-center gap-0.5" : "absolute top-2 right-2 z-10 inline-flex items-center gap-0.5"}>
-      {items.map((it, i) => (
-        <span
-          key={i}
-          title={`${it.n} ${it.title}`}
-          className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold inline-flex items-center justify-center border ${it.cls}`}
-        >
-          {it.n}
-        </span>
-      ))}
-    </span>
-  );
-}
 
 /** Strømforbruk i dag vs i går (Borgen + Hytta), prosent endring. */
 export function PowerVsYesterdayBadge({ inline }: { inline?: boolean } = {}) {
