@@ -21,9 +21,7 @@ export const MENU_VISIBILITY_KEY = "menu_visibility";
 export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   { to: "/", label: "Hjem" },
   { to: "/var", label: "Vær" },
-  { to: "/varet-her", label: "Været her" },
   { to: "/pollen", label: "Luftkvalitet" },
-  { to: "/turer", label: "Ferden" },
   { to: "/agenda", label: "Søppel, bursdager og meldinger" },
   { to: "/push-varslinger", label: "Innstillinger" },
   { to: "/vakttarnet", label: "Vakttårnet" },
@@ -41,17 +39,12 @@ export const MENU_LINK_DEFS: { to: string; label: string }[] = [
   
   { to: "/skatte-utregningen", label: "Skatte utregningen" },
   { to: "/trening", label: "Trening" },
-  { to: "/varsler", label: "Farevarsler" },
   
   { to: "/roborock", label: "Roborock" },
-  { to: "/planter", label: "Planter & Trær" },
-  { to: "/fly", label: "Fly i nærheten" },
   { to: "/steintavle", label: "Steintavle" },
   { to: "/steintavle-2", label: "Steintavle 2" },
   { to: "/iphone-app", label: "iPhone App" },
   { to: "/varfavoritter", label: "Værfavoritter" },
-  { to: "/nsm-sikkerhet", label: "NSM sikkerhet" },
-  { to: "/ssb-statistikk", label: "SSB statistikk" },
 ];
 
 const DEFAULT_LINK_STATE: MenuLinkState = { enabled: true, users: [] };
