@@ -174,10 +174,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
     } else if (source === "met") {
       const m = await import("@/lib/met-alerts.functions");
       await tryRun("getTelemarkAlerts", () => m.getTelemarkAlerts());
-    } else if (source === "nrk") {
-      const m = await import("@/lib/nrk-traffic");
-      await tryRun("getNrkTraffic", () => m.getNrkTraffic());
-    } else if (source === "spot") {
+} else if (source === "spot") {
       const m = await import("@/lib/spot-price");
       await tryRun("getSpotPrices", () => m.getSpotPrices());
     } else if (source === "lightning") {
