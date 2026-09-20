@@ -34,13 +34,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     description: "Pollenvarsel for Tollnes med dag- og ukeprognose.",
     keywords: ["pollen", "bjørk", "gress", "or", "hassel", "allergi"],
   },
-  {
-    title: "Met-alerts / Farevarsler",
-    path: "/varsler",
-    section: "Vær",
-    description: "Met.no farevarsler med kart over Norge.",
-    keywords: ["farevarsel", "met", "varsel", "obs", "uvær", "storm", "kart"],
-  },
   // Hytta og turer
   {
     title: "Hytta",
@@ -48,13 +41,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     section: "Hytta",
     description: "Hytta i Flesberg — aurora, vær, sjekkliste, Indre Sal.",
     keywords: ["hytta", "flesberg", "aurora", "nordlys", "sjekkliste", "blefjell"],
-  },
-  {
-    title: "Turer",
-    path: "/turer",
-    section: "Aktivitet",
-    description: "Strava-turer, kart over løp og sykling.",
-    keywords: ["turer", "strava", "løp", "sykling", "kart", "aktiviteter"],
   },
   {
     title: "Trening / Garmin",
@@ -100,13 +86,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     keywords: ["roborock", "mqtt", "debug", "støvsuger"],
   },
   {
-    title: "Planter",
-    path: "/planter",
-    section: "Hjemmet",
-    description: "Plante-database med vanning, stell, giftighet og fakta.",
-    keywords: ["planter", "blomster", "tre", "vanning", "stell", "giftig", "spiselig"],
-  },
-  {
     title: "Strøm / Tibber",
     path: "/stromkroniken",
     section: "Økonomi",
@@ -133,20 +112,6 @@ export const SEARCH_INDEX: SearchEntry[] = [
     section: "Hjemmet",
     description: "Ting jeg har lånt bort eller lånt inn — med bilde og påminnelse.",
     keywords: ["utlån", "lånt", "låne", "lån", "bok", "verktøy", "påminnelse"],
-  },
-  {
-    title: "Batterier i huset",
-    path: "/batterier",
-    section: "Hjemmet",
-    description: "Alle batteri-nivåer fra Homey, Netatmo og Gardena med varsling.",
-    keywords: ["batteri", "batterier", "batteries", "battery", "homey", "netatmo", "gardena", "lavt"],
-  },
-  {
-    title: "Internett-test",
-    path: "/internett",
-    section: "Hjemmet",
-    description: "Mål hastighet, ping, jitter, pakketap og finn ut hva som gjør nettet tregt.",
-    keywords: ["internett", "nett", "wifi", "hastighet", "speedtest", "ping", "jitter", "båndbredde", "treg", "fiber", "mbps", "latens"],
   },
   {
     title: "Bruksanvisning",
