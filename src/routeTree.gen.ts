@@ -10,21 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as YtelseRouteImport } from './routes/ytelse'
-import { Route as VarslerRouteImport } from './routes/varsler'
 import { Route as VarmeRouteImport } from './routes/varme'
 import { Route as VarkartRouteImport } from './routes/varkart'
 import { Route as VarfavoritterRouteImport } from './routes/varfavoritter'
-import { Route as VaretHerRouteImport } from './routes/varet-her'
 import { Route as VarRouteImport } from './routes/var'
 import { Route as VakttarnetRouteImport } from './routes/vakttarnet'
 import { Route as UtlanRouteImport } from './routes/utlan'
-import { Route as TurerRouteImport } from './routes/turer'
 import { Route as TreningRouteImport } from './routes/trening'
 import { Route as StromkronikenRouteImport } from './routes/stromkroniken'
 import { Route as StovsugerenRouteImport } from './routes/stovsugeren'
 import { Route as Steintavle2RouteImport } from './routes/steintavle-2'
 import { Route as SteintavleRouteImport } from './routes/steintavle'
-import { Route as SsbStatistikkRouteImport } from './routes/ssb-statistikk'
 import { Route as SmarthusRouteImport } from './routes/smarthus'
 import { Route as SmartDashbordRouteImport } from './routes/smart-dashbord'
 import { Route as SkatteUtregningenRouteImport } from './routes/skatte-utregningen'
@@ -32,21 +28,16 @@ import { Route as RoborockRouteImport } from './routes/roborock'
 import { Route as RegnskapRouteImport } from './routes/regnskap'
 import { Route as PushVarslingerRouteImport } from './routes/push-varslinger'
 import { Route as PollenRouteImport } from './routes/pollen'
-import { Route as PlanterRouteImport } from './routes/planter'
-import { Route as NsmSikkerhetRouteImport } from './routes/nsm-sikkerhet'
 import { Route as LysRouteImport } from './routes/lys'
 import { Route as LinketurRouteImport } from './routes/linketur'
 import { Route as KvitteringerRouteImport } from './routes/kvitteringer'
 import { Route as KostholdRouteImport } from './routes/kosthold'
 import { Route as JaguarRouteImport } from './routes/jaguar'
 import { Route as IphoneAppRouteImport } from './routes/iphone-app'
-import { Route as InternettRouteImport } from './routes/internett'
 import { Route as HyttaRouteImport } from './routes/hytta'
 import { Route as GressklipperRouteImport } from './routes/gressklipper'
-import { Route as FlyRouteImport } from './routes/fly'
 import { Route as BudsjettRouteImport } from './routes/budsjett'
 import { Route as BruksanvisningRouteImport } from './routes/bruksanvisning'
-import { Route as BatterierRouteImport } from './routes/batterier'
 import { Route as AgendaRouteImport } from './routes/agenda'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
@@ -60,7 +51,6 @@ import { Route as ApiPublicHooksSnapshotTibberDailyRouteImport } from './routes/
 import { Route as ApiPublicHooksSnapshotPulseRouteImport } from './routes/api.public.hooks.snapshot-pulse'
 import { Route as ApiPublicHooksRadonPollRouteImport } from './routes/api/public/hooks/radon-poll'
 import { Route as ApiPublicHooksOpenMeteoWarmRouteImport } from './routes/api/public/hooks/open-meteo-warm'
-import { Route as ApiPublicHooksNsmPollRouteImport } from './routes/api/public/hooks/nsm-poll'
 import { Route as ApiPublicHooksNetatmoClimateRefreshRouteImport } from './routes/api/public/hooks/netatmo-climate-refresh'
 import { Route as ApiPublicHooksHomeySensorPollRouteImport } from './routes/api/public/hooks/homey-sensor-poll'
 import { Route as ApiPublicHooksGardenaPollRouteImport } from './routes/api/public/hooks/gardena-poll'
@@ -73,11 +63,6 @@ import { Route as ApiPublicHooksAgendaPushRouteImport } from './routes/api.publi
 const YtelseRoute = YtelseRouteImport.update({
   id: '/ytelse',
   path: '/ytelse',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VarslerRoute = VarslerRouteImport.update({
-  id: '/varsler',
-  path: '/varsler',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VarmeRoute = VarmeRouteImport.update({
@@ -95,11 +80,6 @@ const VarfavoritterRoute = VarfavoritterRouteImport.update({
   path: '/varfavoritter',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VaretHerRoute = VaretHerRouteImport.update({
-  id: '/varet-her',
-  path: '/varet-her',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const VarRoute = VarRouteImport.update({
   id: '/var',
   path: '/var',
@@ -113,11 +93,6 @@ const VakttarnetRoute = VakttarnetRouteImport.update({
 const UtlanRoute = UtlanRouteImport.update({
   id: '/utlan',
   path: '/utlan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TurerRoute = TurerRouteImport.update({
-  id: '/turer',
-  path: '/turer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TreningRoute = TreningRouteImport.update({
@@ -143,11 +118,6 @@ const Steintavle2Route = Steintavle2RouteImport.update({
 const SteintavleRoute = SteintavleRouteImport.update({
   id: '/steintavle',
   path: '/steintavle',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SsbStatistikkRoute = SsbStatistikkRouteImport.update({
-  id: '/ssb-statistikk',
-  path: '/ssb-statistikk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SmarthusRoute = SmarthusRouteImport.update({
@@ -185,16 +155,6 @@ const PollenRoute = PollenRouteImport.update({
   path: '/pollen',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PlanterRoute = PlanterRouteImport.update({
-  id: '/planter',
-  path: '/planter',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NsmSikkerhetRoute = NsmSikkerhetRouteImport.update({
-  id: '/nsm-sikkerhet',
-  path: '/nsm-sikkerhet',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LysRoute = LysRouteImport.update({
   id: '/lys',
   path: '/lys',
@@ -225,11 +185,6 @@ const IphoneAppRoute = IphoneAppRouteImport.update({
   path: '/iphone-app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InternettRoute = InternettRouteImport.update({
-  id: '/internett',
-  path: '/internett',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const HyttaRoute = HyttaRouteImport.update({
   id: '/hytta',
   path: '/hytta',
@@ -240,11 +195,6 @@ const GressklipperRoute = GressklipperRouteImport.update({
   path: '/gressklipper',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FlyRoute = FlyRouteImport.update({
-  id: '/fly',
-  path: '/fly',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BudsjettRoute = BudsjettRouteImport.update({
   id: '/budsjett',
   path: '/budsjett',
@@ -253,11 +203,6 @@ const BudsjettRoute = BudsjettRouteImport.update({
 const BruksanvisningRoute = BruksanvisningRouteImport.update({
   id: '/bruksanvisning',
   path: '/bruksanvisning',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BatterierRoute = BatterierRouteImport.update({
-  id: '/batterier',
-  path: '/batterier',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgendaRoute = AgendaRouteImport.update({
@@ -329,11 +274,6 @@ const ApiPublicHooksOpenMeteoWarmRoute =
     path: '/api/public/hooks/open-meteo-warm',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksNsmPollRoute = ApiPublicHooksNsmPollRouteImport.update({
-  id: '/api/public/hooks/nsm-poll',
-  path: '/api/public/hooks/nsm-poll',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksNetatmoClimateRefreshRoute =
   ApiPublicHooksNetatmoClimateRefreshRouteImport.update({
     id: '/api/public/hooks/netatmo-climate-refresh',
@@ -384,21 +324,16 @@ const ApiPublicHooksAgendaPushRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/batterier': typeof BatterierRoute
   '/bruksanvisning': typeof BruksanvisningRoute
   '/budsjett': typeof BudsjettRoute
-  '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
-  '/internett': typeof InternettRoute
   '/iphone-app': typeof IphoneAppRoute
   '/jaguar': typeof JaguarRoute
   '/kosthold': typeof KostholdRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
-  '/nsm-sikkerhet': typeof NsmSikkerhetRoute
-  '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/regnskap': typeof RegnskapRoute
@@ -406,21 +341,17 @@ export interface FileRoutesByFullPath {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
-  '/ssb-statistikk': typeof SsbStatistikkRoute
   '/steintavle': typeof SteintavleRoute
   '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
-  '/turer': typeof TurerRoute
   '/utlan': typeof UtlanRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
-  '/varet-her': typeof VaretHerRoute
   '/varfavoritter': typeof VarfavoritterRoute
   '/varkart': typeof VarkartRoute
   '/varme': typeof VarmeRoute
-  '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
@@ -435,7 +366,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
-  '/api/public/hooks/nsm-poll': typeof ApiPublicHooksNsmPollRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -446,21 +376,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/batterier': typeof BatterierRoute
   '/bruksanvisning': typeof BruksanvisningRoute
   '/budsjett': typeof BudsjettRoute
-  '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
-  '/internett': typeof InternettRoute
   '/iphone-app': typeof IphoneAppRoute
   '/jaguar': typeof JaguarRoute
   '/kosthold': typeof KostholdRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
-  '/nsm-sikkerhet': typeof NsmSikkerhetRoute
-  '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/regnskap': typeof RegnskapRoute
@@ -468,21 +393,17 @@ export interface FileRoutesByTo {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
-  '/ssb-statistikk': typeof SsbStatistikkRoute
   '/steintavle': typeof SteintavleRoute
   '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
-  '/turer': typeof TurerRoute
   '/utlan': typeof UtlanRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
-  '/varet-her': typeof VaretHerRoute
   '/varfavoritter': typeof VarfavoritterRoute
   '/varkart': typeof VarkartRoute
   '/varme': typeof VarmeRoute
-  '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
@@ -497,7 +418,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
-  '/api/public/hooks/nsm-poll': typeof ApiPublicHooksNsmPollRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -509,21 +429,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agenda': typeof AgendaRoute
-  '/batterier': typeof BatterierRoute
   '/bruksanvisning': typeof BruksanvisningRoute
   '/budsjett': typeof BudsjettRoute
-  '/fly': typeof FlyRoute
   '/gressklipper': typeof GressklipperRoute
   '/hytta': typeof HyttaRoute
-  '/internett': typeof InternettRoute
   '/iphone-app': typeof IphoneAppRoute
   '/jaguar': typeof JaguarRoute
   '/kosthold': typeof KostholdRoute
   '/kvitteringer': typeof KvitteringerRoute
   '/linketur': typeof LinketurRoute
   '/lys': typeof LysRoute
-  '/nsm-sikkerhet': typeof NsmSikkerhetRoute
-  '/planter': typeof PlanterRoute
   '/pollen': typeof PollenRoute
   '/push-varslinger': typeof PushVarslingerRoute
   '/regnskap': typeof RegnskapRoute
@@ -531,21 +446,17 @@ export interface FileRoutesById {
   '/skatte-utregningen': typeof SkatteUtregningenRoute
   '/smart-dashbord': typeof SmartDashbordRoute
   '/smarthus': typeof SmarthusRoute
-  '/ssb-statistikk': typeof SsbStatistikkRoute
   '/steintavle': typeof SteintavleRoute
   '/steintavle-2': typeof Steintavle2Route
   '/stovsugeren': typeof StovsugerenRoute
   '/stromkroniken': typeof StromkronikenRoute
   '/trening': typeof TreningRoute
-  '/turer': typeof TurerRoute
   '/utlan': typeof UtlanRoute
   '/vakttarnet': typeof VakttarnetRoute
   '/var': typeof VarRoute
-  '/varet-her': typeof VaretHerRoute
   '/varfavoritter': typeof VarfavoritterRoute
   '/varkart': typeof VarkartRoute
   '/varme': typeof VarmeRoute
-  '/varsler': typeof VarslerRoute
   '/ytelse': typeof YtelseRoute
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
@@ -560,7 +471,6 @@ export interface FileRoutesById {
   '/api/public/hooks/gardena-poll': typeof ApiPublicHooksGardenaPollRoute
   '/api/public/hooks/homey-sensor-poll': typeof ApiPublicHooksHomeySensorPollRoute
   '/api/public/hooks/netatmo-climate-refresh': typeof ApiPublicHooksNetatmoClimateRefreshRoute
-  '/api/public/hooks/nsm-poll': typeof ApiPublicHooksNsmPollRoute
   '/api/public/hooks/open-meteo-warm': typeof ApiPublicHooksOpenMeteoWarmRoute
   '/api/public/hooks/radon-poll': typeof ApiPublicHooksRadonPollRoute
   '/api/public/hooks/snapshot-pulse': typeof ApiPublicHooksSnapshotPulseRoute
@@ -573,21 +483,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agenda'
-    | '/batterier'
     | '/bruksanvisning'
     | '/budsjett'
-    | '/fly'
     | '/gressklipper'
     | '/hytta'
-    | '/internett'
     | '/iphone-app'
     | '/jaguar'
     | '/kosthold'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
-    | '/nsm-sikkerhet'
-    | '/planter'
     | '/pollen'
     | '/push-varslinger'
     | '/regnskap'
@@ -595,21 +500,17 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smart-dashbord'
     | '/smarthus'
-    | '/ssb-statistikk'
     | '/steintavle'
     | '/steintavle-2'
     | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
-    | '/turer'
     | '/utlan'
     | '/vakttarnet'
     | '/var'
-    | '/varet-her'
     | '/varfavoritter'
     | '/varkart'
     | '/varme'
-    | '/varsler'
     | '/ytelse'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
@@ -624,7 +525,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
-    | '/api/public/hooks/nsm-poll'
     | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -635,21 +535,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agenda'
-    | '/batterier'
     | '/bruksanvisning'
     | '/budsjett'
-    | '/fly'
     | '/gressklipper'
     | '/hytta'
-    | '/internett'
     | '/iphone-app'
     | '/jaguar'
     | '/kosthold'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
-    | '/nsm-sikkerhet'
-    | '/planter'
     | '/pollen'
     | '/push-varslinger'
     | '/regnskap'
@@ -657,21 +552,17 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smart-dashbord'
     | '/smarthus'
-    | '/ssb-statistikk'
     | '/steintavle'
     | '/steintavle-2'
     | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
-    | '/turer'
     | '/utlan'
     | '/vakttarnet'
     | '/var'
-    | '/varet-her'
     | '/varfavoritter'
     | '/varkart'
     | '/varme'
-    | '/varsler'
     | '/ytelse'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
@@ -686,7 +577,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
-    | '/api/public/hooks/nsm-poll'
     | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -697,21 +587,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agenda'
-    | '/batterier'
     | '/bruksanvisning'
     | '/budsjett'
-    | '/fly'
     | '/gressklipper'
     | '/hytta'
-    | '/internett'
     | '/iphone-app'
     | '/jaguar'
     | '/kosthold'
     | '/kvitteringer'
     | '/linketur'
     | '/lys'
-    | '/nsm-sikkerhet'
-    | '/planter'
     | '/pollen'
     | '/push-varslinger'
     | '/regnskap'
@@ -719,21 +604,17 @@ export interface FileRouteTypes {
     | '/skatte-utregningen'
     | '/smart-dashbord'
     | '/smarthus'
-    | '/ssb-statistikk'
     | '/steintavle'
     | '/steintavle-2'
     | '/stovsugeren'
     | '/stromkroniken'
     | '/trening'
-    | '/turer'
     | '/utlan'
     | '/vakttarnet'
     | '/var'
-    | '/varet-her'
     | '/varfavoritter'
     | '/varkart'
     | '/varme'
-    | '/varsler'
     | '/ytelse'
     | '/hooks/log-pulse'
     | '/api/homey/callback'
@@ -748,7 +629,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/gardena-poll'
     | '/api/public/hooks/homey-sensor-poll'
     | '/api/public/hooks/netatmo-climate-refresh'
-    | '/api/public/hooks/nsm-poll'
     | '/api/public/hooks/open-meteo-warm'
     | '/api/public/hooks/radon-poll'
     | '/api/public/hooks/snapshot-pulse'
@@ -760,21 +640,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgendaRoute: typeof AgendaRoute
-  BatterierRoute: typeof BatterierRoute
   BruksanvisningRoute: typeof BruksanvisningRoute
   BudsjettRoute: typeof BudsjettRoute
-  FlyRoute: typeof FlyRoute
   GressklipperRoute: typeof GressklipperRoute
   HyttaRoute: typeof HyttaRoute
-  InternettRoute: typeof InternettRoute
   IphoneAppRoute: typeof IphoneAppRoute
   JaguarRoute: typeof JaguarRoute
   KostholdRoute: typeof KostholdRoute
   KvitteringerRoute: typeof KvitteringerRoute
   LinketurRoute: typeof LinketurRoute
   LysRoute: typeof LysRoute
-  NsmSikkerhetRoute: typeof NsmSikkerhetRoute
-  PlanterRoute: typeof PlanterRoute
   PollenRoute: typeof PollenRoute
   PushVarslingerRoute: typeof PushVarslingerRoute
   RegnskapRoute: typeof RegnskapRoute
@@ -782,21 +657,17 @@ export interface RootRouteChildren {
   SkatteUtregningenRoute: typeof SkatteUtregningenRoute
   SmartDashbordRoute: typeof SmartDashbordRoute
   SmarthusRoute: typeof SmarthusRoute
-  SsbStatistikkRoute: typeof SsbStatistikkRoute
   SteintavleRoute: typeof SteintavleRoute
   Steintavle2Route: typeof Steintavle2Route
   StovsugerenRoute: typeof StovsugerenRoute
   StromkronikenRoute: typeof StromkronikenRoute
   TreningRoute: typeof TreningRoute
-  TurerRoute: typeof TurerRoute
   UtlanRoute: typeof UtlanRoute
   VakttarnetRoute: typeof VakttarnetRoute
   VarRoute: typeof VarRoute
-  VaretHerRoute: typeof VaretHerRoute
   VarfavoritterRoute: typeof VarfavoritterRoute
   VarkartRoute: typeof VarkartRoute
   VarmeRoute: typeof VarmeRoute
-  VarslerRoute: typeof VarslerRoute
   YtelseRoute: typeof YtelseRoute
   HooksLogPulseRoute: typeof HooksLogPulseRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
@@ -811,7 +682,6 @@ export interface RootRouteChildren {
   ApiPublicHooksGardenaPollRoute: typeof ApiPublicHooksGardenaPollRoute
   ApiPublicHooksHomeySensorPollRoute: typeof ApiPublicHooksHomeySensorPollRoute
   ApiPublicHooksNetatmoClimateRefreshRoute: typeof ApiPublicHooksNetatmoClimateRefreshRoute
-  ApiPublicHooksNsmPollRoute: typeof ApiPublicHooksNsmPollRoute
   ApiPublicHooksOpenMeteoWarmRoute: typeof ApiPublicHooksOpenMeteoWarmRoute
   ApiPublicHooksRadonPollRoute: typeof ApiPublicHooksRadonPollRoute
   ApiPublicHooksSnapshotPulseRoute: typeof ApiPublicHooksSnapshotPulseRoute
@@ -827,13 +697,6 @@ declare module '@tanstack/react-router' {
       path: '/ytelse'
       fullPath: '/ytelse'
       preLoaderRoute: typeof YtelseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/varsler': {
-      id: '/varsler'
-      path: '/varsler'
-      fullPath: '/varsler'
-      preLoaderRoute: typeof VarslerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/varme': {
@@ -857,13 +720,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VarfavoritterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/varet-her': {
-      id: '/varet-her'
-      path: '/varet-her'
-      fullPath: '/varet-her'
-      preLoaderRoute: typeof VaretHerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/var': {
       id: '/var'
       path: '/var'
@@ -883,13 +739,6 @@ declare module '@tanstack/react-router' {
       path: '/utlan'
       fullPath: '/utlan'
       preLoaderRoute: typeof UtlanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/turer': {
-      id: '/turer'
-      path: '/turer'
-      fullPath: '/turer'
-      preLoaderRoute: typeof TurerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trening': {
@@ -925,13 +774,6 @@ declare module '@tanstack/react-router' {
       path: '/steintavle'
       fullPath: '/steintavle'
       preLoaderRoute: typeof SteintavleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ssb-statistikk': {
-      id: '/ssb-statistikk'
-      path: '/ssb-statistikk'
-      fullPath: '/ssb-statistikk'
-      preLoaderRoute: typeof SsbStatistikkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/smarthus': {
@@ -983,20 +825,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PollenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/planter': {
-      id: '/planter'
-      path: '/planter'
-      fullPath: '/planter'
-      preLoaderRoute: typeof PlanterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/nsm-sikkerhet': {
-      id: '/nsm-sikkerhet'
-      path: '/nsm-sikkerhet'
-      fullPath: '/nsm-sikkerhet'
-      preLoaderRoute: typeof NsmSikkerhetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lys': {
       id: '/lys'
       path: '/lys'
@@ -1039,13 +867,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IphoneAppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/internett': {
-      id: '/internett'
-      path: '/internett'
-      fullPath: '/internett'
-      preLoaderRoute: typeof InternettRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/hytta': {
       id: '/hytta'
       path: '/hytta'
@@ -1060,13 +881,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GressklipperRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/fly': {
-      id: '/fly'
-      path: '/fly'
-      fullPath: '/fly'
-      preLoaderRoute: typeof FlyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/budsjett': {
       id: '/budsjett'
       path: '/budsjett'
@@ -1079,13 +893,6 @@ declare module '@tanstack/react-router' {
       path: '/bruksanvisning'
       fullPath: '/bruksanvisning'
       preLoaderRoute: typeof BruksanvisningRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/batterier': {
-      id: '/batterier'
-      path: '/batterier'
-      fullPath: '/batterier'
-      preLoaderRoute: typeof BatterierRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agenda': {
@@ -1179,13 +986,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOpenMeteoWarmRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/nsm-poll': {
-      id: '/api/public/hooks/nsm-poll'
-      path: '/api/public/hooks/nsm-poll'
-      fullPath: '/api/public/hooks/nsm-poll'
-      preLoaderRoute: typeof ApiPublicHooksNsmPollRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/netatmo-climate-refresh': {
       id: '/api/public/hooks/netatmo-climate-refresh'
       path: '/api/public/hooks/netatmo-climate-refresh'
@@ -1248,21 +1048,16 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgendaRoute: AgendaRoute,
-  BatterierRoute: BatterierRoute,
   BruksanvisningRoute: BruksanvisningRoute,
   BudsjettRoute: BudsjettRoute,
-  FlyRoute: FlyRoute,
   GressklipperRoute: GressklipperRoute,
   HyttaRoute: HyttaRoute,
-  InternettRoute: InternettRoute,
   IphoneAppRoute: IphoneAppRoute,
   JaguarRoute: JaguarRoute,
   KostholdRoute: KostholdRoute,
   KvitteringerRoute: KvitteringerRoute,
   LinketurRoute: LinketurRoute,
   LysRoute: LysRoute,
-  NsmSikkerhetRoute: NsmSikkerhetRoute,
-  PlanterRoute: PlanterRoute,
   PollenRoute: PollenRoute,
   PushVarslingerRoute: PushVarslingerRoute,
   RegnskapRoute: RegnskapRoute,
@@ -1270,21 +1065,17 @@ const rootRouteChildren: RootRouteChildren = {
   SkatteUtregningenRoute: SkatteUtregningenRoute,
   SmartDashbordRoute: SmartDashbordRoute,
   SmarthusRoute: SmarthusRoute,
-  SsbStatistikkRoute: SsbStatistikkRoute,
   SteintavleRoute: SteintavleRoute,
   Steintavle2Route: Steintavle2Route,
   StovsugerenRoute: StovsugerenRoute,
   StromkronikenRoute: StromkronikenRoute,
   TreningRoute: TreningRoute,
-  TurerRoute: TurerRoute,
   UtlanRoute: UtlanRoute,
   VakttarnetRoute: VakttarnetRoute,
   VarRoute: VarRoute,
-  VaretHerRoute: VaretHerRoute,
   VarfavoritterRoute: VarfavoritterRoute,
   VarkartRoute: VarkartRoute,
   VarmeRoute: VarmeRoute,
-  VarslerRoute: VarslerRoute,
   YtelseRoute: YtelseRoute,
   HooksLogPulseRoute: HooksLogPulseRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
@@ -1302,7 +1093,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksHomeySensorPollRoute: ApiPublicHooksHomeySensorPollRoute,
   ApiPublicHooksNetatmoClimateRefreshRoute:
     ApiPublicHooksNetatmoClimateRefreshRoute,
-  ApiPublicHooksNsmPollRoute: ApiPublicHooksNsmPollRoute,
   ApiPublicHooksOpenMeteoWarmRoute: ApiPublicHooksOpenMeteoWarmRoute,
   ApiPublicHooksRadonPollRoute: ApiPublicHooksRadonPollRoute,
   ApiPublicHooksSnapshotPulseRoute: ApiPublicHooksSnapshotPulseRoute,
