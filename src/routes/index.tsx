@@ -30,7 +30,7 @@ import { MaesterCounsel } from "@/components/MaesterCounsel";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { BirthdaysOverview } from "@/components/BirthdaysOverview";
 import { UpcomingHolidays } from "@/components/UpcomingHolidays";
-import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, MowerStatusBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, AlarmStateBadge, UtgangsdorenLockBadge, AlertsSeverityBadge, PowerVsYesterdayBadge, StepsTodayBadge, TrainingLast4WeeksBadge, GarbageNextPickupBadge, CurrentTempBadge, WeatherDaysBadge } from "@/components/HallBadges";
+import { PushTodayBadge, LightsOnBadge, TomorrowWeatherBadge, MowerStatusBadge, GardenaStatusBadge, GardenaBatteryBadge, GardenaSignalBadge, RoborockStatusBadge, AlarmStateBadge, UtgangsdorenLockBadge, PowerVsYesterdayBadge, StepsTodayBadge, TrainingLast4WeeksBadge, GarbageNextPickupBadge, CurrentTempBadge, WeatherDaysBadge } from "@/components/HallBadges";
 import { useMenuVisibility, isMenuLinkVisible } from "@/hooks/use-menu-visibility";
 import { useCurrentWho } from "@/hooks/use-current-who";
 
