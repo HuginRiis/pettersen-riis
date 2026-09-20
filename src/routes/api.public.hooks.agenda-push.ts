@@ -98,13 +98,6 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[tibber-push] failed", err);
           }
-          let metAlerts = { checked: 0, sent: 0, errors: 0, skipped: 0 };
-          try {
-            const mmod = await import("@/lib/met-alert-push.server");
-            metAlerts = await mmod.processMetAlertNotifications();
-          } catch (err) {
-            console.error("[met-alert-push] failed", err);
-          }
           let mailDelivery: { checked: number; sent: number; errors: number; skipped: number | string } = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
             // Posten API: kjør kun 2 ganger i timen (minutt 00 og 30, Oslo-tid).
@@ -192,13 +185,6 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[garmin-push] failed", err);
           }
-          let plants = { checked: 0, sent: 0, errors: 0, skipped: 0 };
-          try {
-            const pmod = await import("@/lib/plants-push.server");
-            plants = await pmod.processPlantsNotifications();
-          } catch (err) {
-            console.error("[plants-push] failed", err);
-          }
           let garminThresholds = { checked: 0, sent: 0, errors: 0, skipped: 0 };
           try {
             const gtmod = await import("@/lib/garmin-thresholds.server");
@@ -227,13 +213,6 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[slow-page-push] failed", err);
           }
-          let flights = { checked: 0, sent: 0, errors: 0, skipped: 0 };
-          try {
-            const fmod = await import("@/lib/flights-push.server");
-            flights = await fmod.processFlightNotifications();
-          } catch (err) {
-            console.error("[flights-push] failed", err);
-          }
           let loans = { checked: 0, sent: 0, errors: 0 };
           try {
             const lnmod = await import("@/lib/loans-push.server");
@@ -241,14 +220,7 @@ export const Route = createFileRoute("/api/public/hooks/agenda-push")({
           } catch (err) {
             console.error("[loans-push] failed", err);
           }
-          let batteries = { checked: 0, sent: 0, errors: 0, skipped: 0, low: 0 };
-          try {
-            const bmod = await import("@/lib/batteries.server");
-            batteries = await bmod.processBatteryNotifications();
-          } catch (err) {
-            console.error("[batteries-push] failed", err);
-          }
-          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, weatherSummary, lightIdle, tibber, metAlerts, mailDelivery, garmin, garminPush, garminThresholds, plants, sensorSummary, sensorHistory, slowPage, flights, loans, batteries }), {
+          return new Response(JSON.stringify({ ok: true, agenda, checklist, garbage, birthdays, warranty, uv, weather, weatherSummary, lightIdle, tibber, mailDelivery, garmin, garminPush, garminThresholds, sensorSummary, sensorHistory, slowPage, loans }), {
             headers: { "Content-Type": "application/json" },
           });
 

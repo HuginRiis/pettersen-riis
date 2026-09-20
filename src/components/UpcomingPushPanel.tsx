@@ -654,56 +654,7 @@ function EventBasedRules() {
       }
     } catch (e) { console.error("[EventBasedRules] login prefs failed", e); }
 
-    // Flyradar
-    try {
-      const { data } = await supabase
-        .from("flight_alert_prefs" as never)
-        .select("id, airports, notify_arrivals, notify_departures, notify_radius, radius_km");
-      for (const r of (data ?? []) as Array<{
-        id: string; airports: string[]; notify_arrivals: boolean; notify_departures: boolean;
-        notify_radius: boolean; radius_km: number;
-      }>) {
-        const bits: string[] = [];
-        if (r.airports?.length) bits.push(`${r.airports.length} flyplass`);
-        if (r.notify_arrivals) bits.push("ankomst");
-        if (r.notify_departures) bits.push("avgang");
-        if (r.notify_radius) bits.push(`radius ${r.radius_km}km`);
-        if (bits.length === 0) continue;
-        out.push({
-          key: `flight-${r.id}`,
-          icon: Plane,
-          source: "Flyradar",
-          title: "Fly-varsler",
-          detail: bits.join(" · "),
-          recipients: "Alle",
-          enabled: true,
-        });
-      }
-    } catch (e) { console.error("[EventBasedRules] flight prefs failed", e); }
 
-    // Planter
-    try {
-      const { data } = await supabase
-        .from("plants")
-        .select("id, name, notify_recipient, notify_watering, notify_fertilize, notify_sensor, notify_season");
-      for (const p of data ?? []) {
-        const bits: string[] = [];
-        if ((p as any).notify_watering) bits.push("vanning");
-        if ((p as any).notify_fertilize) bits.push("gjødsling");
-        if ((p as any).notify_sensor) bits.push("sensor");
-        if ((p as any).notify_season) bits.push("sesong");
-        if (bits.length === 0) continue;
-        out.push({
-          key: `plant-${(p as any).id}`,
-          icon: Leaf,
-          source: "Planter",
-          title: (p as any).name,
-          detail: bits.join(" · "),
-          recipients: (p as any).notify_recipient || "Alle",
-          enabled: true,
-        });
-      }
-    } catch (e) { console.error("[EventBasedRules] plants failed", e); }
 
     setRows(out);
     setLoading(false);

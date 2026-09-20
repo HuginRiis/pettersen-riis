@@ -37,7 +37,6 @@ const CANDIDATES: Candidate[] = [
   { table: "ai_search_log", dateColumn: "created_at", unused: true, note: "AI-søkelogg — ingen UI bruker historikken" },
   { table: "home_alarm_log", dateColumn: "changed_at", unused: true, note: "Alarm-historikk — vises ikke" },
   { table: "garbage_notification_log", dateColumn: "notified_at", unused: true, note: "Notifikasjons-audit" },
-  { table: "plant_notification_log", dateColumn: "notified_at", unused: true, note: "Notifikasjons-audit" },
   { table: "tibber_notification_log", dateColumn: "notified_at", unused: true, note: "Notifikasjons-audit" },
 
   // Tabeller som brukes i grafer, men hvor gamle rader kan trimmes:

@@ -186,15 +186,7 @@ export const refreshApiSource = createServerFn({ method: "POST" })
         m.getMetRadarSouthernNorway(),
       );
       await tryRun("getTollnesAlerts", () => m.getTollnesAlerts());
-    } else if (source === "flights") {
-      const m = await import("@/lib/flights.functions");
-      await tryRun("getNearbyFlights[tollnes]", () =>
-        m.getNearbyFlights({ data: { location: "tollnes" } }),
-      );
-      await tryRun("getNearbyFlights[hytta]", () =>
-        m.getNearbyFlights({ data: { location: "hytta" } }),
-      );
-    } else if (source === "open-meteo" || source === "air-quality" || source === "uv") {
+} else if (source === "open-meteo" || source === "air-quality" || source === "uv") {
 
 
       // Triggrer cache-oppvarmingen for Open-Meteo (pollen, luftkvalitet, UV).
