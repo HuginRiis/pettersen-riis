@@ -49,9 +49,7 @@ import borgenSeasons from "@/assets/borgen-seasons.png";
 // Hall background images (hentet fra hver sals egen hero)
 import hallVar from "@/assets/got-var.jpg";
 import hallPollen from "@/assets/got-pollen.jpg";
-import hallTurer from "@/assets/got-turer.jpg";
 import hallAgenda from "@/assets/got-agenda.jpg";
-import hallVarsler from "@/assets/got-varsler.jpg";
 import hallVakttarnet from "@/assets/got-vakttarnet.jpg";
 import hallHytta from "@/assets/hytta-aurora-got.webp";
 import hallTrening from "@/assets/got-trening.jpg";
@@ -65,8 +63,6 @@ import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
 import hallRegnskap from "@/assets/got-regnskap.jpg";
 import hallBudsjett from "@/assets/got-budsjett.jpg";
 import hallUtlan from "@/assets/got-utlan.jpg";
-import hallBatterier from "@/assets/got-batterier.jpg";
-import hallInternett from "@/assets/got-internett.jpg";
 import hallKosthold from "@/assets/hogwarts-kosthold.jpg.asset.json";
 import hallBruksanvisning from "@/assets/got-bruksanvisning.jpg";
 import hallJaguar from "@/assets/got-jaguar.jpg";
@@ -78,7 +74,7 @@ import hallStovsuger from "@/assets/got-stovsuger.jpg";
 import hallSkatt from "@/assets/got-skatt.jpg";
 
 // Halls available to anyone who steps into the courtyard (no password required)
-const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen", "/turer"]);
+const PUBLIC_HALL_PATHS = new Set<string>(["/var", "/pollen"]);
 
 // Current season based on month (Northern Hemisphere)
 function getCurrentSeason(): "spring" | "summer" | "autumn" | "winter" {
@@ -326,11 +322,8 @@ function Home() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
           {showHall("/var") && <HallCard to="/var" title="Værens budskap" desc="Værmelding for Skien og hytta." icon="🌨" image={hallVar} locked={false} badge={<HallBadgeStack><WeatherDaysBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /><CurrentTempBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /></HallBadgeStack>} />}
-          {showHall("/varet-her") && <HallCard to="/varet-her" title="Været her" desc="Vær der du er akkurat nå." icon="📍" image={hallVar} locked={false} badge={<HallBadgeStack><CurrentTempBadge inline lat={TOLLNES.lat} lon={TOLLNES.lon} /></HallBadgeStack>} />}
           {showHall("/pollen") && <HallCard to="/pollen" title="Pollen" desc="Dagens pollen i lufta." icon="🌾" image={hallPollen} locked={false} />}
-          {showHall("/turer") && <HallCard to="/turer" title="Ferden" desc="Tips til turer i nærheten." icon="🧭" image={hallTurer} locked={false} />}
           {showHall("/agenda") && <HallCard to="/agenda" title="Søppel, bursdager og meldinger" desc="Søppeltømming, bursdager og meldinger med dato og emne." icon="📜" image={hallAgenda} locked={!isAuthed} badge={<HallBadgeStack><GarbageNextPickupBadge inline /></HallBadgeStack>} />}
-          {showHall("/varsler") && <HallCard to="/varsler" title="Farevarsler" desc="Aktive farevarsler og trafikkmeldinger." icon="⚠️" image={hallVarsler} locked={false} badge={<HallBadgeStack><AlertsSeverityBadge inline /></HallBadgeStack>} />}
           {showHall("/vakttarnet") && <HallCard to="/vakttarnet" title="Vakttårnet" desc="Vaktene rapporterer hvem som nærmer seg porten." icon="👁" image={hallVakttarnet} locked={!isAuthed} badge={<HallBadgeStack><AlarmStateBadge inline /><UtgangsdorenLockBadge inline /></HallBadgeStack>} />}
           {showHall("/hytta") && <HallCard to="/hytta" title="Hytta" desc="Husets tilflukt i fjellet." icon="🏔" image={hallHytta} locked={false} />}
           {showHall("/trening") && <HallCard to="/trening" title="Treningssalen" desc="Kroppen som rustning." icon="⚔️" image={hallTrening} locked={!isAuthed} badge={<HallBadgeStack><StepsTodayBadge inline owner="arne" /><StepsTodayBadge inline owner="rebekka" /><TrainingLast4WeeksBadge inline owner="arne" /><TrainingLast4WeeksBadge inline owner="rebekka" /></HallBadgeStack>} />}
@@ -350,9 +343,7 @@ function Home() {
           {showHall("/regnskap") && <HallCard to="/regnskap" title="Regnskap" desc="Bankimport, AI-kategorisering og full oversikt over pengebruken." icon="💰" image={hallRegnskap} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/utlan") && <HallCard to="/utlan" title="Utlån & Lånt" desc="Ting husets folk har lånt bort eller lånt inn." icon="📦" image={hallUtlan} locked={!isAuthed} />}
-          {showHall("/batterier") && <HallCard to="/batterier" title="Batterier i huset" desc="Alle batteri-nivåer samlet på ett sted — med varsling." icon="🔋" image={hallBatterier} locked={!isAuthed} />}
           {showHall("/kosthold") && <HallCard to="/kosthold" title="Kosthold" desc="Kalorier, AI-analyse av matbilder, laktosefritt og ukeplaner." icon="🥗" image={hallKosthold.url} locked={!isAuthed} />}
-          {showHall("/internett") && <HallCard to="/internett" title="Internett-test" desc="Hastighet, ping, jitter og hva som gjør nettet tregt." icon="📶" image={hallInternett} locked={!isAuthed} />}
           {showHall("/bruksanvisning") && <HallCard to="/bruksanvisning" title="Bruksanvisning" desc="Alle husets manualer — søkt opp på nett og lagret som PDF." icon="📖" image={hallBruksanvisning} locked={!isAuthed} />}
           {showHall("/jaguar") && <HallCard to="/jaguar" title="Jaguar" desc="Kjørelogg, forbruk og statistikk for husets elektriske katt." icon="🚗" image={hallJaguar} locked={!isAuthed} />}
           {showHall("/push-varslinger") && <HallCard to="/push-varslinger" title="Innstillinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<HallBadgeStack><PushTodayBadge inline /></HallBadgeStack>} />}
@@ -666,13 +657,10 @@ function HallCard({
   to:
     | "/agenda"
     | "/var"
-    | "/varet-her"
     | "/pollen"
     | "/vakttarnet"
-    | "/varsler"
     | "/hytta"
     | "/trening"
-    | "/turer"
     | "/stromkroniken"
     | "/smarthus"
     | "/lys"
@@ -686,8 +674,6 @@ function HallCard({
     | "/regnskap"
     | "/budsjett"
     | "/utlan"
-    | "/batterier"
-    | "/internett"
     | "/kosthold"
     | "/bruksanvisning"
     | "/jaguar"
