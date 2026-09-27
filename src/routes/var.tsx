@@ -642,7 +642,7 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
 
           {/* FØLES SOM + SKYDEKKE */}
           <div className="grid grid-cols-2 gap-3">
-            <FeelsLikeCard hour={currentHour} isDay={isDay} />
+            <FeelsLikeCard hour={currentHour} isDay={isDay} lat={userLoc.active.lat} lon={userLoc.active.lon} />
             <CloudCard hour={currentHour} />
           </div>
 
@@ -3329,7 +3329,47 @@ function UvIosChart({ hours, nowProgress, uvNow }: { hours: { time: string; uv: 
 // SIMPLE STAT CARDS
 // ============================================================
 
-function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
+function useTenYearDayNormal(lat: number, lon: number): number | null {
+  const [val, setVal] = useState<number | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const key = `ten-yr-normal:${lat.toFixed(2)},${lon.toFixed(2)}:${mm}-${dd}`;
+    try {
+      const c = localStorage.getItem(key);
+      if (c !== null) { setVal(Number(c)); return; }
+    } catch {}
+    setVal(null);
+    const y = now.getFullYear();
+    const start = `${y - 10}-01-01`;
+    const endD = new Date(now.getTime() - 3 * 86_400_000);
+    const end = endD.toISOString().slice(0, 10);
+    let cancelled = false;
+    fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_mean&timezone=auto`)
+      .then((r) => r.json())
+      .then((j) => {
+        const times: string[] = j?.daily?.time ?? [];
+        const temps: (number | null)[] = j?.daily?.temperature_2m_mean ?? [];
+        const vals: number[] = [];
+        for (let yr = y - 10; yr < y; yr++) {
+          const i = times.indexOf(`${yr}-${mm}-${dd}`);
+          const v = i >= 0 ? temps[i] : null;
+          if (typeof v === "number") vals.push(v);
+        }
+        if (!vals.length || cancelled) return;
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        setVal(avg);
+        try { localStorage.setItem(key, String(avg)); } catch {}
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [lat, lon]);
+  return val;
+}
+
+function FeelsLikeCard({ hour, isDay, lat, lon }: { hour: Hour | null; isDay: boolean; lat: number; lon: number }) {
+  const tenYr = useTenYearDayNormal(lat, lon);
   const [tempUnit] = useTempUnit();
   const t = hour?.temp ?? 0;
   const w = hour?.wind ?? 0;
@@ -3349,7 +3389,7 @@ function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
   const cold = shade <= 5;
   const fx = cold ? <SnowFX intensity={0.5} /> : sun >= 18 ? <HeatwaveFX intensity={1} /> : <HeatwaveFX intensity={-1} />;
   const month = new Date().getMonth();
-  const normal = SKIEN_MONTHLY_FEELS_NORMAL_C[month];
+  const normal = tenYr ?? SKIEN_MONTHLY_FEELS_NORMAL_C[month];
   const delta = shade - normal;
   return (
     <GlassCard eyebrow="Føles som" icon={<Thermometer size={14} />} fx={fx}>
@@ -3373,6 +3413,9 @@ function FeelsLikeCard({ hour, isDay }: { hour: Hour | null; isDay: boolean }) {
       )}
       <div className="mt-2">
         <NormalDelta delta={delta} unit="°" normal={normal} upIsBad={false} />
+        {tenYr !== null && (
+          <div className="text-[10px] text-white/60 mt-1">Normal = snitt denne datoen siste 10 år her</div>
+        )}
       </div>
       <div className="text-[12px] text-white/80 mt-3 leading-snug">{hint}</div>
     </GlassCard>
