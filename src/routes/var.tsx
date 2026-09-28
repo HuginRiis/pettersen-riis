@@ -712,6 +712,10 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           {/* WINDY KART */}
           <CollapsibleMap />
 
+          {/* NORMALER — snitt siste 10 år vs i dag */}
+          <NormalsCompareCard hours={skienHours} hour={currentHour} lat={userLoc.active.lat} lon={userLoc.active.lon} label={userLoc.active.label} />
+
+
           <p className="text-[10px] text-white/50 text-center pt-4">
             Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart fra Windy.com.
           </p>
@@ -3366,6 +3370,116 @@ function useTenYearDayNormal(lat: number, lon: number): number | null {
     return () => { cancelled = true; };
   }, [lat, lon]);
   return val;
+}
+
+type DayNormals = { temp: number; tmax: number; tmin: number; wind: number; precip: number; snow: number; hum: number; years: number };
+
+function useTenYearDayNormals(lat: number, lon: number): DayNormals | null {
+  const [val, setVal] = useState<DayNormals | null>(null);
+  useEffect(() => {
+    const now = new Date();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const key = `ten-yr-normals:${lat.toFixed(2)},${lon.toFixed(2)}:${mm}-${dd}`;
+    try {
+      const c = localStorage.getItem(key);
+      if (c) { setVal(JSON.parse(c)); return; }
+    } catch {}
+    setVal(null);
+    const y = now.getFullYear();
+    const end = new Date(now.getTime() - 3 * 86_400_000).toISOString().slice(0, 10);
+    let cancelled = false;
+    const vars = "temperature_2m_mean,temperature_2m_max,temperature_2m_min,wind_speed_10m_mean,precipitation_sum,snowfall_sum,relative_humidity_2m_mean";
+    fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${y - 10}-01-01&end_date=${end}&daily=${vars}&wind_speed_unit=ms&timezone=auto`)
+      .then((r) => r.json())
+      .then((j) => {
+        const d = j?.daily;
+        const times: string[] = d?.time ?? [];
+        const acc: Record<string, number[]> = {};
+        const names = vars.split(",");
+        let years = 0;
+        for (let yr = y - 10; yr < y; yr++) {
+          const i = times.indexOf(`${yr}-${mm}-${dd}`);
+          if (i < 0) continue;
+          years++;
+          for (const n of names) {
+            const v = d?.[n]?.[i];
+            if (typeof v === "number") (acc[n] ??= []).push(v);
+          }
+        }
+        const avg = (n: string) => { const a = acc[n] ?? []; return a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0; };
+        if (!years || cancelled) return;
+        const out: DayNormals = {
+          temp: avg("temperature_2m_mean"), tmax: avg("temperature_2m_max"), tmin: avg("temperature_2m_min"),
+          wind: avg("wind_speed_10m_mean"), precip: avg("precipitation_sum"), snow: avg("snowfall_sum"),
+          hum: avg("relative_humidity_2m_mean"), years,
+        };
+        setVal(out);
+        try { localStorage.setItem(key, JSON.stringify(out)); } catch {}
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [lat, lon]);
+  return val;
+}
+
+function NormalsCompareCard({ hours, hour, lat, lon, label }: { hours: Hour[] | null; hour: Hour | null; lat: number; lon: number; label: string }) {
+  const n = useTenYearDayNormals(lat, lon);
+  const [tUnit] = useTempUnit();
+  const [wUnit] = useWindUnit();
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setShown(true), 150); return () => clearTimeout(t); }, [n]);
+  const today = new Date().toISOString().slice(0, 10);
+  const todayHours = (hours ?? []).filter((h) => h.time.slice(0, 10) === today);
+  const precipToday = todayHours.reduce((s, h) => s + (h.precip ?? 0), 0);
+  const snowToday = todayHours.reduce((s, h) => s + ((h.precip ?? 0) * snowShare(h) * snowRatio(h.temp ?? 0)) / 10, 0);
+  const temps = todayHours.map((h) => h.temp);
+  const rows = n ? [
+    { icon: "🌡️", name: "Temperatur", now: hour?.temp ?? 0, norm: n.temp, fmt: (v: number) => formatTemp(v, tUnit), max: 30, offset: 20 },
+    { icon: "🔺", name: "Maks i dag", now: temps.length ? Math.max(...temps) : 0, norm: n.tmax, fmt: (v: number) => formatTemp(v, tUnit), max: 35, offset: 20 },
+    { icon: "🔻", name: "Min i dag", now: temps.length ? Math.min(...temps) : 0, norm: n.tmin, fmt: (v: number) => formatTemp(v, tUnit), max: 35, offset: 25 },
+    { icon: "🌬️", name: "Vind", now: hour?.wind ?? 0, norm: n.wind, fmt: (v: number) => formatWind(v, wUnit, { digits: 1 }), max: 15, offset: 0 },
+    { icon: "🌧️", name: "Nedbør", now: precipToday, norm: n.precip, fmt: (v: number) => `${v.toFixed(1)} mm`, max: 15, offset: 0 },
+    { icon: "💧", name: "Fuktighet", now: hour?.humidity ?? 0, norm: n.hum, fmt: (v: number) => `${Math.round(v)} %`, max: 100, offset: 0 },
+    { icon: "❄️", name: "Snø", now: snowToday, norm: n.snow, fmt: (v: number) => `${v.toFixed(1)} cm`, max: 10, offset: 0 },
+  ] : [];
+  const pct = (v: number, max: number, off: number) => Math.max(3, Math.min(100, ((v + off) / (max + off)) * 100));
+  const fx = n && (n.snow > 0.2 || (hour?.temp ?? 10) <= 1) ? <SnowFX intensity={0.4} /> : <HeatwaveFX intensity={(hour?.temp ?? 0) >= 18 ? 1 : -1} />;
+  return (
+    <GlassCard eyebrow={`Normaler i dag · ${label.split(",")[0]}`} icon={<Thermometer size={14} />} fx={fx}>
+      {!n ? (
+        <div className="text-sm text-white/70 animate-pulse">Henter 10 års historikk…</div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex justify-end gap-3 text-[10px] text-white/60">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-white/40" />Normal</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-300" />I dag</span>
+          </div>
+          {rows.map((r, i) => {
+            const diff = r.now - r.norm;
+            return (
+              <div key={r.name} className="animate-fade-in" style={{ animationDelay: `${i * 90}ms`, animationFillMode: "both" }}>
+                <div className="flex items-baseline justify-between text-[12px]">
+                  <span className="text-white/85"><span className="inline-block animate-[pulse_3s_ease-in-out_infinite] mr-1">{r.icon}</span>{r.name}</span>
+                  <span className="tabular-nums text-white/90">
+                    {r.fmt(r.now)} <span className="text-white/50">/ {r.fmt(r.norm)}</span>
+                    <span className={`ml-1.5 text-[10px] ${diff > 0 ? "text-amber-200" : diff < 0 ? "text-sky-200" : "text-white/50"}`}>{diff > 0 ? "▲" : diff < 0 ? "▼" : "•"}</span>
+                  </span>
+                </div>
+                <div className="relative mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-white/35 transition-[width] duration-1000 ease-out" style={{ width: shown ? `${pct(r.norm, r.max, r.offset)}%` : "0%", transitionDelay: `${i * 90}ms` }} />
+                </div>
+                <div className="relative mt-0.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 transition-[width] duration-1000 ease-out" style={{ width: shown ? `${pct(r.now, r.max, r.offset)}%` : "0%", transitionDelay: `${i * 90 + 200}ms` }} />
+                </div>
+              </div>
+            );
+          })}
+          <div className="text-[10px] text-white/55 pt-1">Normal = snitt for denne datoen de siste {n.years} årene på stedet.</div>
+        </div>
+      )}
+    </GlassCard>
+  );
 }
 
 function FeelsLikeCard({ hour, isDay, lat, lon }: { hour: Hour | null; isDay: boolean; lat: number; lon: number }) {
