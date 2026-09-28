@@ -3452,25 +3452,31 @@ function NormalsCompareCard({ hours, hour, lat, lon, label }: { hours: Hour[] | 
       ) : (
         <div className="space-y-3">
           <div className="flex justify-end gap-3 text-[10px] text-white/60">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-white/40" />Normal</span>
+            <span className="flex items-center gap-1"><span className="w-[2px] h-2.5 rounded bg-white/80" />Normal</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-300" />I dag</span>
           </div>
           {rows.map((r, i) => {
             const diff = r.now - r.norm;
+            const pn = pct(r.norm, r.max, r.offset);
+            const pt = pct(r.now, r.max, r.offset);
+            const warm = diff > 0;
             return (
-              <div key={r.name} className="animate-fade-in" style={{ animationDelay: `${i * 90}ms`, animationFillMode: "both" }}>
+              <div key={r.name} className="nc-row" style={{ animationDelay: `${i * 110}ms` }}>
                 <div className="flex items-baseline justify-between text-[12px]">
-                  <span className="text-white/85"><span className="inline-block animate-[pulse_3s_ease-in-out_infinite] mr-1">{r.icon}</span>{r.name}</span>
+                  <span className="text-white/85 flex items-center"><span className="nc-icon mr-1.5" style={{ animationDelay: `${i * 0.4}s` }}>{r.icon}</span>{r.name}</span>
                   <span className="tabular-nums text-white/90">
                     {r.fmt(r.now)} <span className="text-white/50">/ {r.fmt(r.norm)}</span>
-                    <span className={`ml-1.5 text-[10px] ${diff > 0 ? "text-amber-200" : diff < 0 ? "text-sky-200" : "text-white/50"}`}>{diff > 0 ? "▲" : diff < 0 ? "▼" : "•"}</span>
+                    <span className={`ml-1.5 text-[10px] inline-block ${warm ? "text-amber-200 nc-up" : diff < 0 ? "text-sky-200 nc-down" : "text-white/50"}`}>{warm ? "▲" : diff < 0 ? "▼" : "•"}</span>
                   </span>
                 </div>
-                <div className="relative mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className="absolute inset-y-0 left-0 rounded-full bg-white/35 transition-[width] duration-1000 ease-out" style={{ width: shown ? `${pct(r.norm, r.max, r.offset)}%` : "0%", transitionDelay: `${i * 90}ms` }} />
-                </div>
-                <div className="relative mt-0.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 transition-[width] duration-1000 ease-out" style={{ width: shown ? `${pct(r.now, r.max, r.offset)}%` : "0%", transitionDelay: `${i * 90 + 200}ms` }} />
+                <div className="relative mt-1.5 h-2.5">
+                  <div className="absolute inset-0 rounded-full bg-white/10 overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 transition-[width] duration-[1400ms] ease-[cubic-bezier(.22,1.3,.36,1)]" style={{ width: shown ? `${pt}%` : "0%", transitionDelay: `${i * 110 + 250}ms` }}>
+                      <span className="nc-shimmer" style={{ animationDelay: `${i * 0.3}s` }} />
+                    </div>
+                  </div>
+                  <span className="nc-tip absolute top-1/2 transition-[left] duration-[1400ms] ease-[cubic-bezier(.22,1.3,.36,1)]" style={{ left: shown ? `${pt}%` : "0%", transitionDelay: `${i * 110 + 250}ms` }} />
+                  <span className="absolute -top-1 -bottom-1 w-[2px] rounded bg-white/80 shadow-[0_0_6px_rgba(255,255,255,.8)] transition-[left,opacity] duration-1000 ease-out" style={{ left: shown ? `${pn}%` : "0%", opacity: shown ? 1 : 0, transitionDelay: `${i * 110}ms` }} title="Normal" />
                 </div>
               </div>
             );
