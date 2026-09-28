@@ -1754,3 +1754,18 @@ main .container {
 .theme-hogwarts.theme-hogwarts-light [role="progressbar"] {
   background-color: oklch(0.46 0.04 285);
 }
+
+/* Normaler i dag – fancy animasjon */
+@keyframes nc-rise { from { opacity: 0; transform: translateY(12px) scale(.97); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes nc-float { 0%,100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-6deg); } }
+@keyframes nc-shimmer { 0% { transform: translateX(-120%); } 60%,100% { transform: translateX(260%); } }
+@keyframes nc-glow { 0%,100% { box-shadow: 0 0 6px 2px rgba(253,186,116,.7); } 50% { box-shadow: 0 0 14px 5px rgba(253,186,116,.95); } }
+@keyframes nc-up { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@keyframes nc-down { 0%,100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+.nc-row { animation: nc-rise .7s cubic-bezier(.22,1,.36,1) both; }
+.nc-icon { display: inline-block; animation: nc-float 3.2s ease-in-out infinite; }
+.nc-shimmer { position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); animation: nc-shimmer 2.8s ease-in-out infinite; }
+.nc-tip { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 9999px; background: #fff7ed; animation: nc-glow 1.8s ease-in-out infinite; }
+.nc-up { animation: nc-up 1.4s ease-in-out infinite; }
+.nc-down { animation: nc-down 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .nc-row, .nc-icon, .nc-shimmer, .nc-tip, .nc-up, .nc-down { animation: none; } }
