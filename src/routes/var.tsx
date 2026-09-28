@@ -712,6 +712,10 @@ function WeatherPageInner(props: WeatherPageInnerProps) {
           {/* WINDY KART */}
           <CollapsibleMap />
 
+          {/* NORMALER — snitt siste 10 år vs i dag */}
+          <NormalsCompareCard hours={skienHours} hour={currentHour} lat={userLoc.active.lat} lon={userLoc.active.lon} label={userLoc.active.label} />
+
+
           <p className="text-[10px] text-white/50 text-center pt-4">
             Værdata fra MET.no. Live målinger fra Netatmo via Homey. Astronomi beregnet lokalt. Kart fra Windy.com.
           </p>
