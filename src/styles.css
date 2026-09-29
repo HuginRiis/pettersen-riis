@@ -1754,3 +1754,21 @@ main .container {
 .theme-hogwarts.theme-hogwarts-light [role="progressbar"] {
   background-color: oklch(0.46 0.04 285);
 }
+
+/* Normaler-flis: animerte ikoner */
+.nicon{display:inline-block;will-change:transform}
+.nicon-temp{animation:nicon-throb 2.4s ease-in-out infinite;transform-origin:50% 90%}
+.nicon-tmax{animation:nicon-up 1.8s ease-in-out infinite}
+.nicon-tmin{animation:nicon-down 1.8s ease-in-out infinite}
+.nicon-wind{animation:nicon-gust 2s ease-in-out infinite}
+.nicon-precip{animation:nicon-drip 1.6s ease-in-out infinite}
+.nicon-hum{animation:nicon-drop 2.2s cubic-bezier(.5,0,.5,1) infinite}
+.nicon-snow{animation:nicon-spin 6s linear infinite}
+@keyframes nicon-throb{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+@keyframes nicon-up{0%,100%{transform:translateY(1px)}50%{transform:translateY(-3px)}}
+@keyframes nicon-down{0%,100%{transform:translateY(-1px)}50%{transform:translateY(3px)}}
+@keyframes nicon-gust{0%,100%{transform:translateX(0) rotate(0)}30%{transform:translateX(3px) rotate(-6deg)}60%{transform:translateX(-1px) rotate(3deg)}}
+@keyframes nicon-drip{0%,100%{transform:translateY(0)}40%{transform:translateY(2px) rotate(-4deg)}70%{transform:translateY(-1px) rotate(3deg)}}
+@keyframes nicon-drop{0%{transform:translateY(-2px) scale(1,1)}60%{transform:translateY(2px) scale(1.1,.9)}100%{transform:translateY(-2px) scale(1,1)}}
+@keyframes nicon-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.nicon{animation:none!important}}

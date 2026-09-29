@@ -3470,7 +3470,7 @@ function NormalsCompareCard({ hours, hour, lat, lon, label }: { hours: Hour[] | 
             return (
               <div key={r.name} className="animate-fade-in" style={{ animationDelay: `${i * 90}ms`, animationFillMode: "both" }}>
                 <div className="flex items-baseline justify-between text-[12px]">
-                  <span className="text-white/85"><span className="inline-block animate-[pulse_3s_ease-in-out_infinite] mr-1">{r.icon}</span>{r.name}</span>
+                  <span className="text-white/85"><span className={`inline-block mr-1 nicon nicon-${r.homeKey ?? (r.name==="Snø"?"snow":"hum")}`}>{r.icon}</span>{r.name}</span>
                   <span className="tabular-nums text-white/90">
                     {r.fmt(r.now)} <span className="text-white/50">/ {r.fmt(r.norm)}</span>
                     <span className={`ml-1.5 text-[10px] ${diff > 0 ? "text-amber-200" : diff < 0 ? "text-sky-200" : "text-white/50"}`}>{diff > 0 ? "▲" : diff < 0 ? "▼" : "•"}</span>
