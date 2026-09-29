@@ -3475,10 +3475,105 @@ function NormalsCompareCard({ hours, hour, lat, lon, label }: { hours: Hour[] | 
               </div>
             );
           })}
+          <NetatmoNormalsCompare
+            norm={{ temp: n.temp, tmax: n.tmax, tmin: n.tmin, wind: n.wind, precip: n.precip }}
+            forecast={{ temp: hour?.temp ?? null, tmax: temps.length ? Math.max(...temps) : null, tmin: temps.length ? Math.min(...temps) : null, wind: hour?.wind ?? null, precip: precipToday }}
+          />
           <div className="text-[10px] text-white/55 pt-1">Normal = snitt for denne datoen de siste {n.years} årene på stedet.</div>
         </div>
       )}
     </GlassCard>
+  );
+}
+
+type CmpVals = { temp: number | null; tmax: number | null; tmin: number | null; wind: number | null; precip: number | null };
+
+function netatmoToday(res: any): CmpVals | null {
+  if (!res?.ok) return null;
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const s0 = start.getTime();
+  const pick = (arr: { t: number; v: number | null }[]) =>
+    (arr ?? []).filter((p) => (p.t < 1e12 ? p.t * 1000 : p.t) >= s0 && p.v !== null && Number.isFinite(p.v)).map((p) => p.v as number);
+  const t = pick(res.temp), w = pick(res.wind), r = pick(res.rain);
+  const lastT = (res.temp ?? []).filter((p: any) => p.v !== null).slice(-1)[0]?.v ?? null;
+  const lastW = (res.wind ?? []).filter((p: any) => p.v !== null).slice(-1)[0]?.v ?? null;
+  return {
+    temp: lastT,
+    tmax: t.length ? Math.max(...t) : null,
+    tmin: t.length ? Math.min(...t) : null,
+    wind: lastW !== null ? lastW / 3.6 : null, // km/t → m/s
+    precip: r.length ? r.reduce((a, b) => a + b, 0) : null,
+  };
+}
+
+function NetatmoNormalsCompare({ norm, forecast }: { norm: CmpVals; forecast: CmpVals }) {
+  const fetchWeek = useServerFn(getNetatmoOutdoorWeek);
+  const [home, setHome] = useState<CmpVals | null>(null);
+  const [cabin, setCabin] = useState<CmpVals | null>(null);
+  const [shown, setShown] = useState(false);
+  const [tUnit] = useTempUnit();
+  const [wUnit] = useWindUnit();
+  useEffect(() => {
+    let alive = true;
+    fetchWeek({ data: { stationMatch: "tollnes" } }).then((r) => alive && setHome(netatmoToday(r))).catch(() => {});
+    fetchWeek({ data: { stationMatch: "hytta" } }).then((r) => alive && setCabin(netatmoToday(r))).catch(() => {});
+    const id = setTimeout(() => setShown(true), 300);
+    return () => { alive = false; clearTimeout(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const series = [
+    { key: "norm", label: "Normal", color: "rgba(255,255,255,0.45)", v: norm },
+    { key: "fc", label: "Valgt sted", color: "#fbbf24", v: forecast },
+    { key: "home", label: "Netatmo hjemme", color: "#4ade80", v: home },
+    { key: "cabin", label: "Netatmo hytta", color: "#60a5fa", v: cabin },
+  ];
+  const metrics: { k: keyof CmpVals; name: string; fmt: (v: number) => string; min: number; max: number }[] = [
+    { k: "temp", name: "Temp nå", fmt: (v) => formatTemp(v, tUnit, { digits: 1 }), min: -25, max: 35 },
+    { k: "tmax", name: "Maks", fmt: (v) => formatTemp(v, tUnit, { digits: 1 }), min: -25, max: 35 },
+    { k: "tmin", name: "Min", fmt: (v) => formatTemp(v, tUnit, { digits: 1 }), min: -25, max: 35 },
+    { k: "wind", name: "Vind", fmt: (v) => formatWind(v, wUnit, { digits: 1 }), min: 0, max: 15 },
+    { k: "precip", name: "Nedbør", fmt: (v) => `${v.toFixed(1)} mm`, min: 0, max: 20 },
+  ];
+  return (
+    <div className="mt-2 pt-3 border-t border-white/10">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-white/70 mb-2">Sammenlign med dine målinger</div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-white/70 mb-3">
+        {series.map((s) => (
+          <span key={s.key} className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />{s.label}
+            {(s.key === "home" && !home) || (s.key === "cabin" && !cabin) ? <span className="text-white/40">(henter…)</span> : null}
+          </span>
+        ))}
+      </div>
+      <div className="grid grid-cols-5 gap-2 items-end">
+        {metrics.map((m, mi) => (
+          <div key={m.k} className="flex flex-col items-center">
+            <div className="flex items-end gap-[3px] h-28 w-full justify-center">
+              {series.map((s, si) => {
+                const v = s.v?.[m.k] ?? null;
+                const pct = v === null ? 0 : Math.max(4, Math.min(100, ((v - m.min) / (m.max - m.min)) * 100));
+                return (
+                  <div key={s.key} className="group relative w-2.5 sm:w-3 h-full flex items-end">
+                    <div
+                      className="w-full rounded-t transition-[height] duration-1000 ease-out"
+                      style={{ height: shown && v !== null ? `${pct}%` : "0%", background: s.color, transitionDelay: `${mi * 120 + si * 60}ms` }}
+                      title={v !== null ? `${s.label}: ${m.fmt(v)}` : `${s.label}: –`}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-[10px] text-white/80 mt-1">{m.name}</div>
+            <div className="text-[9px] tabular-nums text-white/55 leading-tight text-center">
+              {series.map((s) => {
+                const v = s.v?.[m.k] ?? null;
+                return <div key={s.key} style={{ color: s.color }}>{v === null ? "–" : m.fmt(v)}</div>;
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
