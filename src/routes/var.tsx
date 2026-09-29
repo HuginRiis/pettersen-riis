@@ -3434,12 +3434,21 @@ function NormalsCompareCard({ hours, hour, lat, lon, label }: { hours: Hour[] | 
   const precipToday = todayHours.reduce((s, h) => s + (h.precip ?? 0), 0);
   const snowToday = todayHours.reduce((s, h) => s + ((h.precip ?? 0) * snowShare(h) * snowRatio(h.temp ?? 0)) / 10, 0);
   const temps = todayHours.map((h) => h.temp);
-  const rows = n ? [
-    { icon: "🌡️", name: "Temperatur", now: hour?.temp ?? 0, norm: n.temp, fmt: (v: number) => formatTemp(v, tUnit), max: 30, offset: 20 },
-    { icon: "🔺", name: "Maks i dag", now: temps.length ? Math.max(...temps) : 0, norm: n.tmax, fmt: (v: number) => formatTemp(v, tUnit), max: 35, offset: 20 },
-    { icon: "🔻", name: "Min i dag", now: temps.length ? Math.min(...temps) : 0, norm: n.tmin, fmt: (v: number) => formatTemp(v, tUnit), max: 35, offset: 25 },
-    { icon: "🌬️", name: "Vind", now: hour?.wind ?? 0, norm: n.wind, fmt: (v: number) => formatWind(v, wUnit, { digits: 1 }), max: 15, offset: 0 },
-    { icon: "🌧️", name: "Nedbør", now: precipToday, norm: n.precip, fmt: (v: number) => `${v.toFixed(1)} mm`, max: 15, offset: 0 },
+  const fetchHome = useServerFn(getNetatmoOutdoorWeek);
+  const [home, setHome] = useState<CmpVals | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetchHome({ data: { stationMatch: "tollnes" } }).then((r) => alive && setHome(netatmoToday(r))).catch(() => {});
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const homeVal = (k: keyof CmpVals): number | null => home?.[k] ?? null;
+  const rows: { icon: string; name: string; now: number; norm: number; fmt: (v: number) => string; max: number; offset: number; homeKey?: keyof CmpVals }[] = n ? [
+    { icon: "🌡️", name: "Temperatur", now: hour?.temp ?? 0, norm: n.temp, fmt: (v: number) => formatTemp(v, tUnit), max: 30, offset: 20, homeKey: "temp" },
+    { icon: "🔺", name: "Maks i dag", now: temps.length ? Math.max(...temps) : 0, norm: n.tmax, fmt: (v: number) => formatTemp(v, tUnit), max: 35, offset: 20, homeKey: "tmax" },
+    { icon: "🔻", name: "Min i dag", now: temps.length ? Math.min(...temps) : 0, norm: n.tmin, fmt: (v: number) => formatTemp(v, tUnit), max: 35, offset: 25, homeKey: "tmin" },
+    { icon: "🌬️", name: "Vind", now: hour?.wind ?? 0, norm: n.wind, fmt: (v: number) => formatWind(v, wUnit, { digits: 1 }), max: 15, offset: 0, homeKey: "wind" },
+    { icon: "🌧️", name: "Nedbør", now: precipToday, norm: n.precip, fmt: (v: number) => `${v.toFixed(1)} mm`, max: 15, offset: 0, homeKey: "precip" },
     { icon: "💧", name: "Fuktighet", now: hour?.humidity ?? 0, norm: n.hum, fmt: (v: number) => `${Math.round(v)} %`, max: 100, offset: 0 },
     { icon: "❄️", name: "Snø", now: snowToday, norm: n.snow, fmt: (v: number) => `${v.toFixed(1)} cm`, max: 10, offset: 0 },
   ] : [];
@@ -3454,6 +3463,7 @@ function NormalsCompareCard({ hours, hour, lat, lon, label }: { hours: Hour[] | 
           <div className="flex justify-end gap-3 text-[10px] text-white/60">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-white/40" />Normal</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-300" />I dag</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" />Tollnes{!home && <span className="text-white/40"> (henter…)</span>}</span>
           </div>
           {rows.map((r, i) => {
             const diff = r.now - r.norm;
@@ -3472,6 +3482,14 @@ function NormalsCompareCard({ hours, hour, lat, lon, label }: { hours: Hour[] | 
                 <div className="relative mt-0.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
                   <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-300 to-orange-400 transition-[width] duration-1000 ease-out" style={{ width: shown ? `${pct(r.now, r.max, r.offset)}%` : "0%", transitionDelay: `${i * 90 + 200}ms` }} />
                 </div>
+                {r.homeKey && (
+                  <div className="relative mt-0.5 h-1.5 rounded-full bg-white/10 overflow-hidden" title={homeVal(r.homeKey) !== null ? `Tollnes: ${r.fmt(homeVal(r.homeKey)!)}` : "Tollnes: –"}>
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-300 to-green-500 transition-[width] duration-1000 ease-out" style={{ width: shown && homeVal(r.homeKey) !== null ? `${pct(homeVal(r.homeKey)!, r.max, r.offset)}%` : "0%", transitionDelay: `${i * 90 + 400}ms` }} />
+                  </div>
+                )}
+                {r.homeKey && homeVal(r.homeKey) !== null && (
+                  <div className="text-[10px] tabular-nums text-emerald-300/90 text-right mt-0.5">Tollnes {r.fmt(homeVal(r.homeKey)!)}</div>
+                )}
               </div>
             );
           })}
