@@ -904,3 +904,53 @@ export const getTibberWeeklyMeter = createServerFn({ method: "GET" })
       },
     ),
   );
+
+// ============================================================
+// Effekttrinn: de 3 timene med høyest forbruk per måned (maks én per døgn).
+// ============================================================
+export type PeakHour = { from: string; kwh: number };
+export type PeakMonth = { month: string; peaks: PeakHour[]; avgKw: number };
+export type PeakHoursResult = {
+  homes: Partial<Record<"hytta" | "tollnes", PeakMonth[]>>;
+  error?: string;
+};
+let peakCache: { at: number; data: PeakHoursResult } | null = null;
+
+export const getTibberPeakHours = createServerFn({ method: "GET" }).handler(
+  withApiLog("tibber", "getTibberPeakHours", async (): Promise<PeakHoursResult> => {
+    const token = process.env.TIBBER_TOKEN;
+    if (!token) return { homes: {}, error: "TIBBER_TOKEN mangler" };
+    if (peakCache && Date.now() - peakCache.at < 30 * 60_000) return peakCache.data;
+    try {
+      const homes = await fetchHourlyHomes(token, 24 * 186);
+      const out: PeakHoursResult = { homes: {} };
+      const dayKey = (iso: string) =>
+        new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
+      for (const h of homes) {
+        const loc = classifyHome(h);
+        if (!loc) continue;
+        const byMonth = new Map<string, Map<string, PeakHour>>();
+        for (const n of h.consumption?.nodes ?? []) {
+          if (n.consumption == null) continue;
+          const d = dayKey(n.from);
+          const m = d.slice(0, 7);
+          const days = byMonth.get(m) ?? new Map<string, PeakHour>();
+          const cur = days.get(d);
+          if (!cur || n.consumption > cur.kwh) days.set(d, { from: n.from, kwh: n.consumption });
+          byMonth.set(m, days);
+        }
+        out.homes[loc] = Array.from(byMonth.entries())
+          .sort(([a], [b]) => b.localeCompare(a))
+          .map(([month, days]) => {
+            const peaks = Array.from(days.values()).sort((a, b) => b.kwh - a.kwh).slice(0, 3);
+            const avgKw = peaks.length ? peaks.reduce((s, p) => s + p.kwh, 0) / peaks.length : 0;
+            return { month, peaks, avgKw };
+          });
+      }
+      peakCache = { at: Date.now(), data: out };
+      return out;
+    } catch (e: any) {
+      return { homes: {}, error: e?.message ?? "Ukjent feil" };
+    }
+  }),
+);
