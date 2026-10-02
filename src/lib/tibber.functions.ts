@@ -918,31 +918,28 @@ let peakCache: { at: number; data: PeakHoursResult } | null = null;
 
 export const getTibberPeakHours = createServerFn({ method: "GET" }).handler(
   withApiLog("tibber", "getTibberPeakHours", async (): Promise<PeakHoursResult> => {
-    const token = process.env.TIBBER_TOKEN;
-    if (!token) return { homes: {}, error: "TIBBER_TOKEN mangler" };
     if (peakCache && Date.now() - peakCache.at < 30 * 60_000) return peakCache.data;
     try {
-      const homes = await fetchHourlyHomes(token, 24 * 186);
+      // Tibber gir ikke lenger timesforbruk (consumption = null), så vi
+      // regner toppene ut fra Pulse-målingene som lagres i databasen.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data, error } = await (supabaseAdmin as any).rpc("pulse_monthly_peaks");
+      if (error) throw new Error(error.message);
       const out: PeakHoursResult = { homes: {} };
-      const dayKey = (iso: string) =>
-        new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Oslo" });
-      for (const h of homes) {
-        const loc = classifyHome(h);
-        if (!loc) continue;
-        const byMonth = new Map<string, Map<string, PeakHour>>();
-        for (const n of h.consumption?.nodes ?? []) {
-          if (n.consumption == null) continue;
-          const d = dayKey(n.from);
-          const m = d.slice(0, 7);
-          const days = byMonth.get(m) ?? new Map<string, PeakHour>();
-          const cur = days.get(d);
-          if (!cur || n.consumption > cur.kwh) days.set(d, { from: n.from, kwh: n.consumption });
-          byMonth.set(m, days);
-        }
+      const grouped = new Map<string, Map<string, PeakHour[]>>();
+      for (const r of (data ?? []) as Array<{ location: string; month: string; hour_start: string; kwh: number }>) {
+        const byMonth = grouped.get(r.location) ?? new Map<string, PeakHour[]>();
+        const list = byMonth.get(r.month) ?? [];
+        list.push({ from: r.hour_start, kwh: Number(r.kwh) });
+        byMonth.set(r.month, list);
+        grouped.set(r.location, byMonth);
+      }
+      for (const [loc, byMonth] of grouped) {
+        if (loc !== "hytta" && loc !== "tollnes") continue;
         out.homes[loc] = Array.from(byMonth.entries())
           .sort(([a], [b]) => b.localeCompare(a))
-          .map(([month, days]) => {
-            const peaks = Array.from(days.values()).sort((a, b) => b.kwh - a.kwh).slice(0, 3);
+          .map(([month, list]) => {
+            const peaks = list.sort((a, b) => b.kwh - a.kwh).slice(0, 3);
             const avgKw = peaks.length ? peaks.reduce((s, p) => s + p.kwh, 0) / peaks.length : 0;
             return { month, peaks, avgKw };
           });
