@@ -3548,6 +3548,11 @@ export type Database = {
     }
     Functions: {
       cleanup_pgnet_cache: { Args: never; Returns: Json }
+      export_list_tables: { Args: never; Returns: Json }
+      export_table_rows: {
+        Args: { p_limit: number; p_offset: number; p_table: string }
+        Returns: Json
+      }
       fin_recurring: { Args: never; Returns: Json }
       fin_stats: { Args: { p_from?: string; p_to?: string }; Returns: Json }
       get_api_call_hourly_24h: { Args: never; Returns: Json }
