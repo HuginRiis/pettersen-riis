@@ -43,6 +43,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksLogPulseRouteImport } from './routes/hooks.log-pulse'
 import { Route as ApiStravaStartRouteImport } from './routes/api.strava.start'
 import { Route as ApiStravaCallbackRouteImport } from './routes/api.strava.callback'
+import { Route as ApiPublicDataExportRouteImport } from './routes/api/public/data-export'
 import { Route as ApiHomeyStartRouteImport } from './routes/api.homey.start'
 import { Route as ApiHomeyCallbackRouteImport } from './routes/api.homey.callback'
 import { Route as ApiPublicHooksVocPollRouteImport } from './routes/api/public/hooks/voc-poll'
@@ -230,6 +231,11 @@ const ApiStravaCallbackRoute = ApiStravaCallbackRouteImport.update({
   path: '/api/strava/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDataExportRoute = ApiPublicDataExportRouteImport.update({
+  id: '/api/public/data-export',
+  path: '/api/public/data-export',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomeyStartRoute = ApiHomeyStartRouteImport.update({
   id: '/api/homey/start',
   path: '/api/homey/start',
@@ -356,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
+  '/api/public/data-export': typeof ApiPublicDataExportRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
@@ -408,6 +415,7 @@ export interface FileRoutesByTo {
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
+  '/api/public/data-export': typeof ApiPublicDataExportRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
@@ -461,6 +469,7 @@ export interface FileRoutesById {
   '/hooks/log-pulse': typeof HooksLogPulseRoute
   '/api/homey/callback': typeof ApiHomeyCallbackRoute
   '/api/homey/start': typeof ApiHomeyStartRoute
+  '/api/public/data-export': typeof ApiPublicDataExportRoute
   '/api/strava/callback': typeof ApiStravaCallbackRoute
   '/api/strava/start': typeof ApiStravaStartRoute
   '/api/public/hooks/agenda-push': typeof ApiPublicHooksAgendaPushRoute
@@ -515,6 +524,7 @@ export interface FileRouteTypes {
     | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
+    | '/api/public/data-export'
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
@@ -567,6 +577,7 @@ export interface FileRouteTypes {
     | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
+    | '/api/public/data-export'
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
@@ -619,6 +630,7 @@ export interface FileRouteTypes {
     | '/hooks/log-pulse'
     | '/api/homey/callback'
     | '/api/homey/start'
+    | '/api/public/data-export'
     | '/api/strava/callback'
     | '/api/strava/start'
     | '/api/public/hooks/agenda-push'
@@ -672,6 +684,7 @@ export interface RootRouteChildren {
   HooksLogPulseRoute: typeof HooksLogPulseRoute
   ApiHomeyCallbackRoute: typeof ApiHomeyCallbackRoute
   ApiHomeyStartRoute: typeof ApiHomeyStartRoute
+  ApiPublicDataExportRoute: typeof ApiPublicDataExportRoute
   ApiStravaCallbackRoute: typeof ApiStravaCallbackRoute
   ApiStravaStartRoute: typeof ApiStravaStartRoute
   ApiPublicHooksAgendaPushRoute: typeof ApiPublicHooksAgendaPushRoute
@@ -930,6 +943,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStravaCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/data-export': {
+      id: '/api/public/data-export'
+      path: '/api/public/data-export'
+      fullPath: '/api/public/data-export'
+      preLoaderRoute: typeof ApiPublicDataExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/homey/start': {
       id: '/api/homey/start'
       path: '/api/homey/start'
@@ -1080,6 +1100,7 @@ const rootRouteChildren: RootRouteChildren = {
   HooksLogPulseRoute: HooksLogPulseRoute,
   ApiHomeyCallbackRoute: ApiHomeyCallbackRoute,
   ApiHomeyStartRoute: ApiHomeyStartRoute,
+  ApiPublicDataExportRoute: ApiPublicDataExportRoute,
   ApiStravaCallbackRoute: ApiStravaCallbackRoute,
   ApiStravaStartRoute: ApiStravaStartRoute,
   ApiPublicHooksAgendaPushRoute: ApiPublicHooksAgendaPushRoute,
