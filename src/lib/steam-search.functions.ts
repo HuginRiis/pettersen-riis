@@ -3,6 +3,9 @@
 // og til å anslå antall spillere / hvorfor spillet passer.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createIsomorphicFn as __claudeIso } from "@tanstack/react-start";
+// Lovable AI → Claude (selvhostet): avskjæreren lastes bare på serveren.
+await __claudeIso().server(() => import("@/lib/claude-gateway.server")).client(() => Promise.resolve({}))();
 
 export type SteamGame = {
   appid: number;

@@ -50,7 +50,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { compressImageToWebp } from "@/lib/image-compress";
-import heroAsset from "@/assets/hogwarts-kosthold.jpg.asset.json";
+import heroAsset from "@/assets/hogwarts-kosthold.jpg";
 import {
   addMeal,
   analyzeMealImage,
@@ -654,7 +654,7 @@ function KostholdRoute() {
         eyebrow="Den store salen"
         title="Kosthold"
         subtitle="Foto-trylleri · makroer · ukeplaner · laktosefritt — en festmåltid-logg verdig Galtvort"
-        image={heroAsset.url}
+        image={heroAsset}
       />
 
       <div className="relative container mx-auto px-4 py-8 space-y-6 max-w-6xl">

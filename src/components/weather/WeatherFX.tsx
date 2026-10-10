@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useState } from "react";
-import moonRealAsset from "@/assets/moon-real.png.asset.json";
+import moonRealAsset from "@/assets/moon-real.png";
 
 /**
  * Alle FX-komponenter bruker Math.random() ved rendering, noe som gir
@@ -1422,7 +1422,7 @@ const GlassPaneFX = memo(function GlassPaneFX({
               left: 46,
               width: 156,
               height: 156,
-              backgroundImage: `url(${moonRealAsset.url})`,
+              backgroundImage: `url(${moonRealAsset})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               boxShadow:

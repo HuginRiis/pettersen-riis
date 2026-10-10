@@ -54,8 +54,8 @@ import { TileToneProvider, TileToneToggle, useTileTone, tileToneClasses, type Ti
 import { TileOpacityProvider, TileOpacityToggle, useTileOpacity } from "@/components/weather/TileOpacity";
 import { TileColorProvider, TileColorToggle, TileGlassToggle, useTileColor } from "@/components/weather/TileColor";
 import { AnimTogglesProvider, AnimTogglesPanel, useAnimToggles } from "@/components/weather/AnimToggles";
-import moonBlueAsset from "@/assets/moon-blue.png.asset.json";
-import moonRealAsset from "@/assets/moon-real.png.asset.json";
+import moonBlueAsset from "@/assets/moon-blue.png";
+import moonRealAsset from "@/assets/moon-real.png";
 import { useWindUnit, formatWind, formatWindFromKmh, windUnitShort, WIND_UNITS, type WindUnit } from "@/hooks/use-wind-unit";
 import { useTempUnit, formatTemp, TEMP_UNITS } from "@/hooks/use-temp-unit";
 
@@ -2720,7 +2720,7 @@ function MoonVisual({ phaseFraction, illumination }: { phaseFraction: number; il
         </defs>
         {/* Blå måne-bilde som base */}
         <g clipPath="url(#moonClip)" style={{ animation: "wxMoonGlow 4s ease-in-out infinite" }}>
-          <image href={moonRealAsset.url} x={cx - r} y={cy - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
+          <image href={moonRealAsset} x={cx - r} y={cy - r} width={r * 2} height={r * 2} preserveAspectRatio="xMidYMid slice" />
           {/* Mørk skygge for fase — gjennomsiktig så månen skimtes gjennom */}
           <path d={litPath} fill="url(#moonG)" style={{ mixBlendMode: "multiply" }} />
         </g>
@@ -2971,7 +2971,7 @@ function SunsetCard({ sun, now, moon }: { sun: ReturnType<typeof sunTimes>; now:
                 </radialGradient>
               </defs>
               <g clipPath={`url(#${clipId})`}>
-                <image href={moonRealAsset.url} x={sx - mr} y={sy - mr} width={mr * 2} height={mr * 2} preserveAspectRatio="xMidYMid slice" />
+                <image href={moonRealAsset} x={sx - mr} y={sy - mr} width={mr * 2} height={mr * 2} preserveAspectRatio="xMidYMid slice" />
                 <path d={litPath} fill={`url(#${shadeId})`} />
               </g>
             </g>

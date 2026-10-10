@@ -63,7 +63,7 @@ import hallKvitteringer from "@/assets/got-kvitteringer.jpg";
 import hallRegnskap from "@/assets/got-regnskap.jpg";
 import hallBudsjett from "@/assets/got-budsjett.jpg";
 import hallUtlan from "@/assets/got-utlan.jpg";
-import hallKosthold from "@/assets/hogwarts-kosthold.jpg.asset.json";
+import hallKosthold from "@/assets/hogwarts-kosthold.jpg";
 import hallBruksanvisning from "@/assets/got-bruksanvisning.jpg";
 import hallJaguar from "@/assets/got-jaguar.jpg";
 
@@ -343,7 +343,7 @@ function Home() {
           {showHall("/regnskap") && <HallCard to="/regnskap" title="Regnskap" desc="Bankimport, AI-kategorisering og full oversikt over pengebruken." icon="💰" image={hallRegnskap} locked={!isAuthed} />}
           {showHall("/kvitteringer") && <HallCard to="/kvitteringer" title="Kvitteringer" desc="Husets kvitteringer, garanti og utgifter." icon="🧾" image={hallKvitteringer} locked={!isAuthed} />}
           {showHall("/utlan") && <HallCard to="/utlan" title="Utlån & Lånt" desc="Ting husets folk har lånt bort eller lånt inn." icon="📦" image={hallUtlan} locked={!isAuthed} />}
-          {showHall("/kosthold") && <HallCard to="/kosthold" title="Kosthold" desc="Kalorier, AI-analyse av matbilder, laktosefritt og ukeplaner." icon="🥗" image={hallKosthold.url} locked={!isAuthed} />}
+          {showHall("/kosthold") && <HallCard to="/kosthold" title="Kosthold" desc="Kalorier, AI-analyse av matbilder, laktosefritt og ukeplaner." icon="🥗" image={hallKosthold} locked={!isAuthed} />}
           {showHall("/bruksanvisning") && <HallCard to="/bruksanvisning" title="Bruksanvisning" desc="Alle husets manualer — søkt opp på nett og lagret som PDF." icon="📖" image={hallBruksanvisning} locked={!isAuthed} />}
           {showHall("/jaguar") && <HallCard to="/jaguar" title="Jaguar" desc="Kjørelogg, forbruk og statistikk for husets elektriske katt." icon="🚗" image={hallJaguar} locked={!isAuthed} />}
           {showHall("/push-varslinger") && <HallCard to="/push-varslinger" title="Innstillinger" desc="Push-varsler og innstillinger for husets ravner." icon="🔔" image={hallVarslinger} locked={!isAuthed} badge={<HallBadgeStack><PushTodayBadge inline /></HallBadgeStack>} />}

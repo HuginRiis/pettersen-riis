@@ -25,7 +25,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 
-import kartAsset from "@/assets/hydrostranda-kart.jpg.asset.json";
+import kartAsset from "@/assets/hydrostranda-kart.jpg";
 
 type CabinEdit = {
   name?: string;
@@ -651,7 +651,7 @@ export function LinketurKart() {
           aria-label="Åpne kart over Hydrostranda i stor visning"
         >
           <img
-            src={kartAsset.url}
+            src={kartAsset}
             alt="Kart over feriestedet Hydrostranda med hyttenumre, camping, brygge og fasiliteter"
             loading="lazy"
             className="h-auto w-full object-contain"
@@ -666,7 +666,7 @@ export function LinketurKart() {
           aria-label="Kart over Hydrostranda"
         >
           <img
-            src={kartAsset.url}
+            src={kartAsset}
             alt="Kart over feriestedet Hydrostranda"
             className="max-h-[85vh] max-w-full rounded-xl border border-border object-contain"
           />

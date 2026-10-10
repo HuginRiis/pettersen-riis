@@ -1,5 +1,8 @@
 import { createServerFn, createIsomorphicFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { createIsomorphicFn as __claudeIso } from "@tanstack/react-start";
+// Lovable AI → Claude (selvhostet): avskjæreren lastes bare på serveren.
+await __claudeIso().server(() => import("@/lib/claude-gateway.server")).client(() => Promise.resolve({}))();
 const __loadAdmin = createIsomorphicFn()
   .server((): Promise<typeof import("@/integrations/supabase/client.server")> =>
     import("@/integrations/supabase/client.server"),

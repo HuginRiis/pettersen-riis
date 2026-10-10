@@ -1,3 +1,4 @@
+import "@/lib/claude-gateway.server"; // Lovable AI → Claude (selvhostet)
 // AI-uthenting av transaksjoner fra kontoutskrift (CSV, PDF eller bilde).
 const MODEL = "google/gemini-2.5-flash";
 

@@ -1,3 +1,4 @@
+import "@/lib/claude-gateway.server"; // Lovable AI → Claude (selvhostet)
 /**
  * Synker daglige stats, aktiviteter og søvn fra Garmin → Supabase per person (owner).
  * Idempotent — kan kjøres flere ganger om dagen.

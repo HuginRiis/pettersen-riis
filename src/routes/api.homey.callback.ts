@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { saveHomeyConnection } from "@/lib/homey-connection.server";
 
 const ATHOM_API_BASE = "https://api.athom.com";
-const REDIRECT_URI = "https://pettersen-riis.lovable.app/api/homey/callback";
+const REDIRECT_URI = "https://pettersen.riis.cc/api/homey/callback";
 
 function htmlResponse(body: string, status = 200) {
   return new Response(body, {

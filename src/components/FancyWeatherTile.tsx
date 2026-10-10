@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { getMetForecastComplete } from "@/lib/met-forecast.functions";
-import moonRealAsset from "@/assets/moon-real.png.asset.json";
+import moonRealAsset from "@/assets/moon-real.png";
 
 /** Kutt ned lange labels til bare stedsnavnet (før første komma). */
 function shortLabel(label: string): string {
@@ -140,7 +140,7 @@ export function FancyWeatherTile({ label, lat, lon }: Props) {
 
         <div
           className="fancy-wx__moon"
-          style={{ backgroundImage: `url(${moonRealAsset.url})` }}
+          style={{ backgroundImage: `url(${moonRealAsset})` }}
         />
 
         <div className="fancy-wx__stars" />

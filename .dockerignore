@@ -1,0 +1,9 @@
+node_modules
+.output
+dist
+.env
+app.env
+.git
+migrering
+*.mp3
+*.opus
